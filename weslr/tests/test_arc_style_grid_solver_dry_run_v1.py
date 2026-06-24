@@ -18,6 +18,7 @@ from weslr.arc_style_grid_solver_dry_run import (
     SOLVER_TYPE_V1,
     build_arc_style_solver_dry_run_result_v1,
     generate_arc_style_candidate_rules_v1,
+    infer_arc_style_primitive_candidates_from_grid_delta_v1,
     run_arc_style_bounded_solver_dry_run_v1,
     summarize_arc_style_solver_dry_run_result_v1,
     to_arc_style_solver_dry_run_json_safe_v1,
@@ -53,11 +54,24 @@ def test_candidate_generation_is_deterministic_and_bounded() -> None:
     task = _task_by_type("recolor_symbol")
     first = generate_arc_style_candidate_rules_v1(task)
     second = generate_arc_style_candidate_rules_v1(task)
+    inference = infer_arc_style_primitive_candidates_from_grid_delta_v1(task)
     assert _json_safe(first) == _json_safe(second)
     assert 1 <= len(first) <= MAX_CANDIDATES_PER_TASK_V1
     assert all(candidate["bounded_depth"] <= MAX_PRIMITIVE_SEQUENCE_DEPTH_V1 for candidate in first)
     assert all(candidate["is_executable"] is True for candidate in first)
     assert all(candidate["task_id"] == task["task_id"] for candidate in first)
+    assert all(candidate["generation_trace"]["uses_train_output_for_transformation_inference"] is True for candidate in first)
+    assert all(candidate["generation_trace"]["uses_test_output"] is False for candidate in first)
+    assert all(candidate["generation_trace"]["uses_task_id_for_candidate_selection"] is False for candidate in first)
+    assert all(candidate["generation_trace"]["uses_notes_for_candidate_selection"] is False for candidate in first)
+    assert all(candidate["generation_trace"]["lookup_table_detected"] is False for candidate in first)
+    assert all(candidate["generation_trace"]["structural_evidence_labels"] for candidate in first)
+    assert inference["uses_train_output_for_transformation_inference"] is True
+    assert inference["uses_test_output"] is False
+    assert inference["uses_task_id_for_candidate_selection"] is False
+    assert inference["uses_notes_for_candidate_selection"] is False
+    assert inference["lookup_table_detected"] is False
+    assert inference["structural_evidence_labels"]
 
 
 def test_internal_toy_tasks_solve_exactly() -> None:
@@ -78,6 +92,11 @@ def test_internal_toy_tasks_solve_exactly() -> None:
     assert all(result["candidate_count"] <= MAX_CANDIDATES_PER_TASK_V1 for result in packet["task_results"])
     assert all(result["no_score_claim"] is True for result in packet["task_results"])
     assert all(result["task_source"] == TASK_SOURCE_INTERNAL_SYNTHETIC_V1 for result in packet["task_results"])
+    assert packet["trace"]["uses_train_output_for_transformation_inference"] is True
+    assert packet["trace"]["uses_test_output"] is False
+    assert packet["trace"]["uses_task_id_for_candidate_selection"] is False
+    assert packet["trace"]["uses_notes_for_candidate_selection"] is False
+    assert packet["trace"]["lookup_table_detected"] is False
 
 
 def test_each_supported_toy_task_chooses_the_expected_primitive_family() -> None:
@@ -118,6 +137,11 @@ def test_failure_ledger_records_mismatch_when_no_exact_solution_exists() -> None
     assert task_result["train_fit_status"] in {"partial_fit", "unsupported", "mismatch"}
     assert task_result["selected_candidate_id"] is not None
     assert task_result["failure_notes"]
+    assert task_result["trace"]["uses_train_output_for_transformation_inference"] is True
+    assert task_result["trace"]["uses_test_output"] is False
+    assert task_result["trace"]["uses_task_id_for_candidate_selection"] is False
+    assert task_result["trace"]["uses_notes_for_candidate_selection"] is False
+    assert task_result["trace"]["lookup_table_detected"] is False
     assert packet["failure_ledger"]["entries"]
     assert packet["failure_ledger"]["category_counts"]
     assert any(count >= 1 for count in packet["failure_ledger"]["category_counts"].values())

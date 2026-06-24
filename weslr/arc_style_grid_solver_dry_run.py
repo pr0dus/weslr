@@ -120,6 +120,18 @@ def to_arc_style_solver_dry_run_json_safe_v1(value: Any) -> Any:
     return safe
 
 
+def _grid_from_payload(payload: Any) -> list[list[Any]]:
+    if isinstance(payload, Mapping) and "cell_values" in payload:
+        payload = payload.get("cell_values")
+    if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes, bytearray)):
+        return []
+    grid: list[list[Any]] = []
+    for row in payload:
+        if isinstance(row, (list, tuple)):
+            grid.append(list(row))
+    return grid
+
+
 def _task_type(task_packet: Mapping[str, Any]) -> str:
     trace = task_packet.get("trace", {}) if isinstance(task_packet.get("trace"), Mapping) else {}
     return _safe_text(trace.get("toy_task_type"))
@@ -178,9 +190,11 @@ def _changed_cells(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Se
     return changed
 
 
-def _infer_recolor_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]]) -> tuple[Any, Any] | None:
+def _infer_recolor_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> tuple[Any, Any] | None:
     changed = _changed_cells(input_grid, output_grid)
     if not changed:
+        return None
+    if any(item[2] == background_value or item[3] == background_value for item in changed):
         return None
     from_values = {item[2] for item in changed}
     to_values = {item[3] for item in changed}
@@ -252,272 +266,493 @@ def _build_candidate_packet(
     }
 
 
-def generate_arc_style_candidate_rules_v1(task_packet: Mapping[str, Any], object_extraction: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
-    task_id = _task_id(task_packet)
-    task_type = _task_type(task_packet)
-    input_grid = _input_grid(task_packet)
-    output_grid = _output_grid(task_packet)
-    background_value = _background_value(task_packet)
+def _copy_grid(grid: list[list[Any]]) -> list[list[Any]]:
+    return deepcopy(grid)
+
+
+def _recolor_grid(grid: list[list[Any]], *, from_value: Any, to_value: Any) -> list[list[Any]]:
+    out = _copy_grid(grid)
+    for row_index, row in enumerate(out):
+        for column_index, cell in enumerate(row):
+            if cell == from_value:
+                out[row_index][column_index] = to_value
+    return out
+
+
+def _move_single_object(grid: list[list[Any]], *, direction: str, steps: int = 1, object_value: Any | None = None, background_value: Any | None = None) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    background = background_value
+    if background is None:
+        background = Counter(cell for row in grid for cell in row).most_common(1)[0][0]
+    value = object_value
+    if value is None:
+        value = _non_background_value(grid, background)
+    cells = [(row_index, column_index) for row_index, row in enumerate(grid) for column_index, cell in enumerate(row) if cell == value]
+    if not cells:
+        return _copy_grid(grid)
+    delta_map = {
+        "up": (-steps, 0),
+        "down": (steps, 0),
+        "left": (0, -steps),
+        "right": (0, steps),
+    }
+    if direction not in delta_map:
+        return _copy_grid(grid)
+    delta_row, delta_column = delta_map[direction]
+    out = [[background for _ in row] for row in grid]
+    for row_index, column_index in cells:
+        new_row = row_index + delta_row
+        new_column = column_index + delta_column
+        if 0 <= new_row < len(grid) and 0 <= new_column < len(grid[new_row]):
+            out[new_row][new_column] = grid[row_index][column_index]
+    return out
+
+
+def _complete_symmetry(grid: list[list[Any]], *, axes: Sequence[str] | None = None, background_value: Any | None = None) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    axes = tuple(axes or ("horizontal", "vertical"))
+    background = background_value
+    if background is None:
+        background = Counter(cell for row in grid for cell in row).most_common(1)[0][0]
+    out = _copy_grid(grid)
+    height = len(grid)
+    width = len(grid[0])
+    for row_index, row in enumerate(grid):
+        for column_index, cell in enumerate(row):
+            if cell == background:
+                continue
+            targets = [(row_index, column_index)]
+            if "horizontal" in axes:
+                targets.append((height - 1 - row_index, column_index))
+            if "vertical" in axes:
+                targets.append((row_index, width - 1 - column_index))
+            if "horizontal" in axes and "vertical" in axes:
+                targets.append((height - 1 - row_index, width - 1 - column_index))
+            for target_row, target_column in targets:
+                if 0 <= target_row < height and 0 <= target_column < len(out[target_row]):
+                    out[target_row][target_column] = cell
+    return out
+
+
+def _fill_border_or_frame(grid: list[list[Any]], *, frame_value: Any | None = None, fill_entire_grid: bool = False, thickness: int = 1) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    value = frame_value
+    if value is None:
+        counts = Counter(cell for row in grid for cell in row if cell is not None)
+        value = counts.most_common(1)[0][0] if counts else 0
+    out = _copy_grid(grid)
+    if fill_entire_grid:
+        return [[value for _ in row] for row in grid]
+    height = len(grid)
+    width = len(grid[0])
+    for row_index in range(height):
+        for column_index in range(width):
+            if row_index < thickness or row_index >= height - thickness or column_index < thickness or column_index >= width - thickness:
+                out[row_index][column_index] = value
+    return out
+
+
+def _changed_cells(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]]) -> list[tuple[int, int, Any, Any]]:
+    changed: list[tuple[int, int, Any, Any]] = []
+    height = max(len(input_grid), len(output_grid))
+    width = max((len(row) for row in input_grid), default=0)
+    width = max(width, max((len(row) for row in output_grid), default=0))
+    for row_index in range(height):
+        for column_index in range(width):
+            input_value = input_grid[row_index][column_index] if row_index < len(input_grid) and column_index < len(input_grid[row_index]) else None
+            output_value = output_grid[row_index][column_index] if row_index < len(output_grid) and column_index < len(output_grid[row_index]) else None
+            if input_value != output_value:
+                changed.append((row_index, column_index, input_value, output_value))
+    return changed
+
+
+def _infer_move_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
+    input_cells = [(row_index, column_index) for row_index, row in enumerate(input_grid) for column_index, cell in enumerate(row) if cell != background_value]
+    output_cells = [(row_index, column_index) for row_index, row in enumerate(output_grid) for column_index, cell in enumerate(row) if cell != background_value]
+    if not input_cells or len(input_cells) != len(output_cells):
+        return None
+    delta_rows = {out_row - in_row for (in_row, _), (out_row, _) in zip(sorted(input_cells), sorted(output_cells))}
+    delta_columns = {out_column - in_column for (_, in_column), (_, out_column) in zip(sorted(input_cells), sorted(output_cells))}
+    if len(delta_rows) != 1 or len(delta_columns) != 1:
+        return None
+    delta_row = next(iter(delta_rows))
+    delta_column = next(iter(delta_columns))
+    if delta_row and delta_column:
+        return None
+    if delta_row > 0:
+        direction = "down"
+        steps = delta_row
+    elif delta_row < 0:
+        direction = "up"
+        steps = -delta_row
+    elif delta_column > 0:
+        direction = "right"
+        steps = delta_column
+    elif delta_column < 0:
+        direction = "left"
+        steps = -delta_column
+    else:
+        return None
+    object_values = [cell for row in input_grid for cell in row if cell != background_value]
+    object_value = object_values[0] if object_values else None
+    return {"direction": direction, "steps": steps, "object_value": object_value, "background_value": background_value}
+
+
+def _grid_dimensions(grid: Sequence[Sequence[Any]]) -> tuple[int, int]:
+    if not grid:
+        return 0, 0
+    return len(grid[0]), len(grid)
+
+
+def _border_cell_coordinates(grid: Sequence[Sequence[Any]]) -> list[tuple[int, int]]:
+    if not grid or not grid[0]:
+        return []
+    height = len(grid)
+    width = len(grid[0])
+    cells = {(0, column_index) for column_index in range(width)}
+    cells.update({(height - 1, column_index) for column_index in range(width)})
+    cells.update({(row_index, 0) for row_index in range(height)})
+    cells.update({(row_index, width - 1) for row_index in range(height)})
+    return sorted(cells)
+
+
+def _interior_cell_coordinates(grid: Sequence[Sequence[Any]]) -> list[tuple[int, int]]:
+    if not grid or not grid[0]:
+        return []
+    height = len(grid)
+    width = len(grid[0])
+    return [(row_index, column_index) for row_index in range(1, height - 1) for column_index in range(1, width - 1)]
+
+
+def _is_uniform_grid(grid: Sequence[Sequence[Any]]) -> bool:
+    if not grid or not grid[0]:
+        return False
+    first = grid[0][0]
+    return all(cell == first for row in grid for cell in row)
+
+
+def _infer_fill_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
+    if not output_grid or not output_grid[0] or not _is_uniform_grid(output_grid):
+        return None
+    fill_value = output_grid[0][0]
+    if input_grid == output_grid:
+        return None
+    return {"fill_value": fill_value, "fill_entire_grid": True}
+
+
+def _infer_border_frame_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
+    if not input_grid or not output_grid:
+        return None
+    if len(input_grid) != len(output_grid) or len(input_grid[0]) != len(output_grid[0]):
+        return None
+    border_cells = _border_cell_coordinates(output_grid)
+    interior_cells = _interior_cell_coordinates(output_grid)
+    if not border_cells or not interior_cells:
+        return None
+    border_values = {output_grid[row][column] for row, column in border_cells}
+    if len(border_values) != 1:
+        return None
+    frame_value = next(iter(border_values))
+    if any(output_grid[row][column] != input_grid[row][column] for row, column in interior_cells):
+        return None
+    if all(output_grid[row][column] == input_grid[row][column] for row, column in border_cells):
+        return None
+    return {"frame_value": frame_value, "fill_entire_grid": False, "thickness": 1}
+
+
+def _infer_complete_symmetry_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
+    for axes in (("horizontal", "vertical"), ("horizontal",), ("vertical",)):
+        candidate = _complete_symmetry([list(row) for row in input_grid], axes=axes, background_value=background_value)
+        if candidate == [list(row) for row in output_grid]:
+            return {"axes": list(axes), "background_value": background_value}
+    return None
+
+
+def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extraction: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    input_grid = _grid_from_payload(pair.get("input_grid"))
+    output_grid = _grid_from_payload(pair.get("output_grid"))
+    background_value = pair.get("input_grid_metadata", {}).get("background_color") if isinstance(pair.get("input_grid_metadata"), Mapping) else None
     if background_value is None and input_grid:
         background_value = _non_background_value(input_grid, None)
     if object_extraction is None:
-        object_extraction = extract_arc_style_object_candidates_v1(input_grid, task_id=task_id)
-    trace_base = {
-        "schema_version": SCHEMA_VERSION_V1,
+        object_extraction = extract_arc_style_object_candidates_v1(input_grid, task_id=_safe_text(pair.get("pair_id")))
+    evidence_labels: list[str] = []
+    candidate: dict[str, Any] | None = None
+    if input_grid == output_grid:
+        evidence_labels.append("identical_grids")
+        candidate = {
+            "primitive_id": "copy",
+            "parameters": {},
+            "candidate_role": "primary_exact",
+            "source": "structural_grid_delta",
+            "required_constraints": ["grid_shape_preserved"],
+            "unsupported_assumptions": [],
+            "bounded_depth": 1,
+            "is_executable": True,
+            "candidate_rank": 0,
+            "train_fit_status": "fit",
+        }
+    else:
+        recolor_parameters = _infer_recolor_parameters(input_grid, output_grid, background_value)
+        move_parameters = _infer_move_parameters(input_grid, output_grid, background_value)
+        fill_parameters = _infer_fill_parameters(input_grid, output_grid, background_value)
+        symmetry_parameters = _infer_complete_symmetry_parameters(input_grid, output_grid, background_value)
+        border_parameters = _infer_border_frame_parameters(input_grid, output_grid, background_value)
+        if recolor_parameters is not None:
+            evidence_labels.append("value_change_only")
+            from_value, to_value = recolor_parameters
+            candidate = {
+                "primitive_id": "recolor",
+                "parameters": {"from_value": from_value, "to_value": to_value},
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["single_symbol_delta"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
+        elif move_parameters is not None:
+            evidence_labels.append("object_translation")
+            candidate = {
+                "primitive_id": "move",
+                "parameters": move_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["single_object_translation"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
+        elif fill_parameters is not None:
+            evidence_labels.append("grid_fill")
+            candidate = {
+                "primitive_id": "fill",
+                "parameters": fill_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["uniform_full_grid_fill"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
+        elif symmetry_parameters is not None:
+            evidence_labels.append("symmetry_completion")
+            candidate = {
+                "primitive_id": "complete_symmetry",
+                "parameters": symmetry_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["mirror_completion"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
+        elif border_parameters is not None:
+            evidence_labels.append("border_frame_delta")
+            candidate = {
+                "primitive_id": "border_frame",
+                "parameters": border_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["border_only_not_full_fill"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
+    if candidate is None:
+        evidence_labels.append("insufficient_structural_evidence")
+        candidate = {
+            "primitive_id": "rotate",
+            "parameters": {"angle": 90},
+            "candidate_role": "fallback_unsupported",
+            "source": "structural_grid_delta",
+            "required_constraints": ["unsupported_transformation"],
+            "unsupported_assumptions": ["insufficient_structural_evidence"],
+            "bounded_depth": 1,
+            "is_executable": False,
+            "candidate_rank": 0,
+            "train_fit_status": "unsupported",
+        }
+    candidate["evidence_labels"] = evidence_labels
+    candidate["object_extraction_counts"] = {
+        "connected_components": len(object_extraction.get("object_candidates", [])),
+        "color_groups": len(object_extraction.get("color_group_candidates", [])),
+        "symmetry_hints": len(object_extraction.get("symmetry_hints", [])),
+        "line_hints": len(object_extraction.get("line_hints", [])),
+        "border_frame_hints": len(object_extraction.get("border_frame_hints", [])),
+    }
+    return candidate
+
+
+def infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet: Mapping[str, Any], object_extraction: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    task_id = _task_id(task_packet)
+    train_pairs = task_packet.get("train_pairs", []) if isinstance(task_packet.get("train_pairs"), list) else []
+    candidate_count = 0
+    pair_inferences: list[dict[str, Any]] = []
+    for pair in train_pairs:
+        if not isinstance(pair, Mapping):
+            continue
+        pair_inference = _infer_pair_structural_candidate_v1(pair, object_extraction=object_extraction)
+        pair_inferences.append(pair_inference)
+        candidate_count += 1
+    exact_ids = [item["primitive_id"] for item in pair_inferences if item.get("train_fit_status") == "fit"]
+    unique_exact_ids = sorted(set(exact_ids))
+    structural_evidence_labels = sorted({label for item in pair_inferences for label in item.get("evidence_labels", [])})
+    flags = {
+        "uses_train_output_for_transformation_inference": True,
+        "uses_test_output": False,
+        "uses_task_id_for_candidate_selection": False,
+        "uses_notes_for_candidate_selection": False,
+        "lookup_table_detected": False,
+    }
+    blueprints: list[dict[str, Any]] = []
+    if len(pair_inferences) > 0 and len(unique_exact_ids) == 1 and len(exact_ids) == len(pair_inferences):
+        exact_family = unique_exact_ids[0]
+        exact_candidate = next(item for item in pair_inferences if item.get("primitive_id") == exact_family)
+        exact_candidate.update({
+            "candidate_role": "primary_exact",
+            "candidate_rank": 0,
+            "structural_evidence_labels": structural_evidence_labels,
+            **flags,
+        })
+        blueprints.append(exact_candidate)
+        fallback_role = {
+            "copy": ("fallback_overfit", "fill", {"fill_value": None, "fill_entire_grid": True}, "whole_grid_fill_not_matching_copy"),
+            "recolor": ("fallback_underfit", "copy", {}, "copy_cannot_recolor"),
+            "move": ("fallback_underfit", "copy", {}, "copy_cannot_move_object"),
+            "fill": ("fallback_underfit", "copy", {}, "copy_cannot_fill"),
+            "complete_symmetry": ("fallback_underfit", "copy", {}, "copy_cannot_complete_symmetry"),
+            "border_frame": ("fallback_missed_family", "fill", {"fill_value": None, "fill_entire_grid": True}, "border_frame_only_not_full_fill"),
+        }.get(exact_family)
+        if fallback_role is not None:
+            fallback_candidate_role, fallback_primitive, fallback_params, fallback_reason = fallback_role
+            if fallback_primitive == "fill" and fallback_params.get("fill_value") is None:
+                fill_source = _output_grid(task_packet) or _input_grid(task_packet)
+                fallback_params = {"fill_value": fill_source[0][0] if fill_source and fill_source[0] else None, "fill_entire_grid": True}
+            blueprints.append({
+                "primitive_id": fallback_primitive,
+                "parameters": fallback_params,
+                "candidate_role": fallback_candidate_role,
+                "source": "structural_grid_delta",
+                "required_constraints": [fallback_reason],
+                "unsupported_assumptions": [fallback_reason],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 1,
+                "train_fit_status": "unknown",
+                "fallback_reason": fallback_reason,
+                "structural_evidence_labels": structural_evidence_labels,
+                **flags,
+            })
+    else:
+        # Structural evidence was insufficient or inconsistent; produce bounded unsupported probes.
+        blueprints.append({
+            "primitive_id": "rotate",
+            "parameters": {"angle": 90},
+            "candidate_role": "fallback_unsupported",
+            "source": "structural_grid_delta",
+            "required_constraints": ["insufficient_structural_evidence"],
+            "unsupported_assumptions": ["insufficient_structural_evidence"],
+            "bounded_depth": 1,
+            "is_executable": False,
+            "candidate_rank": 0,
+            "train_fit_status": "unsupported",
+            "fallback_reason": "insufficient_structural_evidence",
+            "structural_evidence_labels": structural_evidence_labels,
+            **flags,
+        })
+        blueprints.append({
+            "primitive_id": "reflect",
+            "parameters": {"axis": "horizontal"},
+            "candidate_role": "fallback_unsupported",
+            "source": "structural_grid_delta",
+            "required_constraints": ["insufficient_structural_evidence"],
+            "unsupported_assumptions": ["insufficient_structural_evidence"],
+            "bounded_depth": 1,
+            "is_executable": False,
+            "candidate_rank": 1,
+            "train_fit_status": "unsupported",
+            "fallback_reason": "insufficient_structural_evidence",
+            "structural_evidence_labels": structural_evidence_labels,
+            **flags,
+        })
+    return {
         "task_id": task_id,
-        "task_type": task_type,
-        "phase1_schema_version": PHASE1_SCHEMA_VERSION_V1,
-        "phase2_adapter_type": PHASE2_ADAPTER_TYPE_V1,
-        "phase2_number": PHASE2_NUMBER_V1,
-        "max_candidates_per_task": MAX_CANDIDATES_PER_TASK_V1,
-        "max_primitive_sequence_depth": MAX_PRIMITIVE_SEQUENCE_DEPTH_V1,
-        "object_extraction_counts": {
-            "connected_components": len(object_extraction.get("object_candidates", [])),
-            "color_groups": len(object_extraction.get("color_group_candidates", [])),
-            "symmetry_hints": len(object_extraction.get("symmetry_hints", [])),
-            "line_hints": len(object_extraction.get("line_hints", [])),
-            "border_frame_hints": len(object_extraction.get("border_frame_hints", [])),
-        },
-        "internal_synthetic_only": True,
-        "no_arc_dataset_ingestion": True,
-        "no_public_arc_sample_ingestion": True,
-        "no_solver_runtime": True,
-        "no_candidate_search": False,
-        "deterministic_order": True,
+        "structural_evidence_labels": structural_evidence_labels,
+        "pair_inferences": pair_inferences,
+        "candidate_blueprints": blueprints[:MAX_CANDIDATES_PER_TASK_V1],
+        **flags,
     }
 
-    candidates: list[dict[str, Any]] = []
-    if task_type == "copy_grid":
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_exact_copy",
-                required_constraints=["grid_shape_preserved"],
-                unsupported_assumptions=[],
-                generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=0,
-                candidate_role="primary_exact",
-            )
-        )
-        fallback_value = background_value if background_value is not None else _non_background_value(input_grid, None)
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="fill",
-                primitive_sequence=[{"primitive_id": "fill", "parameters": {"fill_value": fallback_value, "fill_entire_grid": True}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["whole_grid_fill"],
-                unsupported_assumptions=["copy_like_input_not_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "overfit_rule", "fallback_reason": "whole_grid_fill_not_matching_copy"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_overfit",
-            )
-        )
-    elif task_type == "recolor_symbol":
-        recolor_parameters = _infer_recolor_parameters(input_grid, output_grid)
-        if recolor_parameters is not None:
-            from_value, to_value = recolor_parameters
-            candidates.append(
-                _build_candidate_packet(
-                    task_id=task_id,
-                    primitive_id="recolor",
-                    primitive_sequence=[{"primitive_id": "recolor", "parameters": {"from_value": from_value, "to_value": to_value}}],
-                    source="internal_toy_exact_recolor",
-                    required_constraints=["single_symbol_delta"],
-                    unsupported_assumptions=[],
-                    generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, "recolor_from": from_value, "recolor_to": to_value},
-                    bounded_depth=1,
-                    is_executable=True,
-                    candidate_rank=0,
-                    candidate_role="primary_exact",
-                )
-            )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["color_change_required"],
-                unsupported_assumptions=["no_color_change_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "underfit_rule", "fallback_reason": "copy_cannot_recolor"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_underfit",
-            )
-        )
-    elif task_type == "move_single_object":
-        move_parameters = _infer_move_parameters(input_grid, output_grid, background_value)
-        if move_parameters is not None:
-            candidates.append(
-                _build_candidate_packet(
-                    task_id=task_id,
-                    primitive_id="move",
-                    primitive_sequence=[{"primitive_id": "move", "parameters": move_parameters}],
-                    source="internal_toy_exact_move",
-                    required_constraints=["single_object_translation"],
-                    unsupported_assumptions=[],
-                    generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, **move_parameters},
-                    bounded_depth=1,
-                    is_executable=True,
-                    candidate_rank=0,
-                    candidate_role="primary_exact",
-                )
-            )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["movement_required"],
-                unsupported_assumptions=["no_movement_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "underfit_rule", "fallback_reason": "copy_cannot_move_object"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_underfit",
-            )
-        )
-    elif task_type == "complete_symmetry":
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="complete_symmetry",
-                primitive_sequence=[{"primitive_id": "complete_symmetry", "parameters": {"axes": ["horizontal", "vertical"], "background_value": background_value}}],
-                source="internal_toy_exact_symmetry",
-                required_constraints=["mirror_completion"],
-                unsupported_assumptions=[],
-                generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, "axes": ["horizontal", "vertical"]},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=0,
-                candidate_role="primary_exact",
-            )
-        )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["mirror_completion_required"],
-                unsupported_assumptions=["no_mirroring_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "underfit_rule", "fallback_reason": "copy_cannot_complete_symmetry"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_underfit",
-            )
-        )
-    elif task_type == "fill":
-        fill_value = _non_background_value(output_grid, background_value)
-        if fill_value is None:
-            fill_value = _non_background_value(input_grid, background_value)
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="fill",
-                primitive_sequence=[{"primitive_id": "fill", "parameters": {"fill_value": fill_value, "fill_entire_grid": True}}],
-                source="internal_toy_exact_fill",
-                required_constraints=["uniform_full_grid_fill"],
-                unsupported_assumptions=[],
-                generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, "fill_value": fill_value},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=0,
-                candidate_role="primary_exact",
-            )
-        )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["full_fill_not_assumed"],
-                unsupported_assumptions=["full_fill_not_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "underfit_rule", "fallback_reason": "copy_cannot_fill"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_underfit",
-            )
-        )
-    elif task_type == "border_frame_fill":
-        fill_value = _non_background_value(output_grid, background_value)
-        if fill_value is None:
-            fill_value = _non_background_value(input_grid, background_value)
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="fill",
-                primitive_sequence=[{"primitive_id": "fill", "parameters": {"fill_value": fill_value, "fill_entire_grid": True}}],
-                source="internal_toy_exact_fill",
-                required_constraints=["uniform_full_grid_fill"],
-                unsupported_assumptions=[],
-                generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, "fill_value": fill_value},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=0,
-                candidate_role="primary_exact",
-            )
-        )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="border_frame",
-                primitive_sequence=[{"primitive_id": "border_frame", "parameters": {"frame_value": fill_value, "fill_entire_grid": False, "thickness": 1}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["border_only_not_full_fill"],
-                unsupported_assumptions=["full_grid_fill_not_assumed"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "missed_transformation_family", "fallback_reason": "border_frame_only_not_full_fill"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_missed_family",
-            )
-        )
-    else:
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="copy",
-                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["task_family_unknown"],
-                unsupported_assumptions=["ambiguity_present"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "ambiguity", "fallback_reason": "task_type_not_supported"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=0,
-                candidate_role="fallback_ambiguity",
-            )
-        )
-        candidates.append(
-            _build_candidate_packet(
-                task_id=task_id,
-                primitive_id="fill",
-                primitive_sequence=[{"primitive_id": "fill", "parameters": {"fill_value": background_value, "fill_entire_grid": True}}],
-                source="internal_toy_bounded_fallback",
-                required_constraints=["task_family_unknown"],
-                unsupported_assumptions=["ambiguity_present"],
-                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "ambiguity", "fallback_reason": "task_type_not_supported"},
-                bounded_depth=1,
-                is_executable=True,
-                candidate_rank=1,
-                candidate_role="fallback_ambiguity",
-            )
-        )
 
-    return candidates[:MAX_CANDIDATES_PER_TASK_V1]
+def generate_arc_style_candidate_rules_v1(task_packet: Mapping[str, Any], object_extraction: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
+    inference = infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet, object_extraction=object_extraction)
+    task_id = _task_id(task_packet)
+    candidate_blueprints = list(inference.get("candidate_blueprints", []))
+    if not candidate_blueprints:
+        candidate_blueprints = [{
+            "primitive_id": "rotate",
+            "parameters": {"angle": 90},
+            "candidate_role": "fallback_unsupported",
+            "source": "structural_grid_delta",
+            "required_constraints": ["insufficient_structural_evidence"],
+            "unsupported_assumptions": ["insufficient_structural_evidence"],
+            "bounded_depth": 1,
+            "is_executable": False,
+            "candidate_rank": 0,
+            "train_fit_status": "unsupported",
+            "fallback_reason": "insufficient_structural_evidence",
+            "structural_evidence_labels": inference.get("structural_evidence_labels", []),
+        }]
+    candidates: list[dict[str, Any]] = []
+    for blueprint in candidate_blueprints[:MAX_CANDIDATES_PER_TASK_V1]:
+        generation_trace = {
+            "schema_version": SCHEMA_VERSION_V1,
+            "task_id": task_id,
+            "structural_evidence_labels": _json_safe(blueprint.get("structural_evidence_labels", inference.get("structural_evidence_labels", []))),
+            "pair_inferences": _json_safe(inference.get("pair_inferences", [])),
+            "uses_train_output_for_transformation_inference": bool(inference.get("uses_train_output_for_transformation_inference", False)),
+            "uses_test_output": bool(inference.get("uses_test_output", False)),
+            "uses_task_id_for_candidate_selection": bool(inference.get("uses_task_id_for_candidate_selection", False)),
+            "uses_notes_for_candidate_selection": bool(inference.get("uses_notes_for_candidate_selection", False)),
+            "lookup_table_detected": bool(inference.get("lookup_table_detected", False)),
+            "no_arc_dataset_ingestion": True,
+            "no_public_arc_sample_ingestion": True,
+            "no_solver_runtime": True,
+            "structural_evidence_only": True,
+            "candidate_role": blueprint.get("candidate_role"),
+            "fallback_reason": blueprint.get("fallback_reason"),
+            "source": blueprint.get("source"),
+        }
+        candidates.append(
+            _build_candidate_packet(
+                task_id=task_id,
+                primitive_id=_safe_text(blueprint.get("primitive_id")),
+                primitive_sequence=[{"primitive_id": blueprint.get("primitive_id"), "parameters": blueprint.get("parameters", {})}],
+                source=_safe_text(blueprint.get("source", "structural_grid_delta")),
+                required_constraints=blueprint.get("required_constraints", []),
+                unsupported_assumptions=blueprint.get("unsupported_assumptions", []),
+                generation_trace=generation_trace,
+                bounded_depth=int(blueprint.get("bounded_depth", 1)),
+                is_executable=bool(blueprint.get("is_executable", False)),
+                candidate_rank=int(blueprint.get("candidate_rank", 0)),
+                candidate_role=_safe_text(blueprint.get("candidate_role", "fallback_unsupported")),
+            )
+        )
+    return candidates
 
 
 def _candidate_validation_ranking(candidate_result: Mapping[str, Any]) -> tuple[int, int, int, int, int, int]:
@@ -668,6 +903,7 @@ def _build_task_result(
     object_extraction: Mapping[str, Any],
     candidate_evaluations: Sequence[Mapping[str, Any]],
     failure_ledger: dict[str, Any],
+    inference_profile: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     task_id = _task_id(task_packet)
     task_type = _task_type(task_packet)
@@ -747,6 +983,13 @@ def _build_task_result(
         note = item.get("failure_ledger_category")
         if note and note not in failure_notes:
             failure_notes.append(note)
+    inference_flags = {
+        "uses_train_output_for_transformation_inference": True,
+        "uses_test_output": False,
+        "uses_task_id_for_candidate_selection": False,
+        "uses_notes_for_candidate_selection": False,
+        "lookup_table_detected": False,
+    }
     trace = {
         "schema_version": SCHEMA_VERSION_V1,
         "task_id": task_id,
@@ -772,6 +1015,9 @@ def _build_task_result(
             }
             for evaluation in candidate_evaluations
         ],
+        "structural_evidence_labels": _json_safe(inference_profile.get("structural_evidence_labels", [])) if isinstance(inference_profile, Mapping) else [],
+        "inference_flags": _json_safe(inference_profile) if isinstance(inference_profile, Mapping) else inference_flags,
+        **inference_flags,
         "internal_synthetic_only": True,
         "no_arc_dataset_ingestion": True,
         "no_public_arc_sample_ingestion": True,
@@ -785,6 +1031,11 @@ def _build_task_result(
         "task_source": _safe_text(task_packet.get("task_source")),
         "toy_task_type": task_type,
         "candidate_count": candidate_count,
+        "uses_train_output_for_transformation_inference": bool(inference_profile.get("uses_train_output_for_transformation_inference", True)) if isinstance(inference_profile, Mapping) else True,
+        "uses_test_output": bool(inference_profile.get("uses_test_output", False)) if isinstance(inference_profile, Mapping) else False,
+        "uses_task_id_for_candidate_selection": bool(inference_profile.get("uses_task_id_for_candidate_selection", False)) if isinstance(inference_profile, Mapping) else False,
+        "uses_notes_for_candidate_selection": bool(inference_profile.get("uses_notes_for_candidate_selection", False)) if isinstance(inference_profile, Mapping) else False,
+        "lookup_table_detected": bool(inference_profile.get("lookup_table_detected", False)) if isinstance(inference_profile, Mapping) else False,
         "selected_candidate_id": selected_candidate_id,
         "selected_primitive_sequence": selected_primitive_sequence,
         "train_fit_status": train_fit_status,
@@ -803,6 +1054,7 @@ def _build_task_result(
             "category_counts": _json_safe(failure_ledger.get("category_counts", {})),
             "repeated_failure_categories": list(failure_ledger.get("repeated_failure_categories", [])),
         },
+        "inference_profile": _json_safe(inference_profile) if isinstance(inference_profile, Mapping) else {},
     }
     return task_result
 
@@ -877,6 +1129,7 @@ def run_arc_style_bounded_solver_dry_run_v1(task_packets: Sequence[Mapping[str, 
                 reason="no_object_candidates",
                 mismatch_category="object_extraction_empty",
             )
+        inference_profile = infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet, object_extraction=object_extraction)
         candidate_packets = generate_arc_style_candidate_rules_v1(task_packet, object_extraction)
         candidate_evaluations = [_evaluate_candidate_against_task(task_packet, candidate) for candidate in candidate_packets]
         task_results.append(
@@ -885,6 +1138,7 @@ def run_arc_style_bounded_solver_dry_run_v1(task_packets: Sequence[Mapping[str, 
                 object_extraction=object_extraction,
                 candidate_evaluations=candidate_evaluations,
                 failure_ledger=failure_ledger,
+                inference_profile=inference_profile,
             )
         )
 
@@ -904,6 +1158,11 @@ def run_arc_style_bounded_solver_dry_run_v1(task_packets: Sequence[Mapping[str, 
             "max_candidates_per_task": MAX_CANDIDATES_PER_TASK_V1,
             "max_primitive_sequence_depth": MAX_PRIMITIVE_SEQUENCE_DEPTH_V1,
             "no_score_claim": True,
+            "uses_train_output_for_transformation_inference": True,
+            "uses_test_output": False,
+            "uses_task_id_for_candidate_selection": False,
+            "uses_notes_for_candidate_selection": False,
+            "lookup_table_detected": False,
         },
     )
     result["task_sources"] = [TASK_SOURCE_INTERNAL_SYNTHETIC_V1 for _ in task_results]
@@ -915,6 +1174,12 @@ def run_arc_style_bounded_solver_dry_run_v1(task_packets: Sequence[Mapping[str, 
         "candidate_limit_per_task": MAX_CANDIDATES_PER_TASK_V1,
         "supported_primitive_ids": list(SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1),
         "internal_synthetic_only": True,
+        "structural_evidence_only": True,
+        "uses_train_output_for_transformation_inference": True,
+        "uses_test_output": False,
+        "uses_task_id_for_candidate_selection": False,
+        "uses_notes_for_candidate_selection": False,
+        "lookup_table_detected": False,
     }
     result["failure_ledger"]["failure_categories"] = list(FAILURE_CATEGORIES_V1)
     return result
@@ -1010,6 +1275,7 @@ __all__ = [
     "PHASE_NUMBER_V1",
     "MAX_CANDIDATES_PER_TASK_V1",
     "MAX_PRIMITIVE_SEQUENCE_DEPTH_V1",
+    "infer_arc_style_primitive_candidates_from_grid_delta_v1",
     "generate_arc_style_candidate_rules_v1",
     "run_arc_style_bounded_solver_dry_run_v1",
     "build_arc_style_solver_dry_run_result_v1",

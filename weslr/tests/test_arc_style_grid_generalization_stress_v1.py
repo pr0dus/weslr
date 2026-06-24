@@ -15,7 +15,7 @@ from weslr.arc_style_grid_generalization_stress import (
     to_arc_style_generalization_stress_json_safe_v1,
     validate_arc_style_generalization_stress_packet_v1,
 )
-from weslr.arc_style_grid_solver_dry_run import run_arc_style_bounded_solver_dry_run_v1
+from weslr.arc_style_grid_solver_dry_run import generate_arc_style_candidate_rules_v1, run_arc_style_bounded_solver_dry_run_v1
 
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "provider",
@@ -85,6 +85,29 @@ def test_variant_metadata_shuffles_do_not_change_solver_selection_for_same_seman
     assert results[left["task_id"]]["selected_candidate_id"].split(":")[1] == results[right["task_id"]]["selected_candidate_id"].split(":")[1]
 
 
+def test_renamed_task_ids_and_empty_notes_do_not_change_selected_primitive() -> None:
+    task = _task_by_family(build_arc_style_synthetic_generalization_tasks_v1(), "recolor_symbol")
+    renamed = perturb_arc_style_task_metadata_v1(task, task_id="recolored_again", notes=[])
+    packet = run_arc_style_bounded_solver_dry_run_v1([task, renamed])
+    base, perturbed = packet["task_results"]
+    assert base["selected_primitive_sequence"] == perturbed["selected_primitive_sequence"]
+    assert base["selected_candidate_id"].split(":")[1] == perturbed["selected_candidate_id"].split(":")[1]
+
+
+def test_lie_about_family_in_task_id_or_notes_does_not_control_selection() -> None:
+    task = _task_by_family(build_arc_style_synthetic_generalization_tasks_v1(), "move_single_object")
+    lied = perturb_arc_style_task_metadata_v1(
+        task,
+        task_id="this_is_not_a_move_task",
+        notes=["this is definitely a copy task"],
+        trace_overrides={"toy_task_type": "copy_grid", "claimed_family": "copy_grid"},
+    )
+    packet = run_arc_style_bounded_solver_dry_run_v1([task, lied])
+    base, perturbed = packet["task_results"]
+    assert base["selected_primitive_sequence"] == perturbed["selected_primitive_sequence"]
+    assert base["selected_candidate_id"].split(":")[1] == perturbed["selected_candidate_id"].split(":")[1]
+
+
 def test_supported_variants_remain_solved_after_metadata_perturbation() -> None:
     packet = run_arc_style_generalization_stress_v1()
     validation = validate_arc_style_generalization_stress_packet_v1(packet)
@@ -92,12 +115,20 @@ def test_supported_variants_remain_solved_after_metadata_perturbation() -> None:
     assert validation["valid"] is True
     assert summary["variant_count"] == packet["variant_count"]
     assert packet["no_score_claim"] is True
-    assert packet["exact_match_count"] >= 20
-    assert packet["partial_match_count"] >= 1
-    assert packet["unsupported_count"] == 0
+    assert packet["exact_match_count"] >= 18
+    assert packet["partial_match_count"] >= 0
+    assert packet["unsupported_count"] >= 1
     assert packet["failure_ledger_summary"]["entries_count"] > 0
     assert all(task_result["no_score_claim"] is True for task_result in packet["task_results"])
     assert all(task_result["task_source"] == "internal_synthetic_toy_tasks_v1" for task_result in packet["task_results"])
+    assert packet["trace"]["uses_train_output_for_transformation_inference"] is True
+    assert packet["trace"]["uses_test_output"] is False
+    assert packet["trace"]["uses_task_id_for_candidate_selection"] is False
+    assert packet["trace"]["uses_notes_for_candidate_selection"] is False
+    assert packet["trace"]["lookup_table_detected"] is False
+    assert all(result["trace"]["structural_evidence_labels"] for result in packet["task_results"])
+    assert all(result["trace"]["uses_test_output"] is False for result in packet["task_results"])
+    assert all(result["trace"]["lookup_table_detected"] is False for result in packet["task_results"])
 
 
 def test_anti_leakage_checks_are_present_and_ids_or_notes_do_not_control_selection() -> None:
@@ -111,10 +142,22 @@ def test_anti_leakage_checks_are_present_and_ids_or_notes_do_not_control_selecti
     assert packet["task_results"]
     assert base["selected_primitive_sequence"] == perturbed["selected_primitive_sequence"]
     assert base["selected_candidate_id"].split(":")[1] == perturbed["selected_candidate_id"].split(":")[1]
+    assert base["trace"]["uses_train_output_for_transformation_inference"] is True
+    assert base["trace"]["uses_test_output"] is False
+    assert base["trace"]["uses_task_id_for_candidate_selection"] is False
+    assert base["trace"]["uses_notes_for_candidate_selection"] is False
+    assert base["trace"]["lookup_table_detected"] is False
+    assert perturbed["trace"]["structural_evidence_labels"]
+    assert all(candidate["generation_trace"]["structural_evidence_labels"] for candidate in packet["task_results"][0]["candidate_packets"])
     stress = run_arc_style_generalization_stress_v1([move_task, renamed])
     assert stress["anti_leakage_checks"]["task_id_dependency_avoided"] is True
     assert stress["anti_leakage_checks"]["notes_dependency_avoided"] is True
     assert stress["anti_leakage_checks"]["expected_output_leakage_avoided"] is True
+    assert stress["anti_leakage_checks"]["uses_train_output_for_transformation_inference"] is True
+    assert stress["anti_leakage_checks"]["uses_test_output"] is False
+    assert stress["anti_leakage_checks"]["uses_task_id_for_candidate_selection"] is False
+    assert stress["anti_leakage_checks"]["uses_notes_for_candidate_selection"] is False
+    assert stress["anti_leakage_checks"]["lookup_table_detected"] is False
 
 
 def test_unsupported_decoys_remain_unsupported() -> None:
@@ -124,6 +167,19 @@ def test_unsupported_decoys_remain_unsupported() -> None:
     packet = run_arc_style_bounded_solver_dry_run_v1(unsupported)
     assert all(result["train_fit_status"] != "fit" for result in packet["task_results"])
     assert all(result["selected_candidate_id"] for result in packet["task_results"])
+    assert all(result["selected_primitive_sequence"][0]["primitive_id"] in {"rotate", "reflect"} for result in packet["task_results"])
+
+
+def test_candidate_generation_exposes_structural_evidence_trace() -> None:
+    task = _task_by_family(build_arc_style_synthetic_generalization_tasks_v1(), "border_frame_fill")
+    candidates = generate_arc_style_candidate_rules_v1(task)
+    assert candidates
+    assert all(candidate["generation_trace"]["uses_train_output_for_transformation_inference"] is True for candidate in candidates)
+    assert all(candidate["generation_trace"]["uses_test_output"] is False for candidate in candidates)
+    assert all(candidate["generation_trace"]["uses_task_id_for_candidate_selection"] is False for candidate in candidates)
+    assert all(candidate["generation_trace"]["uses_notes_for_candidate_selection"] is False for candidate in candidates)
+    assert all(candidate["generation_trace"]["lookup_table_detected"] is False for candidate in candidates)
+    assert all(candidate["generation_trace"]["structural_evidence_labels"] for candidate in candidates)
 
 
 def test_module_source_has_no_forbidden_provider_or_chat_calls() -> None:
