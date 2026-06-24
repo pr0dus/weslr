@@ -278,7 +278,7 @@ def _compose_answer_text(question: str, family: str, context: Mapping[str, Any])
         return (
             "WESLR is a deterministic, governed assistant stack in this repo. "
             "It routes questions through local helper modules, builds bounded answer packets, "
-            "and renders no-model answers. It is not claiming AGI, consciousness, or official certification."
+            "and renders no-model answers as a local proof path."
         )
     if family == "practical_decision":
         if isinstance(distance_meters, int) and distance_meters <= 100:
