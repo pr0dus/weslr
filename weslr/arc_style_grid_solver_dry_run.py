@@ -417,6 +417,40 @@ def generate_arc_style_candidate_rules_v1(task_packet: Mapping[str, Any], object
                 candidate_role="fallback_underfit",
             )
         )
+    elif task_type == "fill":
+        fill_value = _non_background_value(output_grid, background_value)
+        if fill_value is None:
+            fill_value = _non_background_value(input_grid, background_value)
+        candidates.append(
+            _build_candidate_packet(
+                task_id=task_id,
+                primitive_id="fill",
+                primitive_sequence=[{"primitive_id": "fill", "parameters": {"fill_value": fill_value, "fill_entire_grid": True}}],
+                source="internal_toy_exact_fill",
+                required_constraints=["uniform_full_grid_fill"],
+                unsupported_assumptions=[],
+                generation_trace={**trace_base, "candidate_kind": "exact", "failure_family": None, "fill_value": fill_value},
+                bounded_depth=1,
+                is_executable=True,
+                candidate_rank=0,
+                candidate_role="primary_exact",
+            )
+        )
+        candidates.append(
+            _build_candidate_packet(
+                task_id=task_id,
+                primitive_id="copy",
+                primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
+                source="internal_toy_bounded_fallback",
+                required_constraints=["full_fill_not_assumed"],
+                unsupported_assumptions=["full_fill_not_assumed"],
+                generation_trace={**trace_base, "candidate_kind": "fallback", "failure_family": "underfit_rule", "fallback_reason": "copy_cannot_fill"},
+                bounded_depth=1,
+                is_executable=True,
+                candidate_rank=1,
+                candidate_role="fallback_underfit",
+            )
+        )
     elif task_type == "border_frame_fill":
         fill_value = _non_background_value(output_grid, background_value)
         if fill_value is None:
