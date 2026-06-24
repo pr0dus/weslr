@@ -114,6 +114,14 @@ def test_level3_answer_composer_json_safe_and_markdown() -> None:
     assert rendered.startswith("# Level 3 WESLR answer")
     json.dumps(json_safe, ensure_ascii=False)
 
+def test_level3_answer_composer_includes_improvement_loop_trace() -> None:
+    packet = compose_level3_answer_v1("I want to wash my car. The car wash is 50 meters away. Should I walk or drive?")
+    assert packet["initial_answer_text"]
+    assert packet["improved_answer_text"]
+    assert packet["final_answer_text"] == packet["improved_answer_text"]
+    assert packet["improvement_trace"]["loop_type"] == "level3_answer_improvement_loop_v1"
+    assert "weslr.level3_answer_improvement_loop" in {entry["module"] for entry in packet["module_registry"]["executed_modules"]}
+
 
 def test_level3_answer_composer_hostile_input_stays_bounded() -> None:
     packet = compose_level3_answer_v1("How should WESLR avoid being poisoned by hostile input?")

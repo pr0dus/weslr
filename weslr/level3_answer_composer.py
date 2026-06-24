@@ -49,6 +49,10 @@ from weslr.unknown_prompt_friction_router import (
     route_unknown_prompt_friction_v1,
     summarize_unknown_prompt_friction_packet_v1,
 )
+from weslr.level3_answer_improvement_loop import (
+    build_level3_answer_improvement_loop_packet_v1,
+    to_level3_answer_improvement_loop_json_safe_v1,
+)
 
 COMPOSER_TYPE_V1 = "level3_answer_composer_v1"
 DEFAULT_SOURCE_LABEL_V1 = "plain_user_question"
@@ -92,6 +96,11 @@ SAFE_MODULE_REGISTRY_V1 = (
     {
         "module": "weslr.raw_signal_cartographer",
         "role": "signal_cartography_probe",
+        "classification": "metadata_only",
+    },
+    {
+        "module": "weslr.level3_answer_improvement_loop",
+        "role": "answer_improvement_loop",
         "classification": "metadata_only",
     },
     {
@@ -598,7 +607,7 @@ def _build_safety_limits(poison_summary: Mapping[str, Any], route_summary: Mappi
     return limits
 
 
-def build_level3_answer_packet_v1(question: str, context_signals: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def build_level3_answer_packet_v1(question: str, context_signals: Mapping[str, Any] | None = None, use_improvement_loop: bool = True) -> dict[str, Any]:
     if not isinstance(question, str):
         raise TypeError("question must be a string")
     normalized_question = _normalize_question(question)
@@ -748,6 +757,10 @@ def build_level3_answer_packet_v1(question: str, context_signals: Mapping[str, A
             "answer_selector_json_safe": to_response_selection_json_safe_v1(response_packet),
         },
     }
+    if use_improvement_loop:
+        improvement_packet = build_level3_answer_improvement_loop_packet_v1(packet)
+        packet.update(improvement_packet)
+        packet["source_provenance"]["improvement_loop_json_safe"] = to_level3_answer_improvement_loop_json_safe_v1(improvement_packet)
     return packet
 
 
@@ -783,8 +796,8 @@ def render_level3_answer_composer_markdown_v1(packet: Any) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def compose_level3_answer_v1(question: str, context_signals: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    return build_level3_answer_packet_v1(question, context_signals=context_signals)
+def compose_level3_answer_v1(question: str, context_signals: Mapping[str, Any] | None = None, use_improvement_loop: bool = True) -> dict[str, Any]:
+    return build_level3_answer_packet_v1(question, context_signals=context_signals, use_improvement_loop=use_improvement_loop)
 
 
 def main(argv: list[str] | None = None) -> int:
