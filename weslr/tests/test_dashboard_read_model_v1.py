@@ -31,12 +31,18 @@ import json
 import os
 import sys
 import subprocess
+from pathlib import Path
 from typing import Any, Dict, List
 
-# Add the worktree root to sys.path so we can import the helper
-WORKTREE = "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-if WORKTREE not in sys.path:
-    sys.path.insert(0, WORKTREE)
+# Add the repository root to sys.path so we can import the helper
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT_STR = str(REPO_ROOT)
+if REPO_ROOT_STR not in sys.path:
+    sys.path.insert(0, REPO_ROOT_STR)
+
+
+def _helper_source_path() -> Path:
+    return REPO_ROOT / "weslr" / "dashboard_read_model.py"
 
 import weslr.dashboard_read_model as drm  # noqa: E402
 
@@ -176,10 +182,7 @@ def test_top_level_imports_are_stdlib_only():
     none of them are non-stdlib."""
     import ast
 
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
 
@@ -886,10 +889,7 @@ def test_summarize_handles_non_dict():
 def test_no_chat_responder_import_in_source():
     """The helper source must not import or call ChatResponder,
     even in docstrings/comments at the executable level."""
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
     import ast
@@ -909,10 +909,7 @@ def test_no_chat_responder_import_in_source():
 
 
 def test_no_payment_provider_in_source():
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
     # The helper may mention payment providers ONLY in docstring
@@ -948,10 +945,7 @@ def test_no_payment_provider_in_source():
 def test_no_filesystem_writes_in_source():
     """The helper must not perform filesystem writes (no open(...,'w'),
     no os.makedirs, no .write() in executable code)."""
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
     import ast
@@ -969,10 +963,7 @@ def test_no_filesystem_writes_in_source():
 def test_no_weslr_state_path_in_source():
     """The helper must not reference /home/pr0/weslr_state/ in
     executable code (docstring negation is allowed)."""
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
     # Find any reference to weslr_state
@@ -994,10 +985,7 @@ def test_no_weslr_state_path_in_source():
 
 def test_no_executable_runtime_call_in_source():
     """The helper must not call any of the runtime/infra modules."""
-    source_path = (
-        "/home/pr0/projects/weslr-chat-customer-grade-slice8-dashboard-read-model-20260624"
-        "/weslr/dashboard_read_model.py"
-    )
+    source_path = _helper_source_path()
     with open(source_path) as f:
         source = f.read()
     import ast
