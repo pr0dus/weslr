@@ -152,12 +152,19 @@ def _grid_payload(value: Any) -> Any:
 def _validate_grid_like(value: Any) -> dict[str, Any]:
     payload = _grid_payload(value)
     result = {"valid": False, "reasons": [], "grid_metadata": None}
-    if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes, bytearray)):
-        result["reasons"].append("grid_not_sequence")
+    if not isinstance(payload, list):
+        result["reasons"].append("grid_not_list")
         return result
     if len(payload) == 0:
         result["reasons"].append("empty_grid")
         return result
+    for row in payload:
+        if not isinstance(row, list):
+            result["reasons"].append("row_not_list")
+            break
+        if len(row) == 0:
+            result["reasons"].append("empty_row")
+            break
 
     metadata = build_arc_style_grid_metadata_v1(payload)
     result["grid_metadata"] = metadata
@@ -169,6 +176,8 @@ def _validate_grid_like(value: Any) -> dict[str, Any]:
         result["reasons"].append("grid_oversized")
     if metadata["invalid_cells"]:
         result["reasons"].append("invalid_cells_present")
+    if any(cell.get("reason") == "invalid_cell_value" for cell in metadata["invalid_cells"]):
+        result["reasons"].append("invalid_cell_value")
     if len(metadata["trace"].get("cell_type_names", [])) > 1:
         result["reasons"].append("mixed_cell_types_rejected")
     result["valid"] = not result["reasons"]

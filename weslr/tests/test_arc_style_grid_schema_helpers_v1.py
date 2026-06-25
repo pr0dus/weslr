@@ -25,21 +25,24 @@ def _json_safe(value: Any) -> dict[str, Any]:
     return safe
 
 
-def test_valid_rectangular_integer_grid_passes() -> None:
-    meta = build_arc_style_grid_metadata_v1([[1, 2], [3, 4]])
-    assert meta["width"] == 2
-    assert meta["height"] == 2
-    assert meta["palette_ids"] == [1, 2, 3, 4]
+def test_valid_1x1_integer_grid_passes() -> None:
+    meta = build_arc_style_grid_metadata_v1([[0]])
+    assert meta["width"] == 1
+    assert meta["height"] == 1
+    assert meta["palette_ids"] == [0]
     assert meta["trace"]["rectangular"] is True
     assert meta["invalid_cells"] == []
 
 
-def test_valid_rectangular_symbolic_grid_passes() -> None:
-    meta = build_arc_style_grid_metadata_v1([["a", "b"], ["b", "a"]])
-    assert meta["width"] == 2
-    assert meta["height"] == 2
-    assert meta["palette_ids"] == ["a", "b"]
-    assert meta["trace"]["cell_type_names"] == ["short_symbol"]
+def test_valid_30x30_integer_grid_passes() -> None:
+    grid = [[0 if (row + column) % 2 == 0 else 9 for column in range(30)] for row in range(30)]
+    meta = build_arc_style_grid_metadata_v1(grid)
+    assert meta["width"] == 30
+    assert meta["height"] == 30
+    assert meta["trace"]["rectangular"] is True
+    assert meta["trace"]["oversized"] is False
+    assert meta["trace"]["cell_type_names"] == ["int"]
+    assert meta["invalid_cells"] == []
 
 
 def test_empty_grid_rejected() -> None:
@@ -69,31 +72,63 @@ def test_non_rectangular_grid_rejected() -> None:
     assert any(label.endswith("grid_not_rectangular") for label in validation["blocked_reason_labels"])
 
 
-def test_mixed_cell_types_rejected() -> None:
-    meta = build_arc_style_grid_metadata_v1([[1, "a"], [1, "a"]])
-    assert sorted(meta["trace"]["cell_type_names"]) == ["int", "short_symbol"]
-    packet = build_arc_style_grid_task_packet_v1(
-        task_id="mixed-types",
+def test_invalid_cell_values_are_rejected() -> None:
+    invalid_grids = [
+        [[-1]],
+        [[10]],
+        [[1.5]],
+        [["1"]],
+        [[True]],
+    ]
+    for grid in invalid_grids:
+        meta = build_arc_style_grid_metadata_v1(grid)
+        assert meta["invalid_cells"]
+        packet = build_arc_style_grid_task_packet_v1(
+            task_id="invalid-cell",
+            task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+            train_pairs=[],
+            test_input=grid,
+        )
+        validation = validate_arc_style_grid_task_packet_v1(packet)
+        assert validation["valid"] is False
+        assert any("invalid_cells_present" in label or "invalid_cell_value" in label for label in validation["blocked_reason_labels"])
+
+
+def test_empty_row_and_ragged_grid_rejected() -> None:
+    empty_row_packet = build_arc_style_grid_task_packet_v1(
+        task_id="empty-row",
         task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
         train_pairs=[],
-        test_input=[[1, "a"], [1, "a"]],
+        test_input=[[]],
     )
-    validation = validate_arc_style_grid_task_packet_v1(packet)
-    assert validation["valid"] is False
-    assert any(label.endswith("mixed_cell_types_rejected") for label in validation["blocked_reason_labels"])
+    empty_row_validation = validate_arc_style_grid_task_packet_v1(empty_row_packet)
+    assert empty_row_validation["valid"] is False
+    assert any("empty_row" in label for label in empty_row_validation["blocked_reason_labels"])
+
+    ragged_packet = build_arc_style_grid_task_packet_v1(
+        task_id="ragged",
+        task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+        train_pairs=[],
+        test_input=[[1, 2], [3]],
+    )
+    ragged_validation = validate_arc_style_grid_task_packet_v1(ragged_packet)
+    assert ragged_validation["valid"] is False
+    assert any(label.endswith("grid_not_rectangular") for label in ragged_validation["blocked_reason_labels"])
 
 
 def test_oversized_grid_is_rejected_by_policy() -> None:
-    oversized = [[0] * 31 for _ in range(2)]
-    packet = build_arc_style_grid_task_packet_v1(
-        task_id="oversized",
-        task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
-        train_pairs=[],
-        test_input=oversized,
-    )
-    validation = validate_arc_style_grid_task_packet_v1(packet)
-    assert validation["valid"] is False
-    assert any(label.endswith("grid_oversized") or label.endswith("grid_over_policy_limit") for label in validation["blocked_reason_labels"])
+    oversized_rows = [[0] * 30 for _ in range(31)]
+    oversized_cols = [[0] * 31 for _ in range(30)]
+    for grid in (oversized_rows, oversized_cols):
+        packet = build_arc_style_grid_task_packet_v1(
+            task_id="oversized",
+            task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+            train_pairs=[],
+            test_input=grid,
+        )
+        validation = validate_arc_style_grid_task_packet_v1(packet)
+        assert validation["valid"] is False
+        assert any(label.endswith("grid_oversized") or label.endswith("grid_over_policy_limit") for label in validation["blocked_reason_labels"])
 
 
 def test_palette_metadata_and_background_inference_are_traced() -> None:
@@ -102,6 +137,29 @@ def test_palette_metadata_and_background_inference_are_traced() -> None:
     assert meta["background_color"] == 5
     assert meta["trace"]["background_inference"]["strategy"] == "most_common_cell"
     assert meta["trace"]["background_inference"]["candidate_background_color"] == 5
+
+
+def test_train_pair_rejects_invalid_input_and_output_grids() -> None:
+    invalid_inputs = [
+        ([[1, 2], [3]], [[1, 2], [3, 4]]),
+        ([[1, 2], [3, 4]], [[1, 2], [3]]),
+        ([[1, 2], [3, 4]], [[1.5, 2], [3, 4]]),
+    ]
+    for input_grid, output_grid in invalid_inputs:
+        pair = build_arc_style_grid_train_pair_v1("pair-invalid", input_grid, output_grid, "bad")
+        validation = validate_arc_style_grid_train_pair_v1(pair)
+        assert validation["valid"] is False
+
+
+def test_task_packet_rejects_invalid_test_input_grid() -> None:
+    packet = build_arc_style_grid_task_packet_v1(
+        task_id="task-invalid-test",
+        task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+        train_pairs=[build_arc_style_grid_train_pair_v1("pair-ok", [[1]], [[1]], "ok")],
+        test_input=[[1, 2], [3]],
+    )
+    validation = validate_arc_style_grid_task_packet_v1(packet)
+    assert validation["valid"] is False
 
 
 def test_train_pair_packet_shape_is_stable() -> None:

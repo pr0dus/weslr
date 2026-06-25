@@ -92,6 +92,40 @@ def test_invalid_grid_rejected() -> None:
     assert any(label == "invalid_grid" for label in validation["blocked_reason_labels"])
 
 
+def test_invalid_top2_attempt_grid_rejected() -> None:
+    valid_attempt = build_arc_agi2_attempt_v1(
+        attempt_id="task-x:0:cand-a:rank1",
+        grid=[[1, 1], [1, 1]],
+        source_candidate_id="cand-a",
+        rank=1,
+        confidence_label="high",
+        evidence_labels=["copy"],
+        leakage_flags={},
+        metadata={"synthetic_only": True},
+    )
+    invalid_attempt = build_arc_agi2_attempt_v1(
+        attempt_id="task-x:0:cand-b:rank2",
+        grid=[[10]],
+        source_candidate_id="cand-b",
+        rank=2,
+        confidence_label="low",
+        evidence_labels=["copy"],
+        leakage_flags={},
+        metadata={"synthetic_only": True},
+    )
+    packet = {
+        "task_id": "task-x",
+        "test_input_index": 0,
+        "attempts": [valid_attempt, invalid_attempt],
+        "duplicate_attempt_grid": False,
+        "leakage_flags": {"uses_test_output": False, "uses_solution_file": False, "uses_answer_key": False, "uses_hidden_private_data": False, "uses_task_id_shortcut": False, "uses_notes_shortcut": False, "lookup_table_detected": False},
+        "metadata": {"synthetic_only": True},
+    }
+    validation = validate_arc_agi2_top2_attempt_packet_v1(packet)
+    assert validation["valid"] is False
+    assert any(label == "invalid_grid" for label in validation["blocked_reason_labels"])
+
+
 def test_leakage_flag_true_rejected() -> None:
     packet = build_internal_arc_agi2_synthetic_submission_fixtures_v1()["leakage_flag_true_packet"]
     validation = validate_arc_agi2_top2_attempt_packet_v1(packet)

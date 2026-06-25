@@ -21,7 +21,7 @@ GRID_FORMAT_ID_V1 = "arc_style_grid_v1"
 TASK_SOURCE_INTERNAL_SYNTHETIC_V1 = "internal_synthetic_toy_tasks_v1"
 MAX_GRID_WIDTH_V1 = 30
 MAX_GRID_HEIGHT_V1 = 30
-ALLOWED_CELL_TYPE_NAMES_V1 = ("int", "short_symbol")
+ALLOWED_CELL_TYPE_NAMES_V1 = ("int",)
 ALLOWED_TRAIN_FIT_STATUSES_V1 = (
     "unknown",
     "fit",
@@ -109,16 +109,12 @@ def to_arc_style_grid_task_json_safe_v1(value: Any) -> Any:
     return safe
 
 
-def _is_short_symbol(value: Any) -> bool:
-    return isinstance(value, str) and 1 <= len(value.strip()) <= 3
-
-
 def _is_allowed_cell(value: Any) -> bool:
-    return isinstance(value, int) or _is_short_symbol(value)
+    return isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 9
 
 
 def _normalize_row(row: Any) -> list[Any] | None:
-    if not isinstance(row, (list, tuple)):
+    if not isinstance(row, list):
         return None
     return list(row)
 
@@ -157,14 +153,18 @@ def build_arc_style_grid_metadata_v1(
     for row_index, row in enumerate(grid):
         normalized_row = _normalize_row(row)
         if normalized_row is None:
-            invalid_cells.append({"row": row_index, "column": None, "reason": "row_not_sequence"})
+            invalid_cells.append({"row": row_index, "column": None, "reason": "row_not_list"})
+            continue
+        if len(normalized_row) == 0:
+            invalid_cells.append({"row": row_index, "column": None, "reason": "empty_row"})
+            normalized_grid.append(normalized_row)
             continue
         normalized_cells: list[Any] = []
         for column_index, cell in enumerate(normalized_row):
             if not _is_allowed_cell(cell):
-                invalid_cells.append({"row": row_index, "column": column_index, "reason": "unsupported_cell_type"})
+                invalid_cells.append({"row": row_index, "column": column_index, "reason": "invalid_cell_value"})
             else:
-                cell_types.add("int" if isinstance(cell, int) else "short_symbol")
+                cell_types.add("int")
             normalized_cells.append(cell)
         normalized_grid.append(normalized_cells)
 
@@ -229,12 +229,20 @@ def _validate_grid_payload(grid: Any) -> dict[str, Any]:
     payload = grid
     if isinstance(grid, Mapping) and "cell_values" in grid:
         payload = grid.get("cell_values")
-    if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes, bytearray)):
-        result["reasons"].append("grid_not_sequence")
+    if not isinstance(payload, list):
+        result["reasons"].append("grid_not_list")
         return result
     if len(payload) == 0:
         result["reasons"].append("empty_grid")
         return result
+
+    for row in payload:
+        if not isinstance(row, list):
+            result["reasons"].append("row_not_list")
+            break
+        if len(row) == 0:
+            result["reasons"].append("empty_row")
+            break
 
     metadata = build_arc_style_grid_metadata_v1(payload)
     result["grid_metadata"] = metadata
@@ -244,8 +252,12 @@ def _validate_grid_payload(grid: Any) -> dict[str, Any]:
         result["reasons"].append("grid_not_rectangular")
     if metadata["invalid_cells"]:
         result["reasons"].append("invalid_cells_present")
+    if metadata["width"] < 1 or metadata["height"] < 1:
+        result["reasons"].append("empty_grid")
     if metadata["width"] > MAX_GRID_WIDTH_V1 or metadata["height"] > MAX_GRID_HEIGHT_V1:
         result["reasons"].append("grid_over_policy_limit")
+    if any(cell.get("reason") == "invalid_cell_value" for cell in metadata["invalid_cells"]):
+        result["reasons"].append("invalid_cell_value")
     mixed_types = len(metadata["trace"]["cell_type_names"]) > 1
     if mixed_types:
         result["reasons"].append("mixed_cell_types_rejected")
@@ -574,8 +586,8 @@ def build_internal_arc_style_grid_toy_tasks_v1() -> list[dict[str, Any]]:
     recolor_task = build_arc_style_grid_task_packet_v1(
         task_id="toy_recolor_symbol_v1",
         task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
-        train_pairs=[_toy_pair("recolor_pair_1", [["a", "a"], ["a", "b"]], [["a", "a"], ["a", "c"]], "recolor the minority symbol")],
-        test_input=[["a", "b"], ["b", "b"]],
+        train_pairs=[_toy_pair("recolor_pair_1", [[1, 1], [1, 2]], [[1, 1], [1, 3]], "recolor the minority symbol")],
+        test_input=[[1, 2], [2, 2]],
         validation_results=[],
         failure_notes=[],
         trace={"toy_task_type": "recolor_symbol", "internal_synthetic_only": True, "toy_task": True},
