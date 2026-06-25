@@ -224,8 +224,20 @@ def _infer_move_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Seq
     delta_row = next(iter(delta_rows))
     delta_column = next(iter(delta_columns))
     if delta_row and delta_column:
-        return None
-    if delta_row > 0:
+        if abs(delta_row) != abs(delta_column):
+            return None
+        steps = abs(delta_row)
+        if delta_row > 0 and delta_column > 0:
+            direction = "down_right"
+        elif delta_row > 0 and delta_column < 0:
+            direction = "down_left"
+        elif delta_row < 0 and delta_column > 0:
+            direction = "up_right"
+        elif delta_row < 0 and delta_column < 0:
+            direction = "up_left"
+        else:
+            return None
+    elif delta_row > 0:
         direction = "down"
         steps = delta_row
     elif delta_row < 0:
@@ -390,8 +402,20 @@ def _infer_move_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Seq
     delta_row = next(iter(delta_rows))
     delta_column = next(iter(delta_columns))
     if delta_row and delta_column:
-        return None
-    if delta_row > 0:
+        if abs(delta_row) != abs(delta_column):
+            return None
+        steps = abs(delta_row)
+        if delta_row > 0 and delta_column > 0:
+            direction = "down_right"
+        elif delta_row > 0 and delta_column < 0:
+            direction = "down_left"
+        elif delta_row < 0 and delta_column > 0:
+            direction = "up_right"
+        elif delta_row < 0 and delta_column < 0:
+            direction = "up_left"
+        else:
+            return None
+    elif delta_row > 0:
         direction = "down"
         steps = delta_row
     elif delta_row < 0:

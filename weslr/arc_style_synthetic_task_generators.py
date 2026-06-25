@@ -447,15 +447,23 @@ def _family_move_single_object(spec: Mapping[str, Any]) -> dict[str, Any]:
     expected = []
     for idx in range(int(spec["train_pair_count"])):
         input_grid = _grid(rows, cols, 0)
-        _set_cell(input_grid, 1, 1 + (idx % max(cols - 2, 1)), color)
+        input_row = 1
+        input_col = 1 + idx
+        output_row = input_row + 1
+        output_col = input_col + 1
+        _set_cell(input_grid, input_row, input_col, color)
         output_grid = _grid(rows, cols, 0)
-        _set_cell(output_grid, min(rows - 2, 2 + idx), min(cols - 2, 2 + idx), color)
+        _set_cell(output_grid, output_row, output_col, color)
         train_pairs.append(_make_train_pair(f"{spec['task_id']}_train_{idx}", input_grid, output_grid, "move the single object"))
     for idx in range(int(spec["test_input_count"])):
         input_grid = _grid(rows, cols, 0)
-        _set_cell(input_grid, 1 + (idx % max(rows - 2, 1)), 1, color)
+        input_row = 1 + idx
+        input_col = 1
+        output_row = input_row + 1
+        output_col = input_col + 1
+        _set_cell(input_grid, input_row, input_col, color)
         output_grid = _grid(rows, cols, 0)
-        _set_cell(output_grid, rows - 2, cols - 2 - (idx % max(cols - 2, 1)), color)
+        _set_cell(output_grid, output_row, output_col, color)
         test_inputs.append({"test_input_id": f"test_{idx}", "input_grid": input_grid, "notes": "move task"})
         expected.append({"test_input_id": f"test_{idx}", "output_grid": output_grid, "notes": "move output", "synthetic_only": True})
     return {"train_pairs": train_pairs, "test_inputs": test_inputs, "expected_outputs": expected}

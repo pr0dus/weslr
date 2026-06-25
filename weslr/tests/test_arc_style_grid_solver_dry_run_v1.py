@@ -75,6 +75,27 @@ def test_candidate_generation_is_deterministic_and_bounded() -> None:
     assert inference["structural_evidence_labels"]
 
 
+def test_move_inference_supports_diagonal_delta_from_train_pairs_only() -> None:
+    task_packet = build_arc_style_grid_task_packet_v1(
+        task_id="diagonal_move_v1",
+        task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+        train_pairs=[
+            build_arc_style_grid_train_pair_v1("p0", [[0, 0, 0], [0, 1, 0], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 0, 1]], "train"),
+            build_arc_style_grid_train_pair_v1("p1", [[0, 0, 0], [0, 0, 1], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 1, 0]], "train"),
+        ],
+        test_input=[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+        trace={"toy_task_type": "move_single_object", "internal_synthetic_only": True, "toy_task": True},
+    )
+    inference = infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet)
+    assert inference["uses_train_output_for_transformation_inference"] is True
+    assert inference["uses_test_output"] is False
+    assert inference["uses_task_id_for_candidate_selection"] is False
+    assert inference["uses_notes_for_candidate_selection"] is False
+    assert inference["lookup_table_detected"] is False
+    assert "move" in inference["candidate_blueprints"][0]["primitive_id"] or inference["candidate_blueprints"][0]["primitive_id"] == "move"
+    assert inference["candidate_blueprints"][0]["parameters"]["direction"] in {"down_right", "up_left"}
+
+
 def test_internal_toy_tasks_solve_exactly() -> None:
     packet = run_arc_style_bounded_solver_dry_run_v1()
     validation = validate_arc_style_solver_dry_run_result_v1(packet)
@@ -185,6 +206,7 @@ def test_module_source_has_no_forbidden_provider_or_chat_calls() -> None:
 def test_new_supported_synthetic_families_are_solved_exactly_from_generated_tasks() -> None:
     suite = generate_arc_style_synthetic_task_suite_v1()
     family_to_primitive = {
+        "move_single_object": "move",
         "fill_region": "fill_region",
         "extract_largest_object": "extract_largest_object",
         "remove_background_noise": "remove_background_noise",

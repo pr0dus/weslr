@@ -538,6 +538,10 @@ def _move_single_object(grid: list[list[Any]], *, direction: str, steps: int = 1
         "down": (steps, 0),
         "left": (0, -steps),
         "right": (0, steps),
+        "up_left": (-steps, -steps),
+        "up_right": (-steps, steps),
+        "down_left": (steps, -steps),
+        "down_right": (steps, steps),
     }
     if direction not in delta_map:
         return _copy_grid(grid)

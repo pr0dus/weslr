@@ -25,6 +25,17 @@ from weslr.arc_agi2_submission_contract import (
     validate_arc_agi2_top2_attempt_packet_v1,
 )
 from weslr.arc_style_grid_adapter_phase2 import SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1
+from weslr.arc_style_grid_adapter_phase2 import (
+    _background_value_from_grid,
+    _cells_for_value,
+    _dominant_non_background_value,
+    _fill_region_from_outer_border,
+    _largest_component_cells,
+    _line_completion_grid,
+    _object_count_to_pattern_grid,
+    _reflect_bbox_grid,
+    _rotate_bbox_grid,
+)
 from weslr.arc_style_grid_solver_dry_run import run_arc_style_bounded_solver_dry_run_v1
 from weslr.arc_style_synthetic_task_generators import (
     REQUIRED_FAMILIES_V1,
@@ -238,7 +249,16 @@ def _supported_primitive_grid(candidate_packet: Mapping[str, Any], input_grid: S
             object_value = values[0] if values else None
         if object_value is None:
             return None
-        delta_map = {"up": (-steps, 0), "down": (steps, 0), "left": (0, -steps), "right": (0, steps)}
+        delta_map = {
+            "up": (-steps, 0),
+            "down": (steps, 0),
+            "left": (0, -steps),
+            "right": (0, steps),
+            "up_left": (-steps, -steps),
+            "up_right": (-steps, steps),
+            "down_left": (steps, -steps),
+            "down_right": (steps, steps),
+        }
         if direction not in delta_map:
             return None
         delta_row, delta_col = delta_map[direction]
@@ -251,6 +271,74 @@ def _supported_primitive_grid(candidate_packet: Mapping[str, Any], input_grid: S
                     if 0 <= new_row < len(grid) and 0 <= new_col < len(grid[new_row]):
                         out[new_row][new_col] = cell
         return out
+    if primitive_id == "fill_region":
+        fill_value = params.get("fill_value")
+        border_value = params.get("border_value")
+        if border_value is None and grid:
+            border_value = _background_value_from_grid(grid)
+        if fill_value is None and grid:
+            fill_value = _dominant_non_background_value(grid, border_value)
+        return _fill_region_from_outer_border(grid, fill_value=fill_value, border_value=border_value)
+    if primitive_id == "extract_largest_object":
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        cells = _largest_component_cells(grid, background_value)
+        if not cells:
+            return None
+        out = [[background_value for _ in row] for row in grid]
+        for row_index, column_index in cells:
+            out[row_index][column_index] = grid[row_index][column_index]
+        return out
+    if primitive_id == "remove_background_noise":
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        cells = _largest_component_cells(grid, background_value)
+        if not cells:
+            return None
+        out = [[background_value for _ in row] for row in grid]
+        for row_index, column_index in cells:
+            out[row_index][column_index] = grid[row_index][column_index]
+        return out
+    if primitive_id == "line_completion":
+        row_index = params.get("row_index")
+        line_value = params.get("line_value")
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        return _line_completion_grid(grid, row_index=row_index, line_value=line_value, background_value=background_value)
+    if primitive_id == "object_count_to_pattern":
+        count = params.get("count")
+        pattern_value = params.get("pattern_value")
+        row_index = params.get("row_index")
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        return _object_count_to_pattern_grid(grid, count=count, pattern_value=pattern_value, row_index=row_index, background_value=background_value)
+    if primitive_id == "rotate_object_90":
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        object_value = params.get("object_value")
+        if object_value is None and grid:
+            object_value = _dominant_non_background_value(grid, background_value)
+        cells = _cells_for_value(grid, object_value) if object_value is not None else []
+        if not cells:
+            return None
+        return _rotate_bbox_grid(grid, cells=cells, background_value=background_value)
+    if primitive_id == "reflect_object_horizontal_or_vertical":
+        background_value = params.get("background_value")
+        if background_value is None and grid:
+            background_value = _background_value_from_grid(grid)
+        object_value = params.get("object_value")
+        if object_value is None and grid:
+            object_value = _dominant_non_background_value(grid, background_value)
+        axis = _safe_text(params.get("axis", "horizontal"))
+        cells = _cells_for_value(grid, object_value) if object_value is not None else []
+        if not cells:
+            return None
+        return _reflect_bbox_grid(grid, cells=cells, background_value=background_value, axis=axis)
     if primitive_id == "complete_symmetry":
         axes = params.get("axes")
         if not isinstance(axes, list):
