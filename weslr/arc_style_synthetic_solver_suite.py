@@ -39,8 +39,14 @@ SUPPORTED_SYNTHETIC_FAMILIES_V1 = {
     "copy_grid",
     "recolor_symbol",
     "move_single_object",
+    "fill_region",
     "complete_symmetry",
     "border_frame",
+    "extract_largest_object",
+    "remove_background_noise",
+    "line_completion",
+    "object_count_to_pattern",
+    "rotate_object_90",
 }
 
 FAILURE_CATEGORIES_V1 = (

@@ -23,6 +23,7 @@ def test_solver_suite_runs_and_summary_is_json_safe() -> None:
     assert result["generated_task_count"] == 36
     assert result["attempted_task_count"] == 36
     assert result["top2_packet_count"] >= 36
+    assert result["synthetic_unsupported_count"] < 28
     assert json.dumps(to_arc_style_synthetic_solver_suite_json_safe_v1(result), ensure_ascii=False)
 
 
@@ -38,11 +39,13 @@ def test_solver_suite_records_unsupported_families_honestly() -> None:
     result = run_arc_style_synthetic_solver_suite_v1()
     ledger = result["failure_ledger"]
     category_counts = ledger["category_counts"]
+    assert result["synthetic_unsupported_count"] < 28
     assert category_counts.get("unsupported_transformation_family", 0) > 0
-    assert category_counts.get("missing_primitive_executor", 0) > 0
-    assert result["synthetic_unsupported_count"] > 0
+    assert category_counts.get("unsupported_transformation_family", 0) < 28
+    assert category_counts.get("missing_primitive_executor", 0) < 28
     unsupported_family_ids = [family_id for family_id, summary in result["family_level_summary"].items() if summary["synthetic_unsupported_count"] > 0]
     assert unsupported_family_ids
+    assert "reflect_object_horizontal_or_vertical" in unsupported_family_ids
     assert set(FAILURE_CATEGORIES_V1).issuperset(set(ledger["category_counts"].keys()))
 
 

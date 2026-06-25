@@ -27,6 +27,7 @@ from weslr.arc_style_grid_schema_helpers import (
     to_arc_style_grid_task_json_safe_v1,
     validate_arc_style_grid_task_packet_v1,
 )
+from weslr.arc_style_synthetic_task_generators import generate_arc_style_synthetic_task_suite_v1
 
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "provider",
@@ -225,3 +226,125 @@ def test_module_source_has_no_forbidden_provider_or_chat_calls() -> None:
     assert "chat_responder" not in source
     assert "openai" not in source.lower()
     assert "anthropic" not in source.lower()
+
+
+
+def test_new_synthetic_primitive_executors_validate_directly() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    families = {
+        "fill_region",
+        "extract_largest_object",
+        "remove_background_noise",
+        "line_completion",
+        "object_count_to_pattern",
+        "rotate_object_90",
+    }
+    for family_id in families:
+        task = next(task for task in suite["tasks"] if task["family_id"] == family_id)
+        pair = task["train_pairs"][0]
+        input_grid = pair["input_grid"]
+        output_grid = pair["output_grid"]
+        background = pair["input_grid_metadata"]["background_color"]
+        if family_id == "fill_region":
+            border_value = input_grid[0][0]
+            fill_value = next(cell for row in output_grid for cell in row if cell != border_value)
+            candidate = {
+                "candidate_id": f"{family_id}:candidate",
+                "candidate_type": f"{family_id}_candidate",
+                "primitive_sequence": [{"primitive_id": "fill_region", "parameters": {"fill_value": fill_value, "border_value": border_value}}],
+                "train_fit_status": "unknown",
+                "partial_fit_metadata": {},
+                "unsupported_assumptions": [],
+                "rejection_reasons": [],
+                "confidence_metadata": {},
+                "calibration_metadata": {},
+            }
+            assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
+            continue
+        if family_id in {"extract_largest_object", "remove_background_noise"}:
+            candidate = {
+                "candidate_id": f"{family_id}:candidate",
+                "candidate_type": f"{family_id}_candidate",
+                "primitive_sequence": [{"primitive_id": family_id, "parameters": {"background_value": background}}],
+                "train_fit_status": "unknown",
+                "partial_fit_metadata": {},
+                "unsupported_assumptions": [],
+                "rejection_reasons": [],
+                "confidence_metadata": {},
+                "calibration_metadata": {},
+            }
+            assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
+            continue
+        if family_id == "line_completion":
+            row_index = max(range(len(input_grid)), key=lambda index: sum(1 for cell in input_grid[index] if cell != background))
+            line_value = next(cell for row in output_grid for cell in row if cell != background)
+            candidate = {
+                "candidate_id": f"{family_id}:candidate",
+                "candidate_type": f"{family_id}_candidate",
+                "primitive_sequence": [{"primitive_id": "line_completion", "parameters": {"row_index": row_index, "line_value": line_value, "background_value": background}}],
+                "train_fit_status": "unknown",
+                "partial_fit_metadata": {},
+                "unsupported_assumptions": [],
+                "rejection_reasons": [],
+                "confidence_metadata": {},
+                "calibration_metadata": {},
+            }
+            assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
+            continue
+        if family_id == "object_count_to_pattern":
+            count = sum(1 for row in input_grid for cell in row if cell != background)
+            pattern_value = next(cell for row in output_grid for cell in row if cell != background)
+            row_index = max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell != background))
+            candidate = {
+                "candidate_id": f"{family_id}:candidate",
+                "candidate_type": f"{family_id}_candidate",
+                "primitive_sequence": [{"primitive_id": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": row_index, "background_value": background}}],
+                "train_fit_status": "unknown",
+                "partial_fit_metadata": {},
+                "unsupported_assumptions": [],
+                "rejection_reasons": [],
+                "confidence_metadata": {},
+                "calibration_metadata": {},
+            }
+            assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
+            continue
+        if family_id == "rotate_object_90":
+            object_value = next(cell for row in input_grid for cell in row if cell != background)
+            candidate = {
+                "candidate_id": f"{family_id}:candidate",
+                "candidate_type": f"{family_id}_candidate",
+                "primitive_sequence": [{"primitive_id": "rotate_object_90", "parameters": {"object_value": object_value, "background_value": background}}],
+                "train_fit_status": "unknown",
+                "partial_fit_metadata": {},
+                "unsupported_assumptions": [],
+                "rejection_reasons": [],
+                "confidence_metadata": {},
+                "calibration_metadata": {},
+            }
+            assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
+            continue
+        raise AssertionError(f"unexpected family: {family_id}")
+
+
+
+def test_reflect_object_horizontal_or_vertical_executor_handles_direct_custom_case() -> None:
+    pair = build_arc_style_grid_train_pair_v1(
+        "reflect-direct-pair",
+        [[0, 1, 0], [0, 1, 1], [0, 0, 0]],
+        [[0, 0, 1], [0, 1, 1], [0, 0, 0]],
+        "reflect",
+    )
+    candidate = {
+        "candidate_id": "reflect-direct-candidate",
+        "candidate_type": "reflect_object_horizontal_or_vertical_candidate",
+        "primitive_sequence": [{"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "horizontal", "object_value": 1, "background_value": 0}}],
+        "train_fit_status": "unknown",
+        "partial_fit_metadata": {},
+        "unsupported_assumptions": [],
+        "rejection_reasons": [],
+        "confidence_metadata": {},
+        "calibration_metadata": {},
+    }
+    validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+    assert validation["exact_match"] is True
+    assert validation["mismatch_category"] == "exact_match"

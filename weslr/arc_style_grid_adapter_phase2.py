@@ -49,9 +49,16 @@ PRIMITIVE_CATEGORIES_V1 = (
     "recolor",
     "count",
     "fill",
+    "fill_region",
     "erase_background",
     "complete_symmetry",
     "extract_object",
+    "extract_largest_object",
+    "remove_background_noise",
+    "line_completion",
+    "object_count_to_pattern",
+    "rotate_object_90",
+    "reflect_object_horizontal_or_vertical",
     "combine_objects",
     "resize_scale",
     "border_frame",
@@ -62,8 +69,15 @@ SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1 = (
     "move",
     "recolor",
     "fill",
+    "fill_region",
     "complete_symmetry",
     "border_frame",
+    "extract_largest_object",
+    "remove_background_noise",
+    "line_completion",
+    "object_count_to_pattern",
+    "rotate_object_90",
+    "reflect_object_horizontal_or_vertical",
 )
 
 DEFERRED_PRIMITIVE_IDS_V1 = tuple(pid for pid in PRIMITIVE_CATEGORIES_V1 if pid not in SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1)
@@ -583,6 +597,140 @@ def _fill_border_or_frame(grid: list[list[Any]], *, frame_value: Any | None = No
     return out
 
 
+def _outer_border_coordinates(grid: Sequence[Sequence[Any]]) -> list[tuple[int, int]]:
+    if not grid or not grid[0]:
+        return []
+    height = len(grid)
+    width = len(grid[0])
+    cells = {(0, column_index) for column_index in range(width)}
+    cells.update({(height - 1, column_index) for column_index in range(width)})
+    cells.update({(row_index, 0) for row_index in range(height)})
+    cells.update({(row_index, width - 1) for row_index in range(height)})
+    return sorted(cells)
+
+
+def _inner_area_coordinates(grid: Sequence[Sequence[Any]]) -> list[tuple[int, int]]:
+    if not grid or not grid[0]:
+        return []
+    height = len(grid)
+    width = len(grid[0])
+    return [(row_index, column_index) for row_index in range(1, height - 1) for column_index in range(1, width - 1)]
+
+
+def _background_value_from_grid(grid: Sequence[Sequence[Any]]) -> Any | None:
+    if not grid:
+        return None
+    counts = Counter(cell for row in grid for cell in row)
+    return counts.most_common(1)[0][0] if counts else None
+
+
+def _dominant_non_background_value(grid: Sequence[Sequence[Any]], background_value: Any | None) -> Any | None:
+    counts = Counter(cell for row in grid for cell in row if cell != background_value)
+    if counts:
+        return counts.most_common(1)[0][0]
+    counts = Counter(cell for row in grid for cell in row)
+    return counts.most_common(1)[0][0] if counts else None
+
+
+def _largest_component_cells(grid: Sequence[Sequence[Any]], background_value: Any | None) -> list[tuple[int, int]]:
+    components = _connected_components(grid, background_value)
+    if not components:
+        return []
+    return max(components, key=lambda component: (len(component), -_bounding_box_for_cells(component)[0], -_bounding_box_for_cells(component)[1], str(grid[component[0][0]][component[0][1]])))
+
+
+def _rotate_bbox_grid(grid: list[list[Any]], *, cells: Sequence[tuple[int, int]], background_value: Any | None, clockwise: bool = True) -> list[list[Any]]:
+    if not cells:
+        return _copy_grid(grid)
+    row_start, column_start, row_end, column_end = _bounding_box_for_cells(cells)
+    subgrid = [row[column_start : column_end + 1] for row in grid[row_start : row_end + 1]]
+    if clockwise:
+        rotated = [list(reversed(col)) for col in zip(*subgrid)]
+    else:
+        rotated = [list(col) for col in zip(*reversed(subgrid))]
+    out = _copy_grid(grid)
+    for row_index in range(row_start, row_end + 1):
+        for column_index in range(column_start, column_end + 1):
+            out[row_index][column_index] = background_value
+    for row_offset, row in enumerate(rotated):
+        for column_offset, cell in enumerate(row):
+            target_row = row_start + row_offset
+            target_column = column_start + column_offset
+            if 0 <= target_row < len(out) and 0 <= target_column < len(out[target_row]):
+                out[target_row][target_column] = cell
+    return out
+
+
+def _reflect_bbox_grid(grid: list[list[Any]], *, cells: Sequence[tuple[int, int]], background_value: Any | None, axis: str) -> list[list[Any]]:
+    if not cells:
+        return _copy_grid(grid)
+    row_start, column_start, row_end, column_end = _bounding_box_for_cells(cells)
+    subgrid = [row[column_start : column_end + 1] for row in grid[row_start : row_end + 1]]
+    if axis == "horizontal":
+        reflected = [list(reversed(row)) for row in subgrid]
+    else:
+        reflected = [list(row) for row in reversed(subgrid)]
+    out = _copy_grid(grid)
+    for row_index in range(row_start, row_end + 1):
+        for column_index in range(column_start, column_end + 1):
+            out[row_index][column_index] = background_value
+    for row_offset, row in enumerate(reflected):
+        for column_offset, cell in enumerate(row):
+            target_row = row_start + row_offset
+            target_column = column_start + column_offset
+            if 0 <= target_row < len(out) and 0 <= target_column < len(out[target_row]):
+                out[target_row][target_column] = cell
+    return out
+
+
+def _fill_region_from_outer_border(grid: list[list[Any]], *, fill_value: Any | None = None, border_value: Any | None = None) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    out = _copy_grid(grid)
+    if border_value is None:
+        border_values = Counter(grid[row][column] for row, column in _outer_border_coordinates(grid))
+        border_value = border_values.most_common(1)[0][0] if border_values else _background_value_from_grid(grid)
+    if fill_value is None:
+        fill_value = _dominant_non_background_value(grid, border_value)
+    for row_index, column_index in _inner_area_coordinates(grid):
+        out[row_index][column_index] = fill_value
+    return out
+
+
+def _line_completion_grid(grid: list[list[Any]], *, row_index: int | None = None, line_value: Any | None = None, background_value: Any | None = None) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    out = _copy_grid(grid)
+    if background_value is None:
+        background_value = _background_value_from_grid(grid)
+    if row_index is None:
+        row_index = max(range(len(grid)), key=lambda index: sum(1 for cell in grid[index] if cell != background_value))
+    if line_value is None:
+        line_value = _dominant_non_background_value([grid[row_index]], background_value)
+    if line_value is None:
+        return out
+    for column_index in range(len(out[row_index])):
+        out[row_index][column_index] = line_value
+    return out
+
+
+def _object_count_to_pattern_grid(grid: list[list[Any]], *, count: int | None = None, pattern_value: Any | None = None, row_index: int | None = None, background_value: Any | None = None) -> list[list[Any]]:
+    if not grid or not grid[0]:
+        return _copy_grid(grid)
+    if background_value is None:
+        background_value = _background_value_from_grid(grid)
+    out = [[background_value for _ in row] for row in grid]
+    if count is None:
+        count = sum(1 for row in grid for cell in row if cell != background_value)
+    if pattern_value is None:
+        pattern_value = _dominant_non_background_value(grid, background_value)
+    if row_index is None:
+        row_index = len(grid) // 2
+    for column_index in range(min(count, len(out[row_index]))):
+        out[row_index][column_index] = pattern_value
+    return out
+
+
 def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value: Any | None = None) -> tuple[list[list[Any]], dict[str, Any]]:
     parsed = _parse_primitive_step(step)
     primitive_id = parsed["primitive_id"]
@@ -617,6 +765,12 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
             fill_entire_grid=False,
             thickness=int(params.get("thickness", 1) or 1),
         ), trace
+    if primitive_id == "fill_region":
+        return _fill_region_from_outer_border(
+            grid,
+            fill_value=params.get("fill_value"),
+            border_value=params.get("border_value", background_value),
+        ), trace
     if primitive_id == "complete_symmetry":
         axes = params.get("axes") if isinstance(params.get("axes"), (list, tuple)) else None
         return _complete_symmetry(grid, axes=axes, background_value=params.get("background_value", background_value)), trace
@@ -627,6 +781,62 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
             fill_entire_grid=bool(params.get("fill_entire_grid", False)),
             thickness=int(params.get("thickness", 1) or 1),
         ), trace
+    if primitive_id == "extract_largest_object":
+        background = params.get("background_value", background_value)
+        cells = _largest_component_cells(grid, background)
+        if not cells:
+            trace["unsupported_reason"] = "missing_largest_component"
+            return _copy_grid(grid), trace
+        out = [[background for _ in row] for row in grid]
+        for row_index, column_index in cells:
+            out[row_index][column_index] = grid[row_index][column_index]
+        return out, trace
+    if primitive_id == "remove_background_noise":
+        background = params.get("background_value", background_value)
+        cells = _largest_component_cells(grid, background)
+        if not cells:
+            trace["unsupported_reason"] = "missing_largest_component"
+            return _copy_grid(grid), trace
+        out = [[background for _ in row] for row in grid]
+        for row_index, column_index in cells:
+            out[row_index][column_index] = grid[row_index][column_index]
+        return out, trace
+    if primitive_id == "line_completion":
+        return _line_completion_grid(
+            grid,
+            row_index=params.get("row_index"),
+            line_value=params.get("line_value"),
+            background_value=params.get("background_value", background_value),
+        ), trace
+    if primitive_id == "object_count_to_pattern":
+        return _object_count_to_pattern_grid(
+            grid,
+            count=int(params["count"]) if "count" in params and str(params.get("count", "")).isdigit() else params.get("count"),
+            pattern_value=params.get("pattern_value"),
+            row_index=int(params["row_index"]) if "row_index" in params and str(params.get("row_index", "")).isdigit() else params.get("row_index"),
+            background_value=params.get("background_value", background_value),
+        ), trace
+    if primitive_id == "rotate_object_90":
+        background = params.get("background_value", background_value)
+        object_value = params.get("object_value")
+        if object_value is None:
+            object_value = _dominant_non_background_value(grid, background)
+        cells = _cells_for_value(grid, object_value) if object_value is not None else []
+        if not cells:
+            trace["unsupported_reason"] = "missing_object_cells"
+            return _copy_grid(grid), trace
+        return _rotate_bbox_grid(grid, cells=cells, background_value=background, clockwise=True), trace
+    if primitive_id == "reflect_object_horizontal_or_vertical":
+        background = params.get("background_value", background_value)
+        object_value = params.get("object_value")
+        if object_value is None:
+            object_value = _dominant_non_background_value(grid, background)
+        cells = _cells_for_value(grid, object_value) if object_value is not None else []
+        if not cells:
+            trace["unsupported_reason"] = "missing_object_cells"
+            return _copy_grid(grid), trace
+        axis = _safe_text(params.get("axis"), "horizontal")
+        return _reflect_bbox_grid(grid, cells=cells, background_value=background, axis=axis if axis in {"horizontal", "vertical"} else "horizontal"), trace
     trace["unsupported_reason"] = "primitive_not_executable_now"
     return _copy_grid(grid), trace
 
@@ -664,7 +874,7 @@ def _failure_category_for_candidate(primitive_id: str, comparison: Mapping[str, 
         return "color_mapping_mismatch"
     if primitive_id == "move":
         return "object_movement_mismatch"
-    if primitive_id in {"complete_symmetry", "border_frame"}:
+    if primitive_id in {"complete_symmetry", "border_frame", "fill_region", "extract_largest_object", "remove_background_noise", "line_completion", "object_count_to_pattern", "rotate_object_90", "reflect_object_horizontal_or_vertical"}:
         return "transformation_mismatch"
     return "cell_values_mismatch"
 
@@ -890,6 +1100,138 @@ def _infer_candidate_for_toy_task(task_packet: Mapping[str, Any]) -> dict[str, A
         candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
         candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
         return candidate
+    if toy_task_type == "fill_region":
+        outer_border = _outer_border_coordinates(input_grid)
+        border_value = input_grid[0][0] if input_grid and input_grid[0] else background_value
+        fill_value = _dominant_non_background_value(output_grid, border_value)
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:fill_region",
+            candidate_type="fill_region_candidate",
+            primitive_sequence=[{"primitive_id": "fill_region", "parameters": {"fill_value": fill_value, "border_value": border_value}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["fill_region_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type, "outer_border_count": len(outer_border)}
+        return candidate
+    if toy_task_type == "extract_largest_object":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        largest_cells = _largest_component_cells(input_grid, candidate_background)
+        if largest_cells:
+            candidate = build_arc_style_grid_candidate_result_v1(
+                f"{task_packet.get('task_id')}:extract_largest_object",
+                candidate_type="extract_largest_object_candidate",
+                primitive_sequence=[{"primitive_id": "extract_largest_object", "parameters": {"background_value": candidate_background}}],
+                train_fit_status="unknown",
+                confidence_metadata={"confidence": "high"},
+                calibration_metadata={"calibration": "phase2_toy"},
+            )
+            validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+            candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+            candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+            candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["extract_largest_object_candidate_inexact"]
+            candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+            candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+            return candidate
+    if toy_task_type == "remove_background_noise":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:remove_background_noise",
+            candidate_type="remove_background_noise_candidate",
+            primitive_sequence=[{"primitive_id": "remove_background_noise", "parameters": {"background_value": candidate_background}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["remove_background_noise_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+        return candidate
+    if toy_task_type == "line_completion":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        line_row = max(range(len(input_grid)), key=lambda index: sum(1 for cell in input_grid[index] if cell != candidate_background)) if input_grid else 0
+        line_value = _dominant_non_background_value(output_grid, candidate_background)
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:line_completion",
+            candidate_type="line_completion_candidate",
+            primitive_sequence=[{"primitive_id": "line_completion", "parameters": {"row_index": line_row, "line_value": line_value, "background_value": candidate_background}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["line_completion_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+        return candidate
+    if toy_task_type == "object_count_to_pattern":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        count = sum(1 for row in input_grid for cell in row if cell != candidate_background)
+        pattern_value = _dominant_non_background_value(output_grid, candidate_background)
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:object_count_to_pattern",
+            candidate_type="object_count_to_pattern_candidate",
+            primitive_sequence=[{"primitive_id": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": len(input_grid) // 2 if input_grid else 0, "background_value": candidate_background}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["object_count_to_pattern_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+        return candidate
+    if toy_task_type == "rotate_object_90":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        object_value = _dominant_non_background_value(input_grid, candidate_background)
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:rotate_object_90",
+            candidate_type="rotate_object_90_candidate",
+            primitive_sequence=[{"primitive_id": "rotate_object_90", "parameters": {"object_value": object_value, "background_value": candidate_background}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["rotate_object_90_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+        return candidate
+    if toy_task_type == "reflect_object_horizontal_or_vertical":
+        candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
+        object_value = _dominant_non_background_value(input_grid, candidate_background)
+        horizontal_candidate = _reflect_bbox_grid(_copy_grid(input_grid), cells=_cells_for_value(input_grid, object_value), background_value=candidate_background, axis="horizontal") if object_value is not None else _copy_grid(input_grid)
+        vertical_candidate = _reflect_bbox_grid(_copy_grid(input_grid), cells=_cells_for_value(input_grid, object_value), background_value=candidate_background, axis="vertical") if object_value is not None else _copy_grid(input_grid)
+        axis = "horizontal" if horizontal_candidate == output_grid else ("vertical" if vertical_candidate == output_grid else "horizontal")
+        candidate = build_arc_style_grid_candidate_result_v1(
+            f"{task_packet.get('task_id')}:reflect_object_horizontal_or_vertical",
+            candidate_type="reflect_object_horizontal_or_vertical_candidate",
+            primitive_sequence=[{"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": axis, "object_value": object_value, "background_value": candidate_background}}],
+            train_fit_status="unknown",
+            confidence_metadata={"confidence": "high"},
+            calibration_metadata={"calibration": "phase2_toy"},
+        )
+        validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+        candidate["train_fit_status"] = "fit" if validation["exact_match"] else "mismatch"
+        candidate["partial_fit_metadata"] = validation["partial_match_metadata"]
+        candidate["unsupported_assumptions"] = [] if validation["exact_match"] else ["reflect_object_horizontal_or_vertical_candidate_inexact"]
+        candidate["rejection_reasons"] = [] if validation["exact_match"] else [validation["mismatch_category"]]
+        candidate["trace"] = {"validation": validation, "toy_task_type": toy_task_type}
+        return candidate
     return build_arc_style_grid_candidate_result_v1(
         f"{task_packet.get('task_id')}:unsupported",
         candidate_type=f"{toy_task_type}_candidate",
@@ -996,6 +1338,16 @@ def build_arc_style_primitive_registry_v1() -> list[dict[str, Any]]:
             "is_executable_now": True,
         },
         {
+            "primitive_id": "fill_region",
+            "category": "fill_region",
+            "description": "Fill the interior of a bordered synthetic region with a selected value.",
+            "required_inputs": ["fill_value"],
+            "allowed_assumptions": ["border_value_known", "interior_region_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
             "primitive_id": "erase_background",
             "category": "erase_background",
             "description": "Remove or replace the background value as metadata only.",
@@ -1024,6 +1376,66 @@ def build_arc_style_primitive_registry_v1() -> list[dict[str, Any]]:
             "failure_mode_labels": ["metadata_only", "unsupported_candidate"],
             "bounded_depth_allowed": True,
             "is_executable_now": False,
+        },
+        {
+            "primitive_id": "extract_largest_object",
+            "category": "extract_largest_object",
+            "description": "Extract the largest connected synthetic object from the grid.",
+            "required_inputs": ["background_value"],
+            "allowed_assumptions": ["largest_component_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "remove_background_noise",
+            "category": "remove_background_noise",
+            "description": "Remove background noise by preserving the dominant connected object.",
+            "required_inputs": ["background_value"],
+            "allowed_assumptions": ["dominant_component_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "line_completion",
+            "category": "line_completion",
+            "description": "Complete a broken line within a bounded synthetic grid.",
+            "required_inputs": ["row_index", "line_value"],
+            "allowed_assumptions": ["line_row_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "object_count_to_pattern",
+            "category": "object_count_to_pattern",
+            "description": "Convert a counted object signal into a bounded pattern row.",
+            "required_inputs": ["count", "pattern_value"],
+            "allowed_assumptions": ["count_signal_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "rotate_object_90",
+            "category": "rotate_object_90",
+            "description": "Rotate a single synthetic object by 90 degrees within its bounding box.",
+            "required_inputs": ["object_value"],
+            "allowed_assumptions": ["single_object_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "reflect_object_horizontal_or_vertical",
+            "category": "reflect_object_horizontal_or_vertical",
+            "description": "Reflect a single synthetic object horizontally or vertically within its bounding box.",
+            "required_inputs": ["axis", "object_value"],
+            "allowed_assumptions": ["axis_known", "single_object_known"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
         },
         {
             "primitive_id": "combine_objects",

@@ -12,6 +12,7 @@ from weslr.arc_style_grid_schema_helpers import (
     build_arc_style_grid_train_pair_v1,
     build_internal_arc_style_grid_toy_tasks_v1,
 )
+from weslr.arc_style_synthetic_task_generators import generate_arc_style_synthetic_task_suite_v1
 from weslr.arc_style_grid_solver_dry_run import (
     MAX_CANDIDATES_PER_TASK_V1,
     MAX_PRIMITIVE_SEQUENCE_DEPTH_V1,
@@ -178,3 +179,37 @@ def test_module_source_has_no_forbidden_provider_or_chat_calls() -> None:
     assert "chat_responder" not in source
     assert "openai" not in source.lower()
     assert "anthropic" not in source.lower()
+
+
+
+def test_new_supported_synthetic_families_are_solved_exactly_from_generated_tasks() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    family_to_primitive = {
+        "fill_region": "fill_region",
+        "extract_largest_object": "extract_largest_object",
+        "remove_background_noise": "remove_background_noise",
+        "line_completion": "line_completion",
+        "object_count_to_pattern": "object_count_to_pattern",
+        "rotate_object_90": "rotate_object_90",
+    }
+    for family_id, expected_primitive in family_to_primitive.items():
+        task_family = next(task for task in suite["tasks"] if task["family_id"] == family_id)
+        task_packet = task_family["generator_metadata"]["arc_style_task_packets"][0]
+        packet = run_arc_style_bounded_solver_dry_run_v1([task_packet])
+        task_result = packet["task_results"][0]
+        assert task_result["train_fit_status"] == "fit"
+        assert task_result["selected_primitive_sequence"][0]["primitive_id"] == expected_primitive
+        assert task_result["selected_candidate_id"]
+        assert task_result["unsupported_count"] == 0
+        assert packet["selected_unsupported_count"] == 0
+
+
+
+def test_reflect_object_family_remains_unsupported_honestly() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    task_family = next(task for task in suite["tasks"] if task["family_id"] == "reflect_object_horizontal_or_vertical")
+    task_packet = task_family["generator_metadata"]["arc_style_task_packets"][0]
+    packet = run_arc_style_bounded_solver_dry_run_v1([task_packet])
+    task_result = packet["task_results"][0]
+    assert task_result["train_fit_status"] in {"unsupported", "mismatch", "partial_fit"}
+    assert packet["selected_unsupported_count"] >= 1
