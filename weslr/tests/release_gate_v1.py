@@ -177,6 +177,17 @@ _arc_synthetic_freeze_invariants_allowed_paths = {
     _arc_synthetic_freeze_invariants_doc,
 }
 
+# Narrow, exact-path allowance for the ARC UNKNOWN ENGINE level ladder design
+# doc only. Same narrow intent as the prior allowances: a single exact path,
+# NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken any
+# protected-file rule.
+_arc_unknown_engine_level_ladder_design_doc = (
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DESIGN_V1.md"
+)
+_arc_unknown_engine_level_ladder_design_allowed_paths = {
+    _arc_unknown_engine_level_ladder_design_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -15909,6 +15920,8 @@ def _check_git_scope():
         if path in _arc_synthetic_controlled_improvement_freeze_allowed_paths:
             allowed = True
         if path in _arc_synthetic_freeze_invariants_allowed_paths:
+            allowed = True
+        if path in _arc_unknown_engine_level_ladder_design_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
