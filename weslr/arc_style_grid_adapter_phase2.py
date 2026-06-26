@@ -57,6 +57,10 @@ PRIMITIVE_CATEGORIES_V1 = (
     "remove_background_noise",
     "line_completion",
     "object_count_to_pattern",
+    "construct_count_pattern",
+    "crop_to_non_background_bbox",
+    "place_object_on_new_canvas",
+    "preserve_input_canvas",
     "rotate_object_90",
     "reflect_object_horizontal_or_vertical",
     "combine_objects",
@@ -76,6 +80,10 @@ SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1 = (
     "remove_background_noise",
     "line_completion",
     "object_count_to_pattern",
+    "construct_count_pattern",
+    "crop_to_non_background_bbox",
+    "place_object_on_new_canvas",
+    "preserve_input_canvas",
     "rotate_object_90",
     "reflect_object_horizontal_or_vertical",
 )
@@ -735,6 +743,107 @@ def _object_count_to_pattern_grid(grid: list[list[Any]], *, count: int | None = 
     return out
 
 
+def _grid_is_rectangular(grid: Sequence[Sequence[Any]]) -> bool:
+    return bool(grid) and all(isinstance(row, Sequence) and not isinstance(row, (str, bytes, bytearray)) and len(row) == len(grid[0]) for row in grid)
+
+
+def _grid_cells_are_safe(grid: Sequence[Sequence[Any]]) -> bool:
+    for row in grid:
+        for cell in row:
+            if isinstance(cell, bool) or not isinstance(cell, int) or not 0 <= cell <= 9:
+                return False
+    return True
+
+
+def _safe_input_grid(grid: Sequence[Sequence[Any]]) -> bool:
+    return _grid_is_rectangular(grid) and _grid_cells_are_safe(grid)
+
+
+def _construct_count_pattern_grid(grid: list[list[Any]], *, count: int | None = None, pattern_value: Any | None = None, background_value: Any | None = None, row_index: int | None = None) -> list[list[Any]]:
+    if not _safe_input_grid(grid):
+        return _copy_grid(grid)
+    if background_value is None:
+        background_value = _background_value_from_grid(grid)
+    if count is None:
+        distinct_non_background_values = {cell for row in grid for cell in row if cell != background_value}
+        count = len(distinct_non_background_values)
+        if count == 0:
+            components = _connected_components(grid, background_value)
+            count = len(components)
+    if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
+        return _copy_grid(grid)
+    if pattern_value is None:
+        pattern_value = _dominant_non_background_value(grid, background_value)
+    if pattern_value is None:
+        return _copy_grid(grid)
+    height = 1 if row_index is None else max(1, int(row_index) + 1)
+    width = count
+    if width > 25 or height > 25:
+        return _copy_grid(grid)
+    out = [[background_value for _ in range(width)] for _ in range(height)]
+    placement_row = 0 if row_index is None else min(max(0, int(row_index)), height - 1)
+    for column_index in range(width):
+        out[placement_row][column_index] = pattern_value
+    return out
+
+
+def _crop_to_non_background_bbox_grid(grid: list[list[Any]], *, background_value: Any | None = None) -> list[list[Any]]:
+    if not _safe_input_grid(grid):
+        return _copy_grid(grid)
+    background = background_value if background_value is not None else _background_value_from_grid(grid)
+    if background is None:
+        return _copy_grid(grid)
+    cells = [(row_index, column_index) for row_index, row in enumerate(grid) for column_index, cell in enumerate(row) if cell != background]
+    if not cells:
+        return _copy_grid(grid)
+    row_start, column_start, row_end, column_end = _bounding_box_for_cells(cells)
+    if row_start > row_end or column_start > column_end:
+        return _copy_grid(grid)
+    return [list(row[column_start : column_end + 1]) for row in grid[row_start : row_end + 1]]
+
+
+def _place_object_on_new_canvas(grid: list[list[Any]], *, canvas_height: int | None = None, canvas_width: int | None = None, background_value: Any | None = None, anchor_row: int | None = None, anchor_column: int | None = None, object_value: Any | None = None) -> list[list[Any]]:
+    if not _safe_input_grid(grid):
+        return _copy_grid(grid)
+    background = background_value if background_value is not None else _background_value_from_grid(grid)
+    if background is None:
+        return _copy_grid(grid)
+    values = [cell for row in grid for cell in row if cell != background]
+    if object_value is None:
+        distinct_values = {cell for cell in values}
+        if len(distinct_values) != 1:
+            return _copy_grid(grid)
+        object_value = next(iter(distinct_values))
+    cells = [(row_index, column_index) for row_index, row in enumerate(grid) for column_index, cell in enumerate(row) if cell == object_value]
+    if not cells:
+        return _copy_grid(grid)
+    row_start, column_start, row_end, column_end = _bounding_box_for_cells(cells)
+    object_height = row_end - row_start + 1
+    object_width = column_end - column_start + 1
+    height = int(canvas_height) if isinstance(canvas_height, int) and not isinstance(canvas_height, bool) and canvas_height > 0 else len(grid)
+    width = int(canvas_width) if isinstance(canvas_width, int) and not isinstance(canvas_width, bool) and canvas_width > 0 else len(grid[0])
+    if height > 25 or width > 25:
+        return _copy_grid(grid)
+    anchor_r = int(anchor_row) if isinstance(anchor_row, int) and not isinstance(anchor_row, bool) else 0
+    anchor_c = int(anchor_column) if isinstance(anchor_column, int) and not isinstance(anchor_column, bool) else 0
+    if anchor_r < 0 or anchor_c < 0 or anchor_r + object_height > height or anchor_c + object_width > width:
+        return _copy_grid(grid)
+    out = [[background for _ in range(width)] for _ in range(height)]
+    for row_index, column_index in cells:
+        target_row = anchor_r + (row_index - row_start)
+        target_column = anchor_c + (column_index - column_start)
+        out[target_row][target_column] = grid[row_index][column_index]
+    return out
+
+
+def _preserve_input_canvas_grid(grid: list[list[Any]], *, background_value: Any | None = None) -> list[list[Any]]:
+    if not _safe_input_grid(grid):
+        return _copy_grid(grid)
+    if background_value is not None and background_value != _background_value_from_grid(grid):
+        return _copy_grid(grid)
+    return _copy_grid(grid)
+
+
 def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value: Any | None = None) -> tuple[list[list[Any]], dict[str, Any]]:
     parsed = _parse_primitive_step(step)
     primitive_id = parsed["primitive_id"]
@@ -770,9 +879,12 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
             thickness=int(params.get("thickness", 1) or 1),
         ), trace
     if primitive_id == "fill_region":
+        fill_value = params.get("fill_value")
+        if fill_value is None:
+            fill_value = _dominant_non_background_value(grid, params.get("border_value", background_value))
         return _fill_region_from_outer_border(
             grid,
-            fill_value=params.get("fill_value"),
+            fill_value=fill_value,
             border_value=params.get("border_value", background_value),
         ), trace
     if primitive_id == "complete_symmetry":
@@ -820,6 +932,31 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
             row_index=int(params["row_index"]) if "row_index" in params and str(params.get("row_index", "")).isdigit() else params.get("row_index"),
             background_value=params.get("background_value", background_value),
         ), trace
+    if primitive_id == "construct_count_pattern":
+        return _construct_count_pattern_grid(
+            grid,
+            count=int(params["count"]) if "count" in params and str(params.get("count", "")).isdigit() else params.get("count"),
+            pattern_value=params.get("pattern_value"),
+            background_value=params.get("background_value", background_value),
+            row_index=int(params["row_index"]) if "row_index" in params and str(params.get("row_index", "")).isdigit() else params.get("row_index"),
+        ), trace
+    if primitive_id == "crop_to_non_background_bbox":
+        return _crop_to_non_background_bbox_grid(
+            grid,
+            background_value=params.get("background_value", background_value),
+        ), trace
+    if primitive_id == "place_object_on_new_canvas":
+        return _place_object_on_new_canvas(
+            grid,
+            canvas_height=params.get("canvas_height"),
+            canvas_width=params.get("canvas_width"),
+            background_value=params.get("background_value", background_value),
+            anchor_row=params.get("anchor_row"),
+            anchor_column=params.get("anchor_column"),
+            object_value=params.get("object_value"),
+        ), trace
+    if primitive_id == "preserve_input_canvas":
+        return _preserve_input_canvas_grid(grid, background_value=params.get("background_value", background_value)), trace
     if primitive_id == "rotate_object_90":
         background = params.get("background_value", background_value)
         object_value = params.get("object_value")
@@ -878,7 +1015,7 @@ def _failure_category_for_candidate(primitive_id: str, comparison: Mapping[str, 
         return "color_mapping_mismatch"
     if primitive_id == "move":
         return "object_movement_mismatch"
-    if primitive_id in {"complete_symmetry", "border_frame", "fill_region", "extract_largest_object", "remove_background_noise", "line_completion", "object_count_to_pattern", "rotate_object_90", "reflect_object_horizontal_or_vertical"}:
+    if primitive_id in {"complete_symmetry", "border_frame", "fill_region", "extract_largest_object", "remove_background_noise", "line_completion", "object_count_to_pattern", "construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas", "rotate_object_90", "reflect_object_horizontal_or_vertical"}:
         return "transformation_mismatch"
     return "cell_values_mismatch"
 
@@ -1418,6 +1555,46 @@ def build_arc_style_primitive_registry_v1() -> list[dict[str, Any]]:
             "required_inputs": ["count", "pattern_value"],
             "allowed_assumptions": ["count_signal_known"],
             "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "construct_count_pattern",
+            "category": "construct_count_pattern",
+            "description": "Construct a bounded count-encoded pattern on a new canvas using train-only shape and background proposals.",
+            "required_inputs": ["count", "pattern_value"],
+            "allowed_assumptions": ["count_signal_known", "train_only_shape_proposal", "train_only_background_proposal"],
+            "failure_mode_labels": ["transformation_mismatch", "cell_values_mismatch", "output_formatting_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "crop_to_non_background_bbox",
+            "category": "crop_to_non_background_bbox",
+            "description": "Crop a grid to its tight non-background bounding box.",
+            "required_inputs": ["background_value"],
+            "allowed_assumptions": ["background_known_or_inferable"],
+            "failure_mode_labels": ["output_formatting_mismatch", "dimensions_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "place_object_on_new_canvas",
+            "category": "place_object_on_new_canvas",
+            "description": "Place a single object or tight bbox onto a bounded new canvas with explicit background.",
+            "required_inputs": ["canvas_height", "canvas_width", "background_value"],
+            "allowed_assumptions": ["train_only_canvas_shape_proposal", "train_only_background_proposal"],
+            "failure_mode_labels": ["dimensions_mismatch", "out_of_bounds", "unsupported_candidate"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "preserve_input_canvas",
+            "category": "preserve_input_canvas",
+            "description": "Preserve the input canvas shape and background unchanged.",
+            "required_inputs": [],
+            "allowed_assumptions": ["canvas_shape_known"],
+            "failure_mode_labels": ["cell_values_mismatch", "dimensions_mismatch"],
             "bounded_depth_allowed": True,
             "is_executable_now": True,
         },

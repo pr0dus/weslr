@@ -118,8 +118,8 @@ def test_fixtures_validate_and_summarize_correctly() -> None:
 
     heldout_summary = summarize_heldout_compositional_improvement_v1(depth2_search)
     assert heldout_summary["summary_type"] == "heldout_compositional_improvement_summary_v1"
-    assert heldout_summary["exact_gain"] == 6
-    assert heldout_summary["unsupported_reduction"] == 7
+    assert heldout_summary["exact_gain"] == 8
+    assert heldout_summary["unsupported_reduction"] == 9
 
     boundary_summary = summarize_boundary_preservation_v1(depth2_search)
     assert boundary_summary["boundary_preserved"] is True
@@ -127,13 +127,13 @@ def test_fixtures_validate_and_summarize_correctly() -> None:
 
     gap_summary = summarize_remaining_gaps_v1(depth2_search)
     assert gap_summary["remaining_partial_count"] == 3
-    assert gap_summary["remaining_unsupported_count"] == 4
+    assert gap_summary["remaining_unsupported_count"] == 2
 
     assert primitive_expansion["evidence_summary"]["unsupported_reduction"] == 24
     assert partial_to_exact["evidence_summary"]["exact_delta"] == 27
     assert heldout_baseline["evidence_summary"]["exact_delta"] == 0
-    assert depth2_search["evidence_summary"]["exact_delta"] == 6
-    assert depth2_search["delta_metrics"]["unsupported_count"] == -7
+    assert depth2_search["evidence_summary"]["exact_delta"] == 8
+    assert depth2_search["delta_metrics"]["unsupported_count"] == -9
 
 
 def test_chain_summary_and_validation_are_correct() -> None:
@@ -144,11 +144,11 @@ def test_chain_summary_and_validation_are_correct() -> None:
     assert validation["valid"] is True
     assert summary["valid"] is True
     assert summary["known_family_exact_gain"] == 27
-    assert summary["heldout_exact_gain"] == 6
-    assert summary["heldout_unsupported_reduction"] == 7
+    assert summary["heldout_exact_gain"] == 8
+    assert summary["heldout_unsupported_reduction"] == 9
     assert chain["summary"]["known_family_exact_gain"] == 27
-    assert chain["summary"]["heldout_exact_gain"] == 6
-    assert chain["summary"]["heldout_unsupported_reduction"] == 7
+    assert chain["summary"]["heldout_exact_gain"] == 8
+    assert chain["summary"]["heldout_unsupported_reduction"] == 9
 
 
 def test_validator_rejects_missing_metrics_invalid_totals_and_unsafe_flags() -> None:

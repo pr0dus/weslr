@@ -20,6 +20,7 @@ from weslr.arc_agi2_submission_contract import (
 from weslr.arc_style_grid_adapter_phase2 import (
     _apply_primitive_step,
     _compare_grids,
+    _connected_components,
     validate_arc_style_train_pair_with_candidate_v1,
 )
 from weslr.arc_style_grid_schema_helpers import (
@@ -510,6 +511,7 @@ def _build_program_candidate(task_id: str, program_steps: Sequence[Mapping[str, 
     instability_penalty = 0
     if len({result["comparison"]["value_mismatch_count"] for result in train_results}) > 1:
         instability_penalty += 1
+    shape_construction_penalty = sum(1 for step in program_steps if step.get("primitive_name") in {"construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas"})
     score = (
         exact_pair_count * 1000
         - mismatch_count * 20
@@ -517,6 +519,7 @@ def _build_program_candidate(task_id: str, program_steps: Sequence[Mapping[str, 
         - len(program_steps) * 3
         - parameter_complexity * 2
         - instability_penalty * 5
+        - shape_construction_penalty * 8
     )
     if any(result["unsupported_candidate"] for result in train_results):
         score -= 250
@@ -546,6 +549,7 @@ def _build_program_candidate(task_id: str, program_steps: Sequence[Mapping[str, 
         "mismatch_categories": categories,
         "parameter_complexity": parameter_complexity,
         "instability_penalty": instability_penalty,
+        "shape_construction_penalty": shape_construction_penalty,
         "score": score,
         "leakage_flags": {
             "synthetic_only": True,
@@ -665,15 +669,13 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
     if recipe_family_id == "count_object_then_emit_pattern":
         background = _background_value(input_grid)
         cleaned = _execute_step([list(row) for row in input_grid], "remove_background_noise", {"background_value": background})[0]
-        output_background = _background_value(output_grid)
-        count = max(1, sum(1 for row in output_grid for cell in row if cell != output_background))
-        pattern_value = _dominant_non_background_value(output_grid, output_background)
+        pattern_value = _dominant_non_background_value(output_grid, _background_value(output_grid))
         return [[
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
-            {"primitive_name": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": 0, "background_value": background}},
+            {"primitive_name": "construct_count_pattern", "parameters": {"pattern_value": pattern_value, "background_value": background, "row_index": 0}},
         ], [
-            {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
-            {"primitive_name": "object_count_to_pattern", "parameters": {"count": max(1, count - 1), "pattern_value": pattern_value, "row_index": 0, "background_value": background}},
+            {"primitive_name": "crop_to_non_background_bbox", "parameters": {"background_value": background}},
+            {"primitive_name": "construct_count_pattern", "parameters": {"pattern_value": pattern_value, "background_value": background, "row_index": 0}},
         ]]
 
     if recipe_family_id == "reflect_then_recolor":
@@ -693,12 +695,11 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
     if recipe_family_id == "fill_region_then_extract_object":
         background = _background_value(input_grid)
         border_color = _dominant_non_background_value(input_grid, background)
-        fill_value = _dominant_non_background_value(output_grid, _background_value(output_grid))
         return [[
-            {"primitive_name": "fill_region", "parameters": {"fill_value": fill_value, "border_value": background}},
+            {"primitive_name": "fill_region", "parameters": {"border_value": background}},
             {"primitive_name": "extract_largest_object", "parameters": {"background_value": background}},
         ], [
-            {"primitive_name": "fill_region", "parameters": {"fill_value": fill_value, "border_value": border_color}},
+            {"primitive_name": "fill_region", "parameters": {"border_value": border_color}},
             {"primitive_name": "extract_largest_object", "parameters": {"background_value": background}},
         ]]
 

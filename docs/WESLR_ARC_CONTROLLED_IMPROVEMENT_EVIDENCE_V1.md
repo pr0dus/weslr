@@ -26,7 +26,7 @@ Diagnostic evidence only. This records a controlled internal diagnostic → inte
 
 ### Held-out compositional improvement chain
 - before depth-2 search: `1 / 2 / 11 / 0`
-- after depth-2 search: `7 / 3 / 4 / 0`
+- after depth-2 search: `9 / 3 / 2 / 0`
 
 ## Boundary facts
 

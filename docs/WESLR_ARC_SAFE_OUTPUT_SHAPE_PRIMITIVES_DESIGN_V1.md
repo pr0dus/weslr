@@ -10,8 +10,8 @@ Observed synthetic-only state:
 - Known-family baseline: `41 / 3 / 4 / 0`
 - Original held-out compositional baseline: `1 / 2 / 11 / 0`
 - Held-out after depth-2 search: `5 / 5 / 4 / 0`
-- Held-out after depth-2 repair: `7 / 3 / 4 / 0`
-- Immediate pre-repair to repair movement: `5 / 5 / 4 / 0 -> 7 / 3 / 4 / 0`
+- Held-out after output-shape primitives: `9 / 3 / 2 / 0`
+- Immediate pre-repair to repair movement: `7 / 3 / 4 / 0 -> 9 / 3 / 2 / 0`
 - Exact delta vs original baseline: `+6`
 - Partial delta vs original baseline: `+1`
 - Unsupported delta vs original baseline: `-7`

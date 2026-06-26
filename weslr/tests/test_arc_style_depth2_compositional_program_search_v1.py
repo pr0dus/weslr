@@ -79,11 +79,11 @@ def test_depth2_search_is_deterministic_and_beats_baseline() -> None:
     assert first["heldout_baseline_before"]["exact_count"] == 1
     assert first["heldout_baseline_before"]["partial_count"] == 2
     assert first["heldout_baseline_before"]["unsupported_count"] == 11
-    assert first["heldout_search_after"]["exact_count"] == 7
+    assert first["heldout_search_after"]["exact_count"] == 9
     assert first["heldout_search_after"]["partial_count"] == 3
-    assert first["heldout_search_after"]["unsupported_count"] == 4
-    assert first["comparison_report"]["exact_improvement"] == 6
-    assert first["comparison_report"]["unsupported_reduction"] == 7
+    assert first["heldout_search_after"]["unsupported_count"] == 2
+    assert first["comparison_report"]["exact_improvement"] == 8
+    assert first["comparison_report"]["unsupported_reduction"] == 9
     assert first["top2_program_packet_count"] == 14
     assert first["top2_program_packet_valid_count"] == 14
     assert first["top2_program_packet_invalid_count"] == 0
@@ -137,7 +137,7 @@ def test_failure_ledger_is_deterministic_and_json_safe() -> None:
     assert _json_safe(result["failure_ledger"]) == _json_safe(again["failure_ledger"])
     assert json.dumps(_json_safe(result["failure_ledger"]), ensure_ascii=False)
     assert result["comparison_report"]["heldout_baseline_before"]["unsupported_count"] == 11
-    assert result["comparison_report"]["search_failure_ledger"]["status_counts"]["exact"] == 7
+    assert result["comparison_report"]["search_failure_ledger"]["status_counts"]["exact"] == 9
 
 
 def test_known_family_baseline_remains_stable_and_summary_json_safe() -> None:

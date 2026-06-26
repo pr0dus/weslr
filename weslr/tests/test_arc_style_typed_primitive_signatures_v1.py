@@ -115,7 +115,7 @@ def test_json_safe_export_contains_no_callable_objects() -> None:
 def test_summary_contains_metadata_only_information() -> None:
     catalog = build_arc_style_typed_primitive_signature_catalog_v1()
     summary = summarize_arc_style_typed_primitive_signatures_v1(catalog)
-    assert summary["signature_count"] == 12
+    assert summary["signature_count"] == 16
     assert summary["metadata_only_helper"] is True
     assert summary["design_guarded"] is True
     assert summary["public_data_ready"] is False
