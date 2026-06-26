@@ -278,10 +278,13 @@ def test_new_synthetic_primitive_executors_validate_directly() -> None:
         if family_id == "line_completion":
             row_index = max(range(len(input_grid)), key=lambda index: sum(1 for cell in input_grid[index] if cell != background))
             line_value = next(cell for row in output_grid for cell in row if cell != background)
+            output_row = next((row for row in output_grid if any(cell != background for cell in row)), [])
+            span_start_column = min((column_index for column_index, cell in enumerate(output_row) if cell != background), default=0)
+            span_end_column = max((column_index for column_index, cell in enumerate(output_row) if cell != background), default=len(output_row) - 1)
             candidate = {
                 "candidate_id": f"{family_id}:candidate",
                 "candidate_type": f"{family_id}_candidate",
-                "primitive_sequence": [{"primitive_id": "line_completion", "parameters": {"row_index": row_index, "line_value": line_value, "background_value": background}}],
+                "primitive_sequence": [{"primitive_id": "line_completion", "parameters": {"row_index": row_index, "line_value": line_value, "background_value": background, "span_start_column": span_start_column, "span_end_column": span_end_column}}],
                 "train_fit_status": "unknown",
                 "partial_fit_metadata": {},
                 "unsupported_assumptions": [],

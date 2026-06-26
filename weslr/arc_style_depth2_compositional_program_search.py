@@ -343,9 +343,10 @@ def _infer_line_completion(current_grid: Sequence[Sequence[Any]], target_grid: S
     proposals = []
     for row_index, row in enumerate(target_grid):
         if any(cell != target_background for cell in row):
-            proposals.append({"row_index": row_index, "line_value": line_value, "background_value": background})
+            span_end_column = max((column_index for column_index, cell in enumerate(row) if cell != target_background), default=len(row) - 1)
+            proposals.append({"row_index": row_index, "line_value": line_value, "background_value": background, "span_end_column": span_end_column})
     if not proposals:
-        proposals.append({"row_index": 0, "line_value": line_value, "background_value": background})
+        proposals.append({"row_index": 0, "line_value": line_value, "background_value": background, "span_end_column": 0})
     return proposals[:4]
 
 
@@ -657,13 +658,15 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
         background = _background_value(input_grid)
         line_background = _background_value(output_grid)
         line_value = _dominant_non_background_value(output_grid, line_background)
-        row_index = max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell == line_value)) if output_grid else 0
+        output_row = next((row for row in output_grid if any(cell != line_background for cell in row)), [])
+        span_start_column = min((column_index for column_index, cell in enumerate(output_row) if cell != line_background), default=0)
+        span_end_column = max((column_index for column_index, cell in enumerate(output_row) if cell != line_background), default=len(output_row) - 1)
         return [[
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
-            {"primitive_name": "line_completion", "parameters": {"row_index": row_index, "line_value": line_value, "background_value": background}},
+            {"primitive_name": "line_completion", "parameters": {"line_value": line_value, "background_value": background, "span_start_column": span_start_column, "span_end_column": span_end_column}},
         ], [
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
-            {"primitive_name": "line_completion", "parameters": {"row_index": min(max(0, len(output_grid) - 1), row_index + 1), "line_value": line_value, "background_value": background}},
+            {"primitive_name": "line_completion", "parameters": {"row_index": max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell == line_value)) if output_grid else 0, "line_value": line_value, "background_value": background, "span_start_column": span_start_column, "span_end_column": span_end_column}},
         ]]
 
     if recipe_family_id == "count_object_then_emit_pattern":

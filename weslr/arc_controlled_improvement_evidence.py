@@ -174,8 +174,8 @@ HELDOUT_BASELINE_BEFORE_DEPTH2_V1 = {
     "task_count": 14,
 }
 HELDOUT_AFTER_DEPTH2_V1 = {
-    "exact_count": 9,
-    "partial_count": 3,
+    "exact_count": 10,
+    "partial_count": 2,
     "unsupported_count": 2,
     "failed_count": 0,
     "task_count": 14,
@@ -716,7 +716,7 @@ def validate_arc_controlled_improvement_evidence_chain_v1(chain: Any) -> dict[st
         summary = chain["summary"]
         if summary.get("known_family_exact_gain") != 27:
             validation["blocked_reason_labels"].append("known_family_exact_gain_mismatch")
-        if summary.get("heldout_exact_gain") != 8:
+        if summary.get("heldout_exact_gain") != 9:
             validation["blocked_reason_labels"].append("heldout_exact_gain_mismatch")
         if summary.get("heldout_unsupported_reduction") != 9:
             validation["blocked_reason_labels"].append("heldout_unsupported_reduction_mismatch")

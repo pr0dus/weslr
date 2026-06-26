@@ -549,10 +549,14 @@ def _infer_line_completion_parameters(input_grid: Sequence[Sequence[Any]], outpu
     line_value = _dominant_non_background_value(output_grid, background_value)
     if line_value is None:
         return None
-    predicted = _line_completion_grid([list(row) for row in input_grid], row_index=row_index, line_value=line_value, background_value=background_value)
+    output_row = list(output_grid[row_index]) if row_index < len(output_grid) else []
+    non_background_columns = [column_index for column_index, cell in enumerate(output_row) if cell != background_value]
+    span_start_column = min(non_background_columns) if non_background_columns else 0
+    span_end_column = max(non_background_columns) if non_background_columns else len(output_row) - 1
+    predicted = _line_completion_grid([list(row) for row in input_grid], row_index=row_index, line_value=line_value, background_value=background_value, span_start_column=span_start_column, span_end_column=span_end_column)
     if predicted != [list(row) for row in output_grid]:
         return None
-    return {"row_index": row_index, "line_value": line_value, "background_value": background_value}
+    return {"row_index": row_index, "line_value": line_value, "background_value": background_value, "span_start_column": span_start_column, "span_end_column": span_end_column}
 
 
 def _infer_object_count_to_pattern_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:

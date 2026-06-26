@@ -307,7 +307,9 @@ def _supported_primitive_grid(candidate_packet: Mapping[str, Any], input_grid: S
         background_value = params.get("background_value")
         if background_value is None and grid:
             background_value = _background_value_from_grid(grid)
-        return _line_completion_grid(grid, row_index=row_index, line_value=line_value, background_value=background_value)
+        span_start_column = params.get("span_start_column")
+        span_end_column = params.get("span_end_column")
+        return _line_completion_grid(grid, row_index=row_index, line_value=line_value, background_value=background_value, span_start_column=span_start_column, span_end_column=span_end_column)
     if primitive_id == "object_count_to_pattern":
         count = params.get("count")
         pattern_value = params.get("pattern_value")

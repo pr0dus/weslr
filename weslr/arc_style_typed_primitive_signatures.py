@@ -295,6 +295,8 @@ def _signature_blueprints() -> dict[str, dict[str, Any]]:
                     "row_index": {"type": ["integer", "null"], "minimum": 0},
                     "line_value": {"type": ["integer", "string"]},
                     "background_value": {"type": ["integer", "string"]},
+                    "span_start_column": {"type": ["integer", "null"], "minimum": 0},
+                    "span_end_column": {"type": ["integer", "null"], "minimum": 0},
                 },
                 "required": [],
                 "additionalProperties": False,

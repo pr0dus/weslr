@@ -709,7 +709,7 @@ def _fill_region_from_outer_border(grid: list[list[Any]], *, fill_value: Any | N
     return out
 
 
-def _line_completion_grid(grid: list[list[Any]], *, row_index: int | None = None, line_value: Any | None = None, background_value: Any | None = None) -> list[list[Any]]:
+def _line_completion_grid(grid: list[list[Any]], *, row_index: int | None = None, line_value: Any | None = None, background_value: Any | None = None, span_start_column: int | None = None, span_end_column: int | None = None) -> list[list[Any]]:
     if not grid or not grid[0]:
         return _copy_grid(grid)
     out = _copy_grid(grid)
@@ -717,11 +717,25 @@ def _line_completion_grid(grid: list[list[Any]], *, row_index: int | None = None
         background_value = _background_value_from_grid(grid)
     if row_index is None:
         row_index = max(range(len(grid)), key=lambda index: sum(1 for cell in grid[index] if cell != background_value))
+    row = list(grid[row_index])
+    non_background_columns = [column_index for column_index, cell in enumerate(row) if cell != background_value]
     if line_value is None:
-        line_value = _dominant_non_background_value([grid[row_index]], background_value)
+        line_value = _dominant_non_background_value([row], background_value)
     if line_value is None:
         return out
-    for column_index in range(len(out[row_index])):
+    if non_background_columns:
+        inferred_start_column = min(non_background_columns)
+        inferred_end_column = max(non_background_columns)
+    else:
+        inferred_start_column = 0
+        inferred_end_column = len(out[row_index]) - 1
+    if span_start_column is None:
+        span_start_column = inferred_start_column
+    if span_end_column is None:
+        span_end_column = inferred_end_column
+    start_column = max(0, min(len(out[row_index]) - 1, int(span_start_column)))
+    end_column = max(start_column, min(len(out[row_index]) - 1, int(span_end_column)))
+    for column_index in range(start_column, end_column + 1):
         out[row_index][column_index] = line_value
     return out
 
@@ -923,6 +937,8 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
             row_index=params.get("row_index"),
             line_value=params.get("line_value"),
             background_value=params.get("background_value", background_value),
+            span_start_column=params.get("span_start_column"),
+            span_end_column=params.get("span_end_column"),
         ), trace
     if primitive_id == "object_count_to_pattern":
         return _object_count_to_pattern_grid(
@@ -1300,10 +1316,13 @@ def _infer_candidate_for_toy_task(task_packet: Mapping[str, Any]) -> dict[str, A
         candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
         line_row = max(range(len(input_grid)), key=lambda index: sum(1 for cell in input_grid[index] if cell != candidate_background)) if input_grid else 0
         line_value = _dominant_non_background_value(output_grid, candidate_background)
+        output_row = next((row for row in output_grid if any(cell != candidate_background for cell in row)), [])
+        span_start_column = min((column_index for column_index, cell in enumerate(output_row) if cell != candidate_background), default=0)
+        span_end_column = max((column_index for column_index, cell in enumerate(output_row) if cell != candidate_background), default=max(0, len(output_row) - 1))
         candidate = build_arc_style_grid_candidate_result_v1(
             f"{task_packet.get('task_id')}:line_completion",
             candidate_type="line_completion_candidate",
-            primitive_sequence=[{"primitive_id": "line_completion", "parameters": {"row_index": line_row, "line_value": line_value, "background_value": candidate_background}}],
+            primitive_sequence=[{"primitive_id": "line_completion", "parameters": {"row_index": line_row, "line_value": line_value, "background_value": candidate_background, "span_start_column": span_start_column, "span_end_column": span_end_column}}],
             train_fit_status="unknown",
             confidence_metadata={"confidence": "high"},
             calibration_metadata={"calibration": "phase2_toy"},

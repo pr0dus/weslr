@@ -26,7 +26,7 @@ Diagnostic evidence only. This records a controlled internal diagnostic → inte
 
 ### Held-out compositional improvement chain
 - before depth-2 search: `1 / 2 / 11 / 0`
-- after depth-2 search: `9 / 3 / 2 / 0`
+- after depth-2 repair: `10 / 2 / 2 / 0`
 
 ## Boundary facts
 
@@ -48,10 +48,10 @@ This evidence layer is bounded to internal synthetic measurements and preserves 
 The controlled loop shows:
 
 - executor coverage improved first
-- partial results were then converted to exact results
-- held-out composition improved under bounded depth-2 search
-- some held-out cases remain structurally unsupported under the current depth-2 primitive set
-- the remaining gap still favors depth-2 repair before any deeper search change
+- partial results were then converted to exact results, including the line-completion repair lane
+- held-out composition improved under bounded depth-2 repair
+- one fill-region case remains structurally partial under the current depth-2 primitive set
+- the remaining gap still favors safe parameter fidelity repair before any deeper search change
 
 ## Next lane
 
