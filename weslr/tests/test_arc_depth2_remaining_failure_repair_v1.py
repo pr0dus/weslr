@@ -42,11 +42,11 @@ def test_repair_lane_measurement_is_stable_and_depth2_only() -> None:
     assert first["heldout_baseline_before"]["exact_count"] == 1
     assert first["heldout_baseline_before"]["partial_count"] == 2
     assert first["heldout_baseline_before"]["unsupported_count"] == 11
-    assert first["heldout_search_after"]["exact_count"] == 10
+    assert first["heldout_search_after"]["exact_count"] == 12
     assert first["heldout_search_after"]["partial_count"] == 2
-    assert first["heldout_search_after"]["unsupported_count"] == 2
-    assert first["comparison_report"]["exact_improvement"] == 9
-    assert first["comparison_report"]["unsupported_reduction"] == 9
+    assert first["heldout_search_after"]["unsupported_count"] == 0
+    assert first["comparison_report"]["exact_improvement"] == 11
+    assert first["comparison_report"]["unsupported_reduction"] == 11
     assert first["comparison_report"]["known_family_baseline_before"] == first["comparison_report"]["known_family_baseline_after"]
     assert first["comparison_report"]["known_family_baseline_before"]["synthetic_exact_count"] == 41
     assert first["comparison_report"]["known_family_baseline_before"]["synthetic_partial_count"] == 3
@@ -71,9 +71,9 @@ def test_repair_lane_per_recipe_outcomes_and_remaining_gap_causes() -> None:
     assert by_recipe[("count_object_then_emit_pattern", 0)]["heldout_fit_status"] == "fit"
     assert by_recipe[("count_object_then_emit_pattern", 1)]["heldout_fit_status"] == "fit"
 
-    assert by_recipe[("rotate_then_recolor", 0)]["heldout_fit_status"] == "unsupported"
-    assert by_recipe[("rotate_then_recolor", 1)]["heldout_fit_status"] == "unsupported"
-    assert "output-size mismatch" in by_recipe[("rotate_then_recolor", 0)]["mismatch_categories"]
+    assert by_recipe[("rotate_then_recolor", 0)]["heldout_fit_status"] == "fit"
+    assert by_recipe[("rotate_then_recolor", 1)]["heldout_fit_status"] == "fit"
+    assert by_recipe[("rotate_then_recolor", 0)]["mismatch_categories"] == []
 
     for task_result in result["heldout_task_results"]:
         assert task_result["search_trace"]["heldout_evaluation_delay"] is True
@@ -87,9 +87,9 @@ def test_controlled_improvement_evidence_reflects_repaired_measurement_and_rejec
     summary = summarize_arc_controlled_improvement_evidence_v1(packet)
     chain = build_arc_controlled_improvement_evidence_chain_v1()
     assert validate_arc_controlled_improvement_evidence_packet_v1(packet)["valid"] is True
-    assert summary["exact_delta"] == 9
-    assert summary["unsupported_delta"] == -9
-    assert chain["summary"]["heldout_exact_gain"] == 9
+    assert summary["exact_delta"] == 11
+    assert summary["unsupported_delta"] == -11
+    assert chain["summary"]["heldout_exact_gain"] == 11
     assert validate_arc_controlled_improvement_evidence_chain_v1(chain)["valid"] is True
 
     mutated = json.loads(json.dumps(packet))

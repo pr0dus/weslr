@@ -128,11 +128,13 @@ DEFAULT_SOURCE_FILES_V1 = (
     "weslr/arc_style_depth2_compositional_program_search.py",
     "weslr/arc_style_grid_adapter_phase2.py",
     "weslr/arc_style_grid_solver_dry_run.py",
+    "weslr/arc_style_typed_primitive_signatures.py",
 )
 DEFAULT_DOC_FILES_V1 = (
     "docs/WESLR_ARC_RESIDUAL_GAP_INTERNAL_ENGINE_PRESSURE_V1.md",
     "docs/WESLR_ARC_DEPTH2_REMAINING_FAILURES_PATTERN_PRESSURE_V1.md",
     "docs/WESLR_ARC_STYLE_COMPOSITIONAL_PROGRAM_SEARCH_AND_HELDOUT_SYNTHETIC_EVALUATION_DESIGN_V1.md",
+    "docs/WESLR_ARC_SAFE_ROTATE_OBJECT_CANVAS_DESIGN_V1.md",
 )
 DEFAULT_COMMIT_REFS_V1 = (
     "known_family_improvement_chain_metadata",
@@ -174,9 +176,9 @@ HELDOUT_BASELINE_BEFORE_DEPTH2_V1 = {
     "task_count": 14,
 }
 HELDOUT_AFTER_DEPTH2_V1 = {
-    "exact_count": 10,
+    "exact_count": 12,
     "partial_count": 2,
-    "unsupported_count": 2,
+    "unsupported_count": 0,
     "failed_count": 0,
     "task_count": 14,
 }
@@ -716,9 +718,9 @@ def validate_arc_controlled_improvement_evidence_chain_v1(chain: Any) -> dict[st
         summary = chain["summary"]
         if summary.get("known_family_exact_gain") != 27:
             validation["blocked_reason_labels"].append("known_family_exact_gain_mismatch")
-        if summary.get("heldout_exact_gain") != 9:
+        if summary.get("heldout_exact_gain") != 11:
             validation["blocked_reason_labels"].append("heldout_exact_gain_mismatch")
-        if summary.get("heldout_unsupported_reduction") != 9:
+        if summary.get("heldout_unsupported_reduction") != 11:
             validation["blocked_reason_labels"].append("heldout_unsupported_reduction_mismatch")
     validation["valid"] = not validation["blocked_reason_labels"]
     return validation

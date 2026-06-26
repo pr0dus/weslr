@@ -586,6 +586,37 @@ def _infer_rotate_object_parameters(input_grid: Sequence[Sequence[Any]], output_
     return {"object_value": object_value, "background_value": background_value}
 
 
+def _infer_rotate_object_canvas_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
+    from weslr.arc_style_grid_adapter_phase2 import _apply_primitive_step
+
+    object_value = _dominant_non_background_value(input_grid, background_value)
+    for angle in (90, 180, 270):
+        for canvas_policy, anchor_policy in (("preserve_input_canvas", "same_anchor"), ("rotate_input_canvas", "rotate_with_input_canvas")):
+            predicted, _ = _apply_primitive_step(
+                [list(row) for row in input_grid],
+                {
+                    "primitive_id": "rotate_object_canvas",
+                    "parameters": {
+                        "angle": angle,
+                        "background_value": background_value,
+                        "object_value": object_value,
+                        "canvas_policy": canvas_policy,
+                        "anchor_policy": anchor_policy,
+                    },
+                },
+                background_value=background_value,
+            )
+            if predicted == [list(row) for row in output_grid]:
+                return {
+                    "angle": angle,
+                    "background_value": background_value,
+                    "object_value": object_value,
+                    "canvas_policy": canvas_policy,
+                    "anchor_policy": anchor_policy,
+                }
+    return None
+
+
 def _infer_reflect_object_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
     object_value = _dominant_non_background_value(input_grid, background_value)
     if object_value is None:
@@ -772,6 +803,20 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
                 "candidate_rank": 0,
                 "train_fit_status": "fit",
             }
+        elif (rotate_canvas_parameters := _infer_rotate_object_canvas_parameters(input_grid, output_grid, background_value)) is not None:
+            evidence_labels.append("rotate_object_canvas")
+            candidate = {
+                "primitive_id": "rotate_object_canvas",
+                "parameters": rotate_canvas_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["train_only_parameter_proposal", "bounded_canvas_policy"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
         elif (reflect_object_parameters := _infer_reflect_object_parameters(input_grid, output_grid, background_value)) is not None:
             evidence_labels.append("reflect_object_horizontal_or_vertical")
             candidate = {
@@ -858,7 +903,11 @@ def infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet: Mapping
                 "primitive_id": "remove_background_noise",
                 "required_constraints": ["dominant_component_known"],
             }
-        if exact_family in {"rotate_object_90", "reflect_object_horizontal_or_vertical"} and task_type != exact_family:
+        if exact_family == "rotate_object_canvas" and task_type not in {"rotate_object_canvas"}:
+            exact_family = None
+        if exact_family == "rotate_object_90" and task_type not in {"rotate_object_90", "rotate"}:
+            exact_family = None
+        if exact_family == "reflect_object_horizontal_or_vertical" and task_type != exact_family:
             exact_family = None
         if exact_family is not None:
             exact_candidate.update({
@@ -880,6 +929,7 @@ def infer_arc_style_primitive_candidates_from_grid_delta_v1(task_packet: Mapping
                 "remove_background_noise": ("fallback_underfit", "copy", {}, "copy_cannot_remove_background_noise"),
                 "line_completion": ("fallback_underfit", "copy", {}, "copy_cannot_complete_line"),
                 "object_count_to_pattern": ("fallback_underfit", "copy", {}, "copy_cannot_create_pattern_from_count"),
+                "rotate_object_canvas": ("fallback_underfit", "copy", {}, "copy_cannot_rotate_object_canvas"),
                 "rotate_object_90": ("fallback_underfit", "copy", {}, "copy_cannot_rotate_object_90"),
                 "reflect_object_horizontal_or_vertical": ("fallback_underfit", "copy", {}, "copy_cannot_reflect_object"),
             }.get(exact_family)

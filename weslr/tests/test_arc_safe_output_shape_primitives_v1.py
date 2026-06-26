@@ -33,6 +33,7 @@ def test_new_v1_primitives_have_typed_signatures_and_reject_unsafe_metadata() ->
         "crop_to_non_background_bbox",
         "place_object_on_new_canvas",
         "preserve_input_canvas",
+        "rotate_object_canvas",
     }:
         assert primitive_name in catalog
         assert validate_arc_style_typed_primitive_signature_v1(catalog[primitive_name])["valid"] is True

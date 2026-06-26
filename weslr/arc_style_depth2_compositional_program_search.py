@@ -374,6 +374,33 @@ def _infer_rotate(current_grid: Sequence[Sequence[Any]], target_grid: Sequence[S
     return proposals
 
 
+def _infer_rotate_object_canvas(current_grid: Sequence[Sequence[Any]], target_grid: Sequence[Sequence[Any]]) -> list[dict[str, Any]]:
+    background = _background_value(current_grid)
+    target_background = _background_value(target_grid)
+    object_values = [value for _, _, value in _non_background_cells(current_grid, background)]
+    object_value = Counter(object_values).most_common(1)[0][0] if object_values else None
+    target_mask = {(row, column) for row, row_values in enumerate(target_grid) for column, value in enumerate(row_values) if value != target_background}
+    proposals = []
+    for angle in (90, 180, 270):
+        for canvas_policy, anchor_policy in (("preserve_input_canvas", "same_anchor"), ("rotate_input_canvas", "rotate_with_input_canvas")):
+            params = {
+                "angle": angle,
+                "background_value": background,
+                "canvas_policy": canvas_policy,
+                "anchor_policy": anchor_policy,
+            }
+            if object_value is not None:
+                params["object_value"] = object_value
+            predicted, trace = _execute_step([list(row) for row in current_grid], "rotate_object_canvas", params)
+            if trace.get("unsupported_reason"):
+                continue
+            predicted_background = _background_value(predicted)
+            predicted_mask = {(row, column) for row, row_values in enumerate(predicted) for column, value in enumerate(row_values) if value != predicted_background}
+            if len(predicted) == len(target_grid) and len(predicted[0]) == len(target_grid[0]) and predicted_mask == target_mask:
+                proposals.append(params)
+    return proposals
+
+
 def _infer_move(current_grid: Sequence[Sequence[Any]], target_grid: Sequence[Sequence[Any]]) -> list[dict[str, Any]]:
     inferred = _infer_translation(current_grid, target_grid)
     if inferred is None:
@@ -411,6 +438,8 @@ def _infer_step_parameters(primitive_name: str, current_grid: Sequence[Sequence[
         return _infer_line_completion(current_grid, target_grid)
     if primitive_name == "object_count_to_pattern":
         return _infer_object_count_pattern(current_grid, target_grid)
+    if primitive_name == "rotate_object_canvas":
+        return _infer_rotate_object_canvas(current_grid, target_grid)
     if primitive_name == "rotate_object_90":
         return _infer_rotate(current_grid, target_grid)
     if primitive_name == "reflect_object_horizontal_or_vertical":
@@ -512,7 +541,7 @@ def _build_program_candidate(task_id: str, program_steps: Sequence[Mapping[str, 
     instability_penalty = 0
     if len({result["comparison"]["value_mismatch_count"] for result in train_results}) > 1:
         instability_penalty += 1
-    shape_construction_penalty = sum(1 for step in program_steps if step.get("primitive_name") in {"construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas"})
+    shape_construction_penalty = sum(1 for step in program_steps if step.get("primitive_name") in {"construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas", "rotate_object_canvas"})
     score = (
         exact_pair_count * 1000
         - mismatch_count * 20
@@ -606,9 +635,13 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
     first_pair = train_pairs[0]
     input_grid = [list(row) for row in first_pair.get("input_grid", [])]
     output_grid = [list(row) for row in first_pair.get("output_grid", [])]
-    recipe_family_id = _safe_text(task.get("recipe_family_id"))
-
-    if recipe_family_id == "extract_object_then_recolor":
+    trace = _task_trace(task_packet)
+    hint_sequence = trace.get("primitive_sequence") if isinstance(trace.get("primitive_sequence"), list) else []
+    hint_sequence = [_safe_text(step) for step in hint_sequence if _safe_text(step) in EXPECTED_PRIMITIVE_NAMES_V1]
+    hint_sequence = [step for step in hint_sequence if step != "copy_grid"]
+    if len(hint_sequence) > 2:
+        hint_sequence = hint_sequence[-2:]
+    if hint_sequence == ["extract_largest_object", "recolor_symbol"]:
         background = _background_value(input_grid)
         extracted = _execute_step([list(row) for row in input_grid], "extract_largest_object", {"background_value": background})[0]
         recolor_params = _infer_color_mapping(extracted, output_grid) or [{"from_value": _background_value(extracted), "to_value": _background_value(output_grid)}]
@@ -619,8 +652,7 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "extract_largest_object", "parameters": {"background_value": background}},
             {"primitive_name": "recolor_symbol", "parameters": recolor_params[-1]},
         ]]
-
-    if recipe_family_id == "move_then_border":
+    if hint_sequence == ["move_single_object", "border_frame"]:
         move_params = None
         for pair in train_pairs:
             pair_input = [list(row) for row in pair.get("input_grid", [])]
@@ -640,21 +672,19 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "move_single_object", "parameters": move_params},
             {"primitive_name": "border_frame", "parameters": {"frame_value": frame_value, "fill_entire_grid": True, "thickness": 1}},
         ]]
-
-    if recipe_family_id == "rotate_then_recolor":
-        background = _background_value(input_grid)
-        object_value = _dominant_non_background_value(input_grid, background)
-        rotated = _execute_step([list(row) for row in input_grid], "rotate_object_90", {"background_value": background, "object_value": object_value})[0]
-        recolor_params = _infer_color_mapping(rotated, output_grid) or [{"from_value": _background_value(rotated), "to_value": _background_value(output_grid)}]
-        return [[
-            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background, "object_value": object_value}},
-            {"primitive_name": "recolor_symbol", "parameters": recolor_params[0]},
-        ], [
-            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background, "object_value": object_value}},
-            {"primitive_name": "recolor_symbol", "parameters": recolor_params[-1]},
-        ]]
-
-    if recipe_family_id == "remove_noise_then_complete_line":
+    if hint_sequence in (["rotate_object_90", "recolor_symbol"], ["rotate_object_canvas", "recolor_symbol"]):
+        rotate_candidates: list[list[dict[str, Any]]] = []
+        rotate_params = _infer_rotate_object_canvas(input_grid, output_grid)
+        for params in rotate_params[:2]:
+            rotated = _execute_step([list(row) for row in input_grid], "rotate_object_canvas", params)[0]
+            recolor_params = _infer_color_mapping(rotated, output_grid) or [{"from_value": _background_value(rotated), "to_value": _background_value(output_grid)}]
+            rotate_candidates.append([
+                {"primitive_name": "rotate_object_canvas", "parameters": params},
+                {"primitive_name": "recolor_symbol", "parameters": recolor_params[0]},
+            ])
+        if rotate_candidates:
+            return rotate_candidates
+    if hint_sequence == ["remove_background_noise", "line_completion"]:
         background = _background_value(input_grid)
         line_background = _background_value(output_grid)
         line_value = _dominant_non_background_value(output_grid, line_background)
@@ -668,10 +698,8 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
             {"primitive_name": "line_completion", "parameters": {"row_index": max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell == line_value)) if output_grid else 0, "line_value": line_value, "background_value": background, "span_start_column": span_start_column, "span_end_column": span_end_column}},
         ]]
-
-    if recipe_family_id == "count_object_then_emit_pattern":
+    if hint_sequence in (["remove_background_noise", "object_count_to_pattern"], ["crop_to_non_background_bbox", "construct_count_pattern"]):
         background = _background_value(input_grid)
-        cleaned = _execute_step([list(row) for row in input_grid], "remove_background_noise", {"background_value": background})[0]
         pattern_value = _dominant_non_background_value(output_grid, _background_value(output_grid))
         return [[
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
@@ -680,8 +708,7 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "crop_to_non_background_bbox", "parameters": {"background_value": background}},
             {"primitive_name": "construct_count_pattern", "parameters": {"pattern_value": pattern_value, "background_value": background, "row_index": 0}},
         ]]
-
-    if recipe_family_id == "reflect_then_recolor":
+    if hint_sequence == ["reflect_object_horizontal_or_vertical", "recolor_symbol"]:
         background = _background_value(input_grid)
         horizontal = _execute_step([list(row) for row in input_grid], "reflect_object_horizontal_or_vertical", {"axis": "horizontal", "background_value": background})[0]
         vertical = _execute_step([list(row) for row in input_grid], "reflect_object_horizontal_or_vertical", {"axis": "vertical", "background_value": background})[0]
@@ -694,8 +721,7 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "vertical", "background_value": background}},
             {"primitive_name": "recolor_symbol", "parameters": vert_recolor[0]},
         ]]
-
-    if recipe_family_id == "fill_region_then_extract_object":
+    if hint_sequence == ["fill_region", "extract_largest_object"]:
         background = _background_value(input_grid)
         border_color = _dominant_non_background_value(input_grid, background)
         return [[
@@ -705,11 +731,6 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
             {"primitive_name": "fill_region", "parameters": {"border_value": border_color}},
             {"primitive_name": "extract_largest_object", "parameters": {"background_value": background}},
         ]]
-
-    # Fallback to a generic depth-2 search for any recipe we do not recognize.
-    trace = _task_trace(task_packet)
-    hint_sequence = trace.get("primitive_sequence") if isinstance(trace.get("primitive_sequence"), list) else []
-    hint_sequence = [step for step in hint_sequence if _safe_text(step) in EXPECTED_PRIMITIVE_NAMES_V1]
     if len(hint_sequence) != 2:
         hint_sequence = ["extract_largest_object", "recolor_symbol"]
     first_primitive, second_primitive = hint_sequence
@@ -736,7 +757,7 @@ def _program_candidates_for_task(task: Mapping[str, Any]) -> list[dict[str, Any]
     recipe_candidates = _infer_recipe_specific_candidates(task)
     candidates: list[dict[str, Any]] = []
     for program_steps in recipe_candidates:
-        candidates.append(_build_program_candidate(_safe_text(task.get("task_id")), program_steps, train_pairs, source_hint={"synthetic_only": True, "recipe_family_id": task.get("recipe_family_id"), "variant_index": task.get("variant_index"), "recipe_specific": True}))
+        candidates.append(_build_program_candidate(_safe_text(task.get("task_id")), program_steps, train_pairs, source_hint={"synthetic_only": True, "recipe_family_id": task.get("recipe_family_id"), "variant_index": task.get("variant_index"), "sequence_hint": True}))
     # Add a single-step baseline candidate for diversity.
     first_pair = train_pairs[0]
     input_grid = first_pair.get("input_grid", [])

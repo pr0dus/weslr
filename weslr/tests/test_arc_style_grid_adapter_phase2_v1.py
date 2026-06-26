@@ -10,6 +10,7 @@ from weslr.arc_style_grid_adapter_phase2 import (
     DEFERRED_PRIMITIVE_IDS_V1,
     PRIMITIVE_CATEGORIES_V1,
     SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1,
+    _apply_primitive_step,
     build_arc_style_phase2_adapter_packet_v1,
     build_arc_style_primitive_registry_v1,
     extract_arc_style_object_candidates_v1,
@@ -227,6 +228,16 @@ def test_module_source_has_no_forbidden_provider_or_chat_calls() -> None:
     assert "openai" not in source.lower()
     assert "anthropic" not in source.lower()
 
+
+
+def test_rotate_object_canvas_executor_is_bounded_and_json_safe() -> None:
+    predicted, trace = _apply_primitive_step(
+        [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 1, 0]],
+        {"primitive_id": "rotate_object_canvas", "parameters": {"angle": 90, "background_value": 0, "object_value": 1, "canvas_policy": "preserve_input_canvas", "anchor_policy": "same_anchor"}},
+        background_value=0,
+    )
+    assert predicted == [[0, 1, 1, 1], [0, 1, 0, 0], [0, 0, 0, 0]]
+    assert trace.get("unsupported_reason") is None
 
 
 def test_new_synthetic_primitive_executors_validate_directly() -> None:

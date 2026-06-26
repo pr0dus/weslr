@@ -96,6 +96,27 @@ def test_move_inference_supports_diagonal_delta_from_train_pairs_only() -> None:
     assert inference["candidate_blueprints"][0]["parameters"]["direction"] in {"down_right", "up_left"}
 
 
+def test_rotate_object_canvas_family_is_inferred_for_canvas_level_rotation() -> None:
+    task_packet = build_arc_style_grid_task_packet_v1(
+        task_id="rotate_object_canvas_v1",
+        task_source=TASK_SOURCE_INTERNAL_SYNTHETIC_V1,
+        train_pairs=[
+            build_arc_style_grid_train_pair_v1(
+                "p0",
+                [[0, 2, 2], [0, 2, 0]],
+                [[0, 0], [2, 2], [0, 2]],
+                "train",
+            )
+        ],
+        test_input=[[0, 2, 2], [0, 2, 0]],
+        trace={"toy_task_type": "rotate_object_canvas", "internal_synthetic_only": True, "toy_task": True},
+    )
+    candidates = generate_arc_style_candidate_rules_v1(task_packet)
+    rotate_candidates = [candidate for candidate in candidates if candidate["primitive_id"] == "rotate_object_canvas"]
+    assert rotate_candidates
+    assert rotate_candidates[0]["primitive_sequence"][0]["parameters"]["angle"] == 90
+
+
 def test_internal_toy_tasks_solve_exactly() -> None:
     packet = run_arc_style_bounded_solver_dry_run_v1()
     validation = validate_arc_style_solver_dry_run_result_v1(packet)

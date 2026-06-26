@@ -27,6 +27,7 @@ Diagnostic evidence only. This records a controlled internal diagnostic → inte
 ### Held-out compositional improvement chain
 - before depth-2 search: `1 / 2 / 11 / 0`
 - after depth-2 repair: `10 / 2 / 2 / 0`
+- after safe rotate-object-canvas: `12 / 2 / 0 / 0`
 
 ## Boundary facts
 
@@ -51,13 +52,14 @@ The controlled loop shows:
 - partial results were then converted to exact results, including the line-completion repair lane
 - held-out composition improved under bounded depth-2 repair
 - one fill-region case remains structurally partial under the current depth-2 primitive set
+- rotate-then-recolor is now covered by a bounded train-only rotate-object-canvas primitive
 - the remaining gap still favors safe parameter fidelity repair before any deeper search change
 
 ## Next lane
 
-Recommended next lane: `IMPLEMENT_ARC_DEPTH2_REMAINING_FAILURE_REPAIR_V1`
+Recommended next lane: `REVIEW_ARC_SAFE_ROTATE_OBJECT_CANVAS_V1`
 
-Fallback lane: `DESIGN_ARC_DEPTH3_SEARCH_BOUNDARY_V1`
+Fallback lane: `IMPLEMENT_ARC_DEPTH2_REMAINING_FAILURE_REPAIR_V1`
 
 ## Non-goals
 

@@ -61,6 +61,7 @@ PRIMITIVE_CATEGORIES_V1 = (
     "crop_to_non_background_bbox",
     "place_object_on_new_canvas",
     "preserve_input_canvas",
+    "rotate_object_canvas",
     "rotate_object_90",
     "reflect_object_horizontal_or_vertical",
     "combine_objects",
@@ -84,6 +85,7 @@ SUPPORTED_EXECUTABLE_PRIMITIVE_IDS_V1 = (
     "crop_to_non_background_bbox",
     "place_object_on_new_canvas",
     "preserve_input_canvas",
+    "rotate_object_canvas",
     "rotate_object_90",
     "reflect_object_horizontal_or_vertical",
 )
@@ -636,6 +638,23 @@ def _background_value_from_grid(grid: Sequence[Sequence[Any]]) -> Any | None:
     return counts.most_common(1)[0][0] if counts else None
 
 
+def _grid_has_only_valid_arc_cells(grid: Sequence[Sequence[Any]]) -> bool:
+    if not grid or not isinstance(grid, Sequence):
+        return False
+    widths = {len(row) for row in grid if isinstance(row, Sequence)}
+    if len(widths) != 1 or 0 in widths:
+        return False
+    for row in grid:
+        if not isinstance(row, Sequence):
+            return False
+        for cell in row:
+            if isinstance(cell, bool) or not isinstance(cell, int):
+                return False
+            if cell < 0 or cell > 9:
+                return False
+    return True
+
+
 def _dominant_non_background_value(grid: Sequence[Sequence[Any]], background_value: Any | None) -> Any | None:
     counts = Counter(cell for row in grid for cell in row if cell != background_value)
     if counts:
@@ -671,6 +690,116 @@ def _rotate_bbox_grid(grid: list[list[Any]], *, cells: Sequence[tuple[int, int]]
             if 0 <= target_row < len(out) and 0 <= target_column < len(out[target_row]):
                 out[target_row][target_column] = cell
     return out
+
+
+def _rotate_subgrid(subgrid: Sequence[Sequence[Any]], angle: int) -> list[list[Any]]:
+    normalized = int(angle) % 360
+    rotated = [list(row) for row in subgrid]
+    if normalized == 90:
+        return [list(reversed(column)) for column in zip(*rotated)]
+    if normalized == 180:
+        return [list(reversed(row)) for row in reversed(rotated)]
+    if normalized == 270:
+        return [list(column) for column in zip(*reversed(rotated))]
+    return [list(row) for row in rotated]
+
+
+def _rotated_canvas_coordinate(row: int, column: int, *, height: int, width: int, angle: int) -> tuple[int, int]:
+    normalized = int(angle) % 360
+    if normalized == 90:
+        return column, height - 1 - row
+    if normalized == 180:
+        return height - 1 - row, width - 1 - column
+    if normalized == 270:
+        return width - 1 - column, row
+    return row, column
+
+
+def _rotate_object_canvas_grid(
+    grid: list[list[Any]],
+    *,
+    angle: Any,
+    background_value: Any | None,
+    object_value: Any | None = None,
+    canvas_policy: str = "preserve_input_canvas",
+    anchor_policy: str = "same_anchor",
+    canvas_height: Any | None = None,
+    canvas_width: Any | None = None,
+    anchor_row: Any | None = None,
+    anchor_column: Any | None = None,
+) -> tuple[list[list[Any]], str | None]:
+    if not _grid_has_only_valid_arc_cells(grid):
+        return _copy_grid(grid), "invalid_grid"
+    try:
+        normalized_angle = int(angle)
+    except (TypeError, ValueError):
+        return _copy_grid(grid), "invalid_angle"
+    if normalized_angle not in {90, 180, 270}:
+        return _copy_grid(grid), "invalid_angle"
+    background = background_value
+    if background is None:
+        background = _background_value_from_grid(grid)
+    if isinstance(background, bool) or not isinstance(background, int) or background < 0 or background > 9:
+        return _copy_grid(grid), "invalid_background"
+    value = object_value
+    if value is None:
+        value = _dominant_non_background_value(grid, background)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0 or value > 9:
+        return _copy_grid(grid), "invalid_object_value"
+    cells = _cells_for_value(grid, value)
+    if not cells:
+        return _copy_grid(grid), "missing_object_cells"
+    row_start, column_start, row_end, column_end = _bounding_box_for_cells(cells)
+    subgrid = [row[column_start : column_end + 1] for row in grid[row_start : row_end + 1]]
+    rotated = _rotate_subgrid(subgrid, normalized_angle)
+
+    input_height = len(grid)
+    input_width = len(grid[0]) if grid else 0
+    if canvas_policy == "rotate_input_canvas":
+        target_height = input_width if normalized_angle in {90, 270} else input_height
+        target_width = input_height if normalized_angle in {90, 270} else input_width
+    else:
+        if canvas_height is not None and canvas_width is not None:
+            try:
+                target_height = int(canvas_height)
+                target_width = int(canvas_width)
+            except (TypeError, ValueError):
+                return _copy_grid(grid), "invalid_canvas"
+        else:
+            target_height = input_height
+            target_width = input_width
+
+    if target_height <= 0 or target_width <= 0 or target_height > 30 or target_width > 30:
+        return _copy_grid(grid), "invalid_canvas"
+
+    if anchor_policy == "rotate_with_input_canvas":
+        rotated_cells = [_rotated_canvas_coordinate(row, column, height=input_height, width=input_width, angle=normalized_angle) for row, column in cells]
+        target_anchor_row = min(row for row, _ in rotated_cells)
+        target_anchor_column = min(column for _, column in rotated_cells)
+    elif anchor_policy == "explicit_anchor":
+        try:
+            target_anchor_row = int(anchor_row)
+            target_anchor_column = int(anchor_column)
+        except (TypeError, ValueError):
+            return _copy_grid(grid), "invalid_anchor"
+    else:
+        target_anchor_row = row_start
+        target_anchor_column = column_start
+
+    if target_anchor_row < 0 or target_anchor_column < 0:
+        return _copy_grid(grid), "invalid_anchor"
+    rotated_height = len(rotated)
+    rotated_width = len(rotated[0]) if rotated else 0
+    if rotated_height == 0 or rotated_width == 0:
+        return _copy_grid(grid), "invalid_rotation"
+    if target_anchor_row + rotated_height > target_height or target_anchor_column + rotated_width > target_width:
+        return _copy_grid(grid), "placement_overflow"
+
+    out = [[background for _ in range(target_width)] for _ in range(target_height)]
+    for row_offset, row in enumerate(rotated):
+        for column_offset, cell in enumerate(row):
+            out[target_anchor_row + row_offset][target_anchor_column + column_offset] = cell
+    return out, None
 
 
 def _reflect_bbox_grid(grid: list[list[Any]], *, cells: Sequence[tuple[int, int]], background_value: Any | None, axis: str) -> list[list[Any]]:
@@ -973,6 +1102,22 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
         ), trace
     if primitive_id == "preserve_input_canvas":
         return _preserve_input_canvas_grid(grid, background_value=params.get("background_value", background_value)), trace
+    if primitive_id == "rotate_object_canvas":
+        rotated_grid, unsupported_reason = _rotate_object_canvas_grid(
+            grid,
+            angle=params.get("angle"),
+            background_value=params.get("background_value", background_value),
+            object_value=params.get("object_value"),
+            canvas_policy=_safe_text(params.get("canvas_policy"), "preserve_input_canvas"),
+            anchor_policy=_safe_text(params.get("anchor_policy"), "same_anchor"),
+            canvas_height=params.get("canvas_height"),
+            canvas_width=params.get("canvas_width"),
+            anchor_row=params.get("anchor_row"),
+            anchor_column=params.get("anchor_column"),
+        )
+        if unsupported_reason:
+            trace["unsupported_reason"] = unsupported_reason
+        return rotated_grid, trace
     if primitive_id == "rotate_object_90":
         background = params.get("background_value", background_value)
         object_value = params.get("object_value")
@@ -1031,7 +1176,7 @@ def _failure_category_for_candidate(primitive_id: str, comparison: Mapping[str, 
         return "color_mapping_mismatch"
     if primitive_id == "move":
         return "object_movement_mismatch"
-    if primitive_id in {"complete_symmetry", "border_frame", "fill_region", "extract_largest_object", "remove_background_noise", "line_completion", "object_count_to_pattern", "construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas", "rotate_object_90", "reflect_object_horizontal_or_vertical"}:
+    if primitive_id in {"complete_symmetry", "border_frame", "fill_region", "extract_largest_object", "remove_background_noise", "line_completion", "object_count_to_pattern", "construct_count_pattern", "crop_to_non_background_bbox", "place_object_on_new_canvas", "preserve_input_canvas", "rotate_object_canvas", "rotate_object_90", "reflect_object_horizontal_or_vertical"}:
         return "transformation_mismatch"
     return "cell_values_mismatch"
 
@@ -1614,6 +1759,16 @@ def build_arc_style_primitive_registry_v1() -> list[dict[str, Any]]:
             "required_inputs": [],
             "allowed_assumptions": ["canvas_shape_known"],
             "failure_mode_labels": ["cell_values_mismatch", "dimensions_mismatch"],
+            "bounded_depth_allowed": True,
+            "is_executable_now": True,
+        },
+        {
+            "primitive_id": "rotate_object_canvas",
+            "category": "rotate_object_canvas",
+            "description": "Rotate a detected object bbox with bounded canvas and anchor policies inferred from train-only evidence.",
+            "required_inputs": ["angle"],
+            "allowed_assumptions": ["single_object_known", "bounded_canvas_policy", "bounded_anchor_policy", "train_only_parameter_proposal"],
+            "failure_mode_labels": ["dimensions_mismatch", "out_of_bounds", "unsupported_candidate", "transformation_mismatch"],
             "bounded_depth_allowed": True,
             "is_executable_now": True,
         },

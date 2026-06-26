@@ -101,7 +101,7 @@ def test_lookup_and_filter_helpers_are_deterministic() -> None:
     assert filter_arc_style_typed_primitive_signatures_by_color_effect_v1("paint_pattern", catalog) == filter_arc_style_typed_primitive_signatures_by_color_effect_v1("paint_pattern", catalog)
     assert filter_arc_style_typed_primitive_signatures_by_object_effect_v1("move_object", catalog) == filter_arc_style_typed_primitive_signatures_by_object_effect_v1("move_object", catalog)
     assert get_arc_style_typed_primitive_signature_v1("missing", catalog) is None
-    assert [signature["name"] for signature in filter_arc_style_typed_primitive_signatures_by_composability_tag_v1("rotate", catalog)] == ["rotate_object_90"]
+    assert [signature["name"] for signature in filter_arc_style_typed_primitive_signatures_by_composability_tag_v1("rotate", catalog)] == ["rotate_object_90", "rotate_object_canvas"]
 
 
 def test_json_safe_export_contains_no_callable_objects() -> None:
@@ -115,7 +115,7 @@ def test_json_safe_export_contains_no_callable_objects() -> None:
 def test_summary_contains_metadata_only_information() -> None:
     catalog = build_arc_style_typed_primitive_signature_catalog_v1()
     summary = summarize_arc_style_typed_primitive_signatures_v1(catalog)
-    assert summary["signature_count"] == 16
+    assert summary["signature_count"] == 17
     assert summary["metadata_only_helper"] is True
     assert summary["design_guarded"] is True
     assert summary["public_data_ready"] is False

@@ -24,10 +24,10 @@ def test_fill_and_line_repair_metrics_are_stable_and_json_safe() -> None:
     assert json.dumps(to_arc_style_depth2_compositional_program_search_json_safe_v1(first), ensure_ascii=False)
     assert validate_arc_style_depth2_compositional_program_search_result_v1(first)["valid"] is True
     assert summarize_arc_style_depth2_compositional_program_search_result_v1(first)["valid"] is True
-    assert first["heldout_search_after"]["exact_count"] == 10
+    assert first["heldout_search_after"]["exact_count"] == 12
     assert first["heldout_search_after"]["partial_count"] == 2
-    assert first["heldout_search_after"]["unsupported_count"] == 2
-    assert first["comparison_report"]["exact_improvement"] == 9
+    assert first["heldout_search_after"]["unsupported_count"] == 0
+    assert first["comparison_report"]["exact_improvement"] == 11
     assert first["comparison_report"]["known_family_baseline_before"]["synthetic_exact_count"] == 41
 
 
@@ -45,4 +45,4 @@ def test_line_completion_repair_improves_while_fill_region_stays_safe_closed() -
     assert "wrong color" in by_recipe[("fill_region_then_extract_object", 0)]["mismatch_categories"]
     assert "wrong color" in by_recipe[("fill_region_then_extract_object", 1)]["mismatch_categories"]
     assert result["heldout_search_after"]["partial_count"] == 2
-    assert result["heldout_search_after"]["unsupported_count"] == 2
+    assert result["heldout_search_after"]["unsupported_count"] == 0
