@@ -586,6 +586,13 @@ def _trim_outer_border(grid: Sequence[Sequence[Any]]) -> list[list[Any]]:
     return [list(row[1:-1]) for row in grid[1:-1]]
 
 
+def _dominant_non_background_value(grid: Sequence[Sequence[Any]], background_value: Any) -> Any:
+    values = [cell for row in grid for cell in row if cell != background_value]
+    if not values:
+        return background_value
+    return Counter(values).most_common(1)[0][0]
+
+
 def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict[str, Any]]]:
     task_packet = task.get("task_packet", {}) if isinstance(task.get("task_packet"), Mapping) else {}
     train_pairs = _task_train_pairs(task_packet)
@@ -609,8 +616,16 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
         ]]
 
     if recipe_family_id == "move_then_border":
-        inner_output = _trim_outer_border(output_grid)
-        move_params = _infer_translation(input_grid, inner_output) or {"direction": "down_right", "steps": 1, "object_value": None, "background_value": _background_value(input_grid)}
+        move_params = None
+        for pair in train_pairs:
+            pair_input = [list(row) for row in pair.get("input_grid", [])]
+            pair_output = [list(row) for row in pair.get("output_grid", [])]
+            inferred = _infer_translation(_trim_outer_border(pair_input), _trim_outer_border(pair_output)) or _infer_translation(pair_input, pair_output)
+            if inferred is not None:
+                move_params = inferred
+                break
+        if move_params is None:
+            move_params = {"direction": "down_right", "steps": 1, "object_value": None, "background_value": _background_value(input_grid)}
         border_values = [cell for row_index, row in enumerate(output_grid) for column_index, cell in enumerate(row) if row_index in {0, len(output_grid) - 1} or column_index in {0, len(row) - 1}]
         frame_value = Counter(border_values).most_common(1)[0][0] if border_values else _background_value(output_grid)
         return [[
@@ -623,35 +638,36 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
 
     if recipe_family_id == "rotate_then_recolor":
         background = _background_value(input_grid)
-        rotated = _execute_step([list(row) for row in input_grid], "rotate_object_90", {"background_value": background})[0]
+        object_value = _dominant_non_background_value(input_grid, background)
+        rotated = _execute_step([list(row) for row in input_grid], "rotate_object_90", {"background_value": background, "object_value": object_value})[0]
         recolor_params = _infer_color_mapping(rotated, output_grid) or [{"from_value": _background_value(rotated), "to_value": _background_value(output_grid)}]
         return [[
-            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background}},
+            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background, "object_value": object_value}},
             {"primitive_name": "recolor_symbol", "parameters": recolor_params[0]},
         ], [
-            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background}},
+            {"primitive_name": "rotate_object_90", "parameters": {"background_value": background, "object_value": object_value}},
             {"primitive_name": "recolor_symbol", "parameters": recolor_params[-1]},
         ]]
 
     if recipe_family_id == "remove_noise_then_complete_line":
         background = _background_value(input_grid)
-        cleaned = _execute_step([list(row) for row in input_grid], "remove_background_noise", {"background_value": background})[0]
-        line_value = Counter(cell for row in output_grid for cell in row if cell != _background_value(output_grid)).most_common(1)[0][0]
-        row_index = next((index for index, row in enumerate(output_grid) if all(cell == line_value for cell in row if row)), 0)
+        line_background = _background_value(output_grid)
+        line_value = _dominant_non_background_value(output_grid, line_background)
+        row_index = max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell == line_value)) if output_grid else 0
         return [[
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
             {"primitive_name": "line_completion", "parameters": {"row_index": row_index, "line_value": line_value, "background_value": background}},
         ], [
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
-            {"primitive_name": "line_completion", "parameters": {"row_index": max(0, row_index - 1), "line_value": line_value, "background_value": background}},
+            {"primitive_name": "line_completion", "parameters": {"row_index": min(max(0, len(output_grid) - 1), row_index + 1), "line_value": line_value, "background_value": background}},
         ]]
 
     if recipe_family_id == "count_object_then_emit_pattern":
         background = _background_value(input_grid)
         cleaned = _execute_step([list(row) for row in input_grid], "remove_background_noise", {"background_value": background})[0]
-        count = max(1, _component_count(cleaned, background))
-        pattern_values = [cell for row in output_grid for cell in row if cell != _background_value(output_grid)]
-        pattern_value = Counter(pattern_values).most_common(1)[0][0] if pattern_values else _background_value(output_grid)
+        output_background = _background_value(output_grid)
+        count = max(1, sum(1 for row in output_grid for cell in row if cell != output_background))
+        pattern_value = _dominant_non_background_value(output_grid, output_background)
         return [[
             {"primitive_name": "remove_background_noise", "parameters": {"background_value": background}},
             {"primitive_name": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": 0, "background_value": background}},
@@ -676,8 +692,8 @@ def _infer_recipe_specific_candidates(task: Mapping[str, Any]) -> list[list[dict
 
     if recipe_family_id == "fill_region_then_extract_object":
         background = _background_value(input_grid)
-        border_color = Counter(cell for row in input_grid for cell in row if cell != background).most_common(1)[0][0]
-        fill_value = next((value for value in range(1, 10) if value not in {background, border_color}), border_color)
+        border_color = _dominant_non_background_value(input_grid, background)
+        fill_value = _dominant_non_background_value(output_grid, _background_value(output_grid))
         return [[
             {"primitive_name": "fill_region", "parameters": {"fill_value": fill_value, "border_value": background}},
             {"primitive_name": "extract_largest_object", "parameters": {"background_value": background}},
