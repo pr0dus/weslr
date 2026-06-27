@@ -16509,3 +16509,10 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+# Exact‑path allowance for the recovered final report of the alias‑policy mock trial.
+_micro_theory_alias_policy_on_existing_mocks_final_report_doc = (
+    "docs/WESLR_MICRO_THEORY_ALIAS_POLICY_ON_EXISTING_MOCKS_FINAL_REPORT_V1.md"
+)
+_micro_theory_alias_policy_on_existing_mocks_final_report_allowed_paths = {
+    _micro_theory_alias_policy_on_existing_mocks_final_report_doc,
+}
