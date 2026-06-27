@@ -16524,12 +16524,12 @@ _micro_theory_alias_policy_on_existing_mocks_final_report_allowed_paths = {
     _micro_theory_alias_policy_on_existing_mocks_final_report_doc,
 }
 
-# Exact‑path allowance for the trace packet schema planning doc.
-_micro_theory_trace_packet_schema_planning_doc = (
-    "docs/WESLR_MICRO_THEORY_TRACE_PACKET_SCHEMA_PLANNING_V1.md"
+# Exact‑path allowance for the trace packet schema helpers review document.
+_micro_theory_trace_packet_schema_helpers_review_doc = (
+    "docs/WESLR_MICRO_THEORY_TRACE_PACKET_SCHEMA_HELPERS_REVIEW_V1.md"
 )
-_micro_theory_trace_packet_schema_planning_allowed_paths = {
-    _micro_theory_trace_packet_schema_planning_doc,
+_micro_theory_trace_packet_schema_helpers_review_allowed_paths = {
+    _micro_theory_trace_packet_schema_helpers_review_doc,
 }
 
 # Exact‑path allowance for the trace packet schema helper implementation.
