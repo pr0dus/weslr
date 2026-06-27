@@ -16531,3 +16531,27 @@ _micro_theory_trace_packet_schema_planning_doc = (
 _micro_theory_trace_packet_schema_planning_allowed_paths = {
     _micro_theory_trace_packet_schema_planning_doc,
 }
+
+# Exact‑path allowance for the trace packet schema helper implementation.
+_micro_theory_trace_packet_schema_helpers_impl_path = (
+    "weslr/micro_theory_trace_packet_schema_helpers.py"
+)
+_micro_theory_trace_packet_schema_helpers_impl_allowed_paths = {
+    _micro_theory_trace_packet_schema_helpers_impl_path,
+}
+
+# Exact‑path allowance for the trace packet schema helper tests.
+_micro_theory_trace_packet_schema_helpers_test_path = (
+    "weslr/tests/test_micro_theory_trace_packet_schema_helpers_v1.py"
+)
+_micro_theory_trace_packet_schema_helpers_test_allowed_paths = {
+    _micro_theory_trace_packet_schema_helpers_test_path,
+}
+
+# Exact‑path allowance for the trace packet schema helpers implementation report.
+_micro_theory_trace_packet_schema_helpers_impl_report_doc = (
+    "docs/WESLR_MICRO_THEORY_TRACE_PACKET_SCHEMA_HANDLERS_IMPLEMENTATION_V1.md"
+)
+_micro_theory_trace_packet_schema_helpers_impl_report_allowed_paths = {
+    _micro_theory_trace_packet_schema_helpers_impl_report_doc,
+}
