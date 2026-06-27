@@ -294,6 +294,17 @@ _micro_theory_ledger_on_synthetic_trace_mocks_review_allowed_paths = {
     _micro_theory_ledger_on_synthetic_trace_mocks_review_doc,
 }
 
+# Narrow, exact-path allowance for the micro-theory ledger ablation confident
+# wrong mock doc only. Same narrow intent as the prior allowances: a single
+# exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken
+# any protected-file rule.
+_micro_theory_ledger_ablation_confident_wrong_mock_doc = (
+    "docs/WESLR_MICRO_THEORY_LEDGER_ABLATION_CONFIDENT_WRONG_MOCK_V1.md"
+)
+_micro_theory_ledger_ablation_confident_wrong_mock_allowed_paths = {
+    _micro_theory_ledger_ablation_confident_wrong_mock_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -16048,6 +16059,8 @@ def _check_git_scope():
         if path in _micro_theory_ledger_on_synthetic_trace_mocks_allowed_paths:
             allowed = True
         if path in _micro_theory_ledger_on_synthetic_trace_mocks_review_allowed_paths:
+            allowed = True
+        if path in _micro_theory_ledger_ablation_confident_wrong_mock_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
