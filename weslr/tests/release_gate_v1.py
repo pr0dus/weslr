@@ -360,6 +360,17 @@ _more_micro_theory_activation_gate_trials_allowed_paths = {
     _more_micro_theory_activation_gate_trials_doc,
 }
 
+# Narrow, exact-path allowance for the broader micro-theory activation gate
+# trials review doc only. Same narrow intent as the prior allowances: a single
+# exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken
+# any protected-file rule.
+_more_micro_theory_activation_gate_trials_review_doc = (
+    "docs/WESLR_MORE_ACTIVATION_GATE_TRIALS_REVIEW_V1.md"
+)
+_more_micro_theory_activation_gate_trials_review_allowed_paths = {
+    _more_micro_theory_activation_gate_trials_review_doc,
+}
+
 _cognitive_research_protocol_helpers_implementation_report_doc = (
     "docs/WESLR_COGNITIVE_RESEARCH_PROTOCOL_HELPERS_IMPLEMENTATION_REPORT_V1.md"
 )
@@ -16126,6 +16137,8 @@ def _check_git_scope():
         if path in _micro_theory_activation_gate_on_existing_mocks_review_allowed_paths:
             allowed = True
         if path in _more_micro_theory_activation_gate_trials_allowed_paths:
+            allowed = True
+        if path in _more_micro_theory_activation_gate_trials_review_allowed_paths:
             allowed = True
         if path in _workflow_boundary_bootstrap_allowed_paths:
             allowed = True
