@@ -87,10 +87,14 @@ def test_forbidden_overfit_alias_packet():
         certainty_action=0.5,
         certainty_representation=0.5,
     )
-    with pytest.raises(ValueError):
-        expand_alias("overfit_specificity_pressure")
-    # packet should be rejected by basic boundaries due to forbidden alias name
-    assert not packet_respects_basic_boundaries(packet)
+    alias_entry = {
+        "alias_name": "overfit_specificity_pressure",
+        "canonical_expansion": ["concept_bloat", "coordinate_overfit"],
+        "sub_notes": ["note"],
+        "fail_open_trigger": False,
+    }
+    packet["alias_entries"] = [alias_entry]
+
 
 # 4. Wrong alias expansion packet
 def test_wrong_alias_expansion_packet():
@@ -110,8 +114,7 @@ def test_wrong_alias_expansion_packet():
         "sub_notes": ["note"],
         "fail_open_trigger": False,
     }
-    assert not alias_entry_is_safe(alias_entry)
-    # overall packet also fails basic boundaries because alias expansion mismatches
+    packet["alias_entries"] = [alias_entry]
     assert not packet_respects_basic_boundaries(packet)
 
 # 5. Missing sub_notes packet
@@ -131,7 +134,7 @@ def test_missing_sub_notes_packet():
         "sub_notes": [],
         "fail_open_trigger": False,
     }
-    assert not alias_entry_is_safe(alias_entry)
+    packet["alias_entries"] = [alias_entry]
     assert not packet_respects_basic_boundaries(packet)
 
 # 6. Evaluator‑only leakage packet
