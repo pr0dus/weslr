@@ -870,7 +870,37 @@ def build_arc_style_synthetic_solver_suite_result_v1(
         "no_score_claim": True,
         "official_score_claim": False,
         "synthetic_exact_ratio": (synthetic_exact_count / top2_packet_count) if top2_packet_count else 0.0,
-        "synthetic_failure_ledger": _json_safe(failure_ledger) if failure_ledger is not None else build_arc_style_synthetic_solver_failure_ledger_v1(failures),
+        # Task-level aggregates
+        "task_exact_count": sum(1 for tr in task_results_out if tr.get("task_status") == "exact"),
+        "task_partial_count": sum(1 for tr in task_results_out if tr.get("task_status") == "partial"),
+        "task_unsupported_count": sum(1 for tr in task_results_out if tr.get("task_status") == "unsupported"),
+        "task_failed_count": sum(1 for tr in task_results_out if tr.get("task_status") == "failed"),
+        # Rates
+        "task_exact_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0,
+        "task_partial_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "partial") / attempted_task_count) if attempted_task_count else 0.0,
+        "task_unsupported_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "unsupported") / attempted_task_count) if attempted_task_count else 0.0,
+        "packet_exact_rate": (synthetic_exact_count / top2_packet_count) if top2_packet_count else 0.0,
+        "packet_partial_rate": (synthetic_partial_count / top2_packet_count) if top2_packet_count else 0.0,
+        "packet_unsupported_rate": (synthetic_unsupported_count / top2_packet_count) if top2_packet_count else 0.0,
+        # Thresholds and hardening flags
+        "internal_threshold": 0.85,
+        "threshold_basis": "task_exact_rate",
+        "internal_pass_85": ((sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0) >= 0.85,
+        "level_hardening_allowed": ((sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0) >= 0.85,
+        "level_hardening_reason": "",
+        # Frontier placeholders (to be filled by higher-level analysis)
+        "hardest_exact_tier": None,
+        "hardest_partial_tier": None,
+        "first_stable_failure_frontier": None,
+        "remaining_partial_families": [],
+        "remaining_blocker_families": [],
+        "remaining_unsupported_families": [],
+        "next_recommended_pressure_family": None,
+        # Boundary flags
+        "synthetic_only": True,
+        "public_arc_used": False,
+        "kaggle_used": False,
+        "benchmark_claim_safe": False,
         "task_family_count": len(family_level_summary),
     }
     return result
