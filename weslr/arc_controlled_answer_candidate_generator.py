@@ -177,38 +177,31 @@ def generate_controlled_answer_candidates_v1(generator_input: dict) -> dict:
     else:
         metrics["candidate_generation_attempt_count"] += 1
         
-        # Check for forced constraints
-        forced_constraints = generator_input.get("forced_constraints", [])
-        if not forced_constraints:
-            # Check if any construction mode can proceed
-            can_proceed = _check_construction_modes(generator_input)
-            
-            if not can_proceed:
-                blocking_reason = "candidate_generation_blocked"
-                metrics["candidate_generation_blocked_count"] += 1
-                generation_status = "blocked"  # FIX: set status
-            else:
-                # Generate candidates via construction modes
-                candidates, trace_metrics = _generate_candidates(generator_input)
-                metrics["candidate_generated_count"] = len(candidates)
-                metrics["candidate_requires_ledger_review_count"] = len(candidates)
-                metrics["ledger_review_required_count"] = len(candidates)
-                metrics["construction_trace_complete_count"] = trace_metrics
-                generation_status = "generated" if candidates else "blocked"
-                if not candidates:
-                    blocking_reason = "candidate_generation_blocked"
-                    metrics["candidate_generation_blocked_count"] += 1
-        else:
-            # Has forced constraints - generate candidates
-            candidates, trace_metrics = _generate_candidates(generator_input)
-            metrics["candidate_generated_count"] = len(candidates)
-            metrics["candidate_requires_ledger_review_count"] = len(candidates)
-            metrics["ledger_review_required_count"] = len(candidates)
-            metrics["construction_trace_complete_count"] = trace_metrics
-            generation_status = "generated" if candidates else "blocked"
-            if not candidates:
-                blocking_reason = "candidate_generation_blocked"
-                metrics["candidate_generation_blocked_count"] += 1
+        # Generate candidates via construction modes (this also checks blocking)
+        candidates, trace_metrics, blocking_in_generate = _generate_candidates(generator_input)
+        
+        # Update blocking metrics from generation
+        if "unresolved_rival" in blocking_in_generate:
+            metrics["unresolved_rival_blocked_count"] += 1
+        if "ambiguous_correspondence" in blocking_in_generate:
+            metrics["ambiguous_correspondence_blocked_count"] += 1
+        if "unforced_invariant" in blocking_in_generate:
+            metrics["unforced_invariant_blocked_count"] += 1
+        if "mdl_only_choice" in blocking_in_generate:
+            metrics["mdl_only_choice_blocked_count"] += 1
+        if "unsupported_assumption" in blocking_in_generate:
+            metrics["unsupported_assumption_blocked_count"] += 1
+        
+        # Determine blocking reason from generation
+        if blocking_in_generate:
+            blocking_reason = f"candidate_generation_blocked"
+            metrics["candidate_generation_blocked_count"] += 1
+        
+        metrics["candidate_generated_count"] = len(candidates)
+        metrics["candidate_requires_ledger_review_count"] = len(candidates)
+        metrics["ledger_review_required_count"] = len(candidates)
+        metrics["construction_trace_complete_count"] = trace_metrics
+        generation_status = "generated" if candidates else "blocked"
     
     # Build result
     result = {
@@ -270,11 +263,55 @@ def _check_construction_modes(generator_input: dict) -> bool:
     return False
 
 
-def _generate_candidates(generator_input: dict) -> tuple[list, int]:
-    """Generate candidates via construction modes."""
+def _generate_candidates(generator_input: dict) -> tuple[list, int, list]:
+    """Generate candidates via construction modes.
+    
+    Returns:
+        Tuple of (candidates, trace_count, blocking_reasons)
+    """
     candidates = []
     trace_count = 0
     task_id = generator_input.get("task_id", "unknown")
+    blocking_reasons = []
+    
+    # Track blocking reasons
+    unresolved_rivals = generator_input.get("unresolved_rival_grammars", [])
+    ambiguous_correspondences = generator_input.get("object_graph_correspondences", [])
+    unforced_invariants = generator_input.get("invariant_preserving_transformations", [])
+    mdl_only_grammars = generator_input.get("explicit_candidate_grammars", [])
+    unsupported_assumptions_in_input = generator_input.get("unsupported_assumption_list", [])
+    
+    # Check blocking conditions
+    
+    # Rule: unresolved rivals > 1 blocks unique generation
+    if len(unresolved_rivals) > 1:
+        blocking_reasons.append("unresolved_rival")
+    
+    # Rule: ambiguous correspondence blocks generation
+    for corr in ambiguous_correspondences:
+        if corr.get("mapping_type") == "ambiguous" or corr.get("ambiguous_with"):
+            blocking_reasons.append("ambiguous_correspondence")
+            break
+    
+    # Rule: unforced invariant blocks generation
+    for inv in unforced_invariants:
+        if not inv.get("train_supported", False):
+            blocking_reasons.append("unforced_invariant")
+            break
+    
+    # Rule: MDL-only choice blocks (need train evidence too)
+    for g in mdl_only_grammars:
+        if g.get("mdl_only") and not g.get("rules_from_train"):
+            blocking_reasons.append("mdl_only_choice")
+            break
+    
+    # Rule: unsupported assumptions in input block
+    if unsupported_assumptions_in_input:
+        blocking_reasons.append("unsupported_assumption")
+    
+    # If blocking reasons exist, don't generate candidates
+    if blocking_reasons:
+        return [], 0, blocking_reasons
     
     # Mode 1: Train-forced transformation candidate
     train_forced = generator_input.get("train_forced_transformations", [])
@@ -363,7 +400,7 @@ def _generate_candidates(generator_input: dict) -> tuple[list, int]:
         candidate = _build_partial_candidate(task_id, trace_count)
         candidates.append(candidate)
     
-    return candidates, trace_count
+    return candidates, trace_count, blocking_reasons
 
 
 def _build_candidate(
