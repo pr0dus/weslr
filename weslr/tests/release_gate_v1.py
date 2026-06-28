@@ -222,6 +222,7 @@ _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths = {
 # allowances: exact paths only, NOT a broad docs/ allowlist, NOT a wildcard,
 # and does NOT weaken any protected-file rule.
 _arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_IMPLEMENTATION_REVIEW_V1.md", 
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_AND_FROZEN_SOLVER_STATE_AUDIT_V1.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_V1.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_REVIEW_V1.md",
@@ -230,7 +231,10 @@ _arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_V2.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_DESIGN_V1.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_DESIGN_REVIEW_V1.md",
-    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_IMPLEMENTATION_V1.md",
+    "docs/WESLR_COORDINATE_OVERFIT_TRAP_FRONTIER_PROBE_IMPLEMENTATION_V1.md",
+    "docs/WESLR_COORDINATE_OVERFIT_TRAP_FRONTIER_PROBE_DESIGN_V1.md",
+    "docs/WESLR_COORDINATE_OVERFIT_TRAP_FRONTIER_PROBE_DESIGN_REVIEW_V1.md",
+    "docs/WESLR_COORDINATE_OVERFIT_TRAP_FRONTIER_PROBE_IMPLEMENTATION_REVIEW_V1.md",
 }
 
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
