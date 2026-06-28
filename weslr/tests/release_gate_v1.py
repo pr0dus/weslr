@@ -185,7 +185,25 @@ _arc_unknown_engine_level_ladder_design_doc = (
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DESIGN_V1.md"
 )
 _arc_unknown_engine_level_ladder_design_allowed_paths = {
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_AND_FROZEN_SOLVER_STATE_AUDIT_V1.md",
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_REVIEW_V1.md",
     _arc_unknown_engine_level_ladder_design_doc,
+}
+
+# Narrow, exact-path allowance for the ARC UNKNOWN ENGINE level ladder SMOKE METRICS REPAIR report
+_arc_unknown_engine_level_ladder_smoke_metrics_repair_doc = (
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SMOKE_METRICS_REPAIR_V1.md"
+)
+_arc_unknown_engine_level_ladder_smoke_metrics_repair_allowed_paths = {
+    _arc_unknown_engine_level_ladder_smoke_metrics_repair_doc,
+}
+
+# Narrow, exact-path allowance for the ARC UNKNOWN ENGINE level ladder SMOKE METRICS REVIEW report
+_arc_unknown_engine_level_ladder_smoke_metrics_review_doc = (
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SMOKE_METRICS_REVIEW_V1.md"
+)
+_arc_unknown_engine_level_ladder_smoke_metrics_review_allowed_paths = {
+    _arc_unknown_engine_level_ladder_smoke_metrics_review_doc,
 }
 
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
@@ -380,6 +398,17 @@ _micro_theory_collapsed_pressure_category_experiment_doc = (
 )
 _micro_theory_collapsed_pressure_category_experiment_allowed_paths = {
     _micro_theory_collapsed_pressure_category_experiment_doc,
+}
+
+# Narrow, exact-path allowance for the collapsed micro-theory pressure category
+# experiment review doc only. Same narrow intent as the prior allowances: a
+# single exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does NOT
+# weaken any protected-file rule.
+_micro_theory_collapsed_pressure_category_experiment_review_doc = (
+    "docs/WESLR_MICRO_THEORY_COLLAPSED_PRESSURE_CATEGORY_EXPERIMENT_REVIEW_V1.md"
+)
+_micro_theory_collapsed_pressure_category_experiment_review_allowed_paths = {
+    _micro_theory_collapsed_pressure_category_experiment_review_doc,
 }
 
 # Narrow, exact-path allowance for the micro-theory pressure category alias policy doc only.
@@ -16121,6 +16150,10 @@ def _check_git_scope():
         if path in _arc_synthetic_freeze_invariants_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_level_ladder_design_allowed_paths:
+            allowed = True
+        if path in _arc_unknown_engine_level_ladder_smoke_metrics_repair_allowed_paths:
+            allowed = True
+        if path in _arc_unknown_engine_level_ladder_smoke_metrics_review_allowed_paths:
             allowed = True
         if path in _micro_theory_solver_design_allowed_paths:
             allowed = True
