@@ -214,7 +214,10 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         generation_metrics["candidate_generation_blocked_count"] += task_result.get("blocked_count", 0)
         for mode in ["relation_first_rewrite", "object_correspondence", "invariant_preserving",
                     "composed_transform", "train_forced_transformation", "explicit_grammar", "partial"]:
-            key = f"{mode}_candidate_count"
+            if mode == "partial":
+                key = f"{mode}_candidate_descriptor_count"
+            else:
+                key = f"{mode}_candidate_count"
             generation_metrics[key] += task_result.get(key, 0)
         
         # Update ledger metrics
@@ -267,6 +270,14 @@ def _process_task(task: dict) -> dict:
         "forced_unique_count": 0,
         "insufficient_count": 0,
         "mdl_only_rejected_count": 0,
+        # Initialize all construction mode keys
+        "relation_first_rewrite_candidate_count": 0,
+        "object_correspondence_candidate_count": 0,
+        "invariant_preserving_candidate_count": 0,
+        "composed_transform_candidate_count": 0,
+        "train_forced_transformation_candidate_count": 0,
+        "explicit_grammar_candidate_count": 0,
+        "partial_candidate_descriptor_count": 0,
     }
     
     # Build generator input
