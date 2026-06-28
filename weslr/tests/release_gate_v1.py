@@ -239,6 +239,7 @@ _arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
     "docs/WESLR_MOVED_ANCHOR_FRONTIER_PROBE_DESIGN_REVIEW_V1.md",
     "docs/WESLR_MOVED_ANCHOR_FRONTIER_PROBE_IMPLEMENTATION_V1.md",
     "docs/WESLR_MOVED_ANCHOR_FRONTIER_PROBE_IMPLEMENTATION_REVIEW_V1.md",
+    "docs/WESLR_MOVED_ANCHOR_FRONTIER_PROBE_RUN_V1.md",
 }
 
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
