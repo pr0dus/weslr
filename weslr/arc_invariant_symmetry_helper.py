@@ -358,15 +358,25 @@ def _determine_overall_status(invariant_results: list[dict], symmetry_results: l
     invariant_not_forced = sum(1 for r in invariant_results if r.get("status") == "candidate_invariant_not_forced")
     symmetry_not_forced = sum(1 for r in symmetry_results if r.get("status") == "symmetry_detected")
     
+    # Check for preserved status
+    invariant_preserved = sum(1 for r in invariant_results if r.get("status") == "invariant_preserved")
+    symmetry_preserved = sum(1 for r in symmetry_results if r.get("status") == "symmetry_preserved")
+    
     if invariant_violated > 0 or symmetry_violated > 0:
         # Train-supported violation found
         return "invariant_violated"
     elif invariant_not_forced > 0 or symmetry_not_forced > 0:
         # Ambiguous - multiple explanations possible
         return "safe_failure_recommended"
-    elif len(invariant_results) > 0 or len(symmetry_results) > 0:
-        # Invariants/symmetries preserved
+    elif symmetry_preserved > 0 and len(symmetry_results) > 0:
+        # Prioritize symmetry status when symmetry preserved
+        return "symmetry_preserved"
+    elif invariant_preserved > 0 and len(invariant_results) > 0:
+        # Invariants preserved
         return "invariant_preserved"
+    elif len(invariant_results) > 0 or len(symmetry_results) > 0:
+        # Any results
+        return "invariant_detected"
     else:
         return "invariant_detected"
 
