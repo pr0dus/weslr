@@ -332,24 +332,38 @@ def _evaluate_candidate(candidate: dict, assembler_input: dict, metrics: dict) -
     
     # Check: MDL-only selection
     grammars = assembler_input.get("candidate_grammars", [])
-    mdl_only = all(g.get("mdl_only", False) for g in grammars if g.get("candidate_id") == candidate.get("candidate_id"))
-    if mdl_only and not grammars:
-        # Check candidate operations for mdl-only
-        for g in grammars:
-            if g.get("grammar_id") in str(candidate.get("source_constraints", [])):
-                if g.get("mdl_only") and not g.get("rules_from_train"):
-                    metrics["mdl_only_rejected_count"] += 1
-                    traces.append(_build_trace(
-                        "mdl_check", "system", "mdl_only", False, "required", "present"
-                    ))
-                    return {
-                        "candidate_id": candidate.get("candidate_id"),
-                        "decision": "candidate_not_deserved",
-                        "reason": "mdl_only_selection",
-                        "deservedness_traces": traces,
-                        "unresolved_rivals_present": False,
-                        "forced_unique_output_available": False,
-                    }
+    # Check if any grammar for this candidate is MDL-only without train evidence
+    mdl_only_grammars = [g for g in grammars if g.get("mdl_only") and not g.get("rules_from_train")]
+    if mdl_only_grammars:
+        metrics["mdl_only_rejected_count"] += 1
+        traces.append(_build_trace(
+            "mdl_check", "system", "mdl_only", False, "required", "present"
+        ))
+        return {
+            "candidate_id": candidate.get("candidate_id"),
+            "decision": "candidate_not_deserved",
+            "reason": "mdl_only_selection",
+            "deservedness_traces": traces,
+            "unresolved_rivals_present": False,
+            "forced_unique_output_available": False,
+        }
+    
+    # Check: output-affecting ambiguity requires safe failure
+    ambiguity_flags = assembler_input.get("ambiguity_flags", {})
+    output_affecting = ambiguity_flags.get("affects_output", False)
+    if output_affecting:
+        metrics["safe_failure_required_count"] += 1
+        traces.append(_build_trace(
+            "ambiguity_check", "system", "ambiguity_flags", False, "required", "output_affecting"
+        ))
+        return {
+            "candidate_id": candidate.get("candidate_id"),
+            "decision": "safe_failure_required",
+            "reason": "output_affecting_ambiguity",
+            "deservedness_traces": traces,
+            "unresolved_rivals_present": False,
+            "forced_unique_output_available": False,
+        }
     
     # Check: rehearsal-only support
     rehearsal_context = assembler_input.get("rehearsal_context", {})
