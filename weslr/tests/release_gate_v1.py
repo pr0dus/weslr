@@ -217,6 +217,17 @@ _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths = {
     _arc_unknown_engine_branch_state_after_smoke_metrics_repair_doc,
 }
 
+# Narrow, exact-path allowances for recovered ARC UNKNOWN ENGINE audit/smoke
+# documentation on the current branch only. Same narrow intent as the prior
+# allowances: exact paths only, NOT a broad docs/ allowlist, NOT a wildcard,
+# and does NOT weaken any protected-file rule.
+_arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_AND_FROZEN_SOLVER_STATE_AUDIT_V1.md",
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_V1.md",
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_REVIEW_V1.md",
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_SMOKE_ARTIFACTS_RECOVERY_V1.md",
+}
+
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
 # Same narrow intent as the prior allowances: a single exact path, NOT a broad
 # docs/ allowlist, NOT a wildcard, and does NOT weaken any protected-file
@@ -16167,6 +16178,8 @@ def _check_git_scope():
         if path in _arc_unknown_engine_level_ladder_smoke_metrics_review_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
+            allowed = True
+        if path in _arc_unknown_engine_recovered_artifact_docs_allowed_paths:
             allowed = True
         if path in _micro_theory_solver_design_allowed_paths:
             allowed = True
