@@ -130,6 +130,18 @@ def build_statistical_promotion_gate_input_v1(
     if policy.get("regression_allowed", False):
         raise ValueError("regression_allowed must be False")
     
+    # Fail closed: auto-merge not allowed
+    if policy.get("auto_merge_allowed", False):
+        raise ValueError("auto_merge_allowed must be False")
+    
+    # Fail closed: runtime wiring not allowed
+    if policy.get("runtime_wiring_allowed", False):
+        raise ValueError("runtime_wiring_allowed must be False")
+    
+    # Fail closed: public claim not allowed
+    if policy.get("public_claim_allowed", False):
+        raise ValueError("public_claim_allowed must be False")
+    
     # Fail closed: holdout required
     if not policy.get("requires_holdout", True):
         raise ValueError("requires_holdout must be True")
