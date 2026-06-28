@@ -252,3 +252,74 @@ Protected files: unchanged
 .weslr: untouched
 Push avoided: yes
 Final judgment: arc_generative_bridge_v5_replay_design_ready
+---
+
+## 14. Emitter Sequencing Decision Rule
+
+*(Added via addendum: docs/WESLR_ARC_GENERATIVE_BRIDGE_V5_REPLAY_EMITTER_DECISION_RULE_ADDENDUM_V1)*
+
+### 14.1 Purpose
+Lock a pre-registered decision rule for whether V5 replay results justify designing a Safe Answer Emitter. Prevents post-hoc rationalization.
+
+### 14.2 Deserved Correctness Check
+```
+deserved_but_wrong_count = candidate_deserved_count - deserved_exact_count
+```
+- `candidate_deserved_count`: Every candidate approved by ledger assembler
+- `deserved_exact_count`: Approved candidates matching held-back expected answer
+- `deserved_but_wrong_count`: Approved candidates that FAIL local scoring
+
+**Emitter gate requires:** `deserved_but_wrong_count == 0`
+
+### 14.3 Hard Stop Conditions
+Do NOT recommend emitter if:
+- `overconfident_wrong_count > 0`
+- `undeserved_exact_count > 0`
+- `deserved_but_wrong_count > 0`
+- `helper_laundering_violation_count > 0`
+- `final_answer_emitted_count > 0`
+- `public_claim_allowed_count > 0`
+- `helper_output_as_evidence_count > 0`
+- Exact improvement through undeserved candidates
+- Safe failure collapsed
+- Ledger authority not preserved
+- Runtime wiring changed
+- Public/official claim appeared
+
+### 14.4 Emitter Threshold
+Emitter design allowed ONLY if ALL true:
+- `deserved_exact_count` ≥ 6
+- `candidate_deserved_count` ≥ 6
+- `deserved_but_wrong_count` == 0
+- Deserved exacts in ≥ 2 task groups
+- `overconfident_wrong_count` == 0
+- `undeserved_exact_count` == 0
+- All safety counts == 0
+
+### 14.5 Fallback Interpretations
+| Result | Lane |
+|--------|------|
+| deserved_exact_count == 0 | ANALYZE or REPAIR_GENERATOR |
+| 1-5 deserved_exact | ANALYZE |
+| Candidates but few deserved | REPAIR_ASSEMBLER or REPAIR_GENERATOR |
+| Few candidates generated | REPAIR_GENERATOR |
+| Any deserved wrong | REPAIR_ASSEMBLER |
+| Any undeserved exact | ANALYZE (laundering risk) |
+| Only one group | ANALYZE (pattern-specific) |
+
+### 14.6 MDL Generator-Health Yellow Flag
+- Metric: `mdl_only_rejected_count`
+- Flag: `generator_health_warning = True` if high relative to attempts
+- If emitter gate passes BUT warning true: Add `ANALYZE_ARC_CONTROLLED_GENERATOR_HEALTH_V1` to next lane
+
+### 14.7 Allowed Next Lanes
+- DESIGN_ARC_SAFE_ANSWER_EMITTER_BOUNDARY_V1 (only if gate passes)
+- ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1 (mixed/below threshold)
+- REPAIR_ARC_CONTROLLED_ANSWER_CANDIDATE_GENERATOR_V1 (weak generation)
+- REPAIR_ARC_LEDGER_DESERVEDNESS_ASSEMBLER_V1 (unsafe deservedness)
+- BLOCKED_PENDING_OWNER_DECISION (safety violation)
+
+### 14.8 Scoring Order
+A. Build task → B. Generate candidate → C. Ledger decides → D. Compare AFTER decision → E. Record metrics
+Expected answers used ONLY for local scoring AFTER ledger decision. Never influence generation or deservedness.
+
