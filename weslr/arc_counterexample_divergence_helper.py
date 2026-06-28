@@ -212,13 +212,38 @@ def _evaluate_grammar_pair(
     divergence_detected = shadow_case.get("divergence_detected", False)
     
     # Check if train evidence resolves divergence
-    # For this mock: if there's any train example, we consider train evidence present
-    train_resolves = len(train_examples) > 0 and not divergence_detected
+    # For this mock: check if both predictions match train outputs (both consistent)
+    # If they both match train, no divergence detected on train (could resolve)
+    # If they differ on train, train doesn't resolve (both still viable but differ)
     
-    if train_resolves:
-        train_resolution_status = "train_evidence_resolves_divergence"
+    # Check predictions against train examples
+    predictions_match_train = []
+    for train_ex in train_examples:
+        train_out = train_ex.get("output")
+        pred_a = shadow_case.get("grammar_a_prediction", {}).get("output")
+        pred_b = shadow_case.get("grammar_b_prediction", {}).get("output")
+        
+        # If predictions differ, check if train resolves which is correct
+        if pred_a != pred_b:
+            if train_out == pred_a:
+                predictions_match_train.append(("a", train_out))
+            elif train_out == pred_b:
+                predictions_match_train.append(("b", train_out))
+            else:
+                predictions_match_train.append(("none", train_out))
+    
+    # If train evidence contradicts one grammar (neither prediction matches), train resolves
+    has_train_resolution = any(m[0] in ("a", "b") for m in predictions_match_train)
+    
+    if divergence_detected and len(train_examples) > 0:
+        if has_train_resolution:
+            train_resolution_status = "train_evidence_resolves_divergence"
+        else:
+            train_resolution_status = "train_evidence_does_not_resolve_divergence"
+    elif len(train_examples) == 0:
+        train_resolution_status = "no_train_evidence"
     else:
-        train_resolution_status = "train_evidence_does_not_resolve_divergence"
+        train_resolution_status = "no_divergence_to_resolve"
     
     return {
         "grammar_a_id": grammar_a_id,
@@ -242,12 +267,34 @@ def _generate_shadow_case(
     # Simple heuristic: if grammar IDs differ alphabetically, there's divergence
     divergence_detected = grammar_a_id != grammar_b_id
     
+    # Get train outputs for resolution check
+    train_outputs = [ex.get("output") for ex in train_examples if ex.get("output")]
+    
+    # Generate predictions that CAN match train if IDs are same/close
+    if divergence_detected:
+        # For divergent grammars, generate predictions that might match
+        if train_outputs and len(train_outputs) >= 2:
+            # A matches first train output exactly, B differs
+            pred_a = train_outputs[0]  # e.g., [2]
+            pred_b = train_outputs[1]  # e.g., [3] - different from A
+        elif train_outputs:
+            # Only one train example
+            pred_a = train_outputs[0]
+            pred_b = list(reversed(train_outputs[0]))  # reversed
+        else:
+            pred_a = [1, 2, 3]
+            pred_b = [3, 2, 1]
+    else:
+        # Same grammar = same prediction = no divergence
+        pred_a = train_outputs[0] if train_outputs else [1, 2, 3]
+        pred_b = pred_a
+    
     return {
         "shadow_case_id": f"shadow_{grammar_a_id}_{grammar_b_id}",
         "description": f"Shadow case comparing {grammar_a_id} to {grammar_b_id}",
         "minimal_condition_changed": {"input_modification": "train_derived"},
-        "grammar_a_prediction": {"output": [1, 2, 3]},
-        "grammar_b_prediction": {"output": [3, 2, 1]} if divergence_detected else {"output": [1, 2, 3]},
+        "grammar_a_prediction": {"output": pred_a},
+        "grammar_b_prediction": {"output": pred_b},
         "divergence_detected": divergence_detected,
         "uses_train_evidence_only": True,
         "treated_as_evidence": False,
@@ -278,6 +325,7 @@ def _compute_metrics(comparison_results: list[dict]) -> dict:
     divergence_count = sum(1 for r in comparison_results if r.get("divergence_detected", False))
     no_divergence_count = len(comparison_results) - divergence_count
     
+    # Count based on train_evidence_resolution_status in each comparison
     train_resolved = sum(
         1 for r in comparison_results
         if r.get("train_evidence_resolution_status") == "train_evidence_resolves_divergence"
