@@ -76,9 +76,9 @@ def test_existing_smoke_metrics_still_pass():
         test_smoke_output_contains_required_metric_fields,
         test_smoke_output_contains_frontier_placeholder_fields,
         test_current_run_formulae_use_correct_denominators,
-        test_threshold_basis_positive_fixture,
-        test_threshold_basis_negative_fixture,
-        test_packet_pass_task_fail_fixture,
+        test_threshold_basis_positive_fixture_uses_task_rate_not_packet_rate,
+        test_threshold_basis_negative_fixture_blocks_packet_pass_task_fail_case,
+        test_packet_pass_task_fail_fixture_cannot_unlock_hardening,
         test_boundary_flags_consistency,
         test_current_run_sanity_and_threshold_policy_surface,
     )
@@ -86,9 +86,9 @@ def test_existing_smoke_metrics_still_pass():
     test_smoke_output_contains_required_metric_fields()
     test_smoke_output_contains_frontier_placeholder_fields()
     test_current_run_formulae_use_correct_denominators()
-    test_threshold_basis_positive_fixture()
-    test_threshold_basis_negative_fixture()
-    test_packet_pass_task_fail_fixture()
+    test_threshold_basis_positive_fixture_uses_task_rate_not_packet_rate()
+    test_threshold_basis_negative_fixture_blocks_packet_pass_task_fail_case()
+    test_packet_pass_task_fail_fixture_cannot_unlock_hardening()
     test_boundary_flags_consistency()
     test_current_run_sanity_and_threshold_policy_surface()
 
