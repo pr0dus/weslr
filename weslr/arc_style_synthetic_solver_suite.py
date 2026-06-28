@@ -196,6 +196,51 @@ def _authority_flags() -> dict[str, bool]:
     return {name: False for name in DEFAULT_DENIED_AUTHORITY_V1}
 
 
+def compute_arc_unknown_engine_smoke_metrics_policy_v1(
+    *,
+    generated_level_count: int,
+    attempted_task_count: int,
+    task_exact_count: int,
+    task_partial_count: int,
+    task_unsupported_count: int,
+    task_failed_count: int,
+    top2_packet_count: int,
+    synthetic_exact_count: int,
+    synthetic_partial_count: int,
+    synthetic_unsupported_count: int,
+    internal_threshold: float = 0.85,
+) -> dict[str, Any]:
+    task_exact_rate = (task_exact_count / attempted_task_count) if attempted_task_count else 0.0
+    task_partial_rate = (task_partial_count / attempted_task_count) if attempted_task_count else 0.0
+    task_unsupported_rate = (task_unsupported_count / attempted_task_count) if attempted_task_count else 0.0
+    packet_exact_rate = (synthetic_exact_count / top2_packet_count) if top2_packet_count else 0.0
+    packet_partial_rate = (synthetic_partial_count / top2_packet_count) if top2_packet_count else 0.0
+    packet_unsupported_rate = (synthetic_unsupported_count / top2_packet_count) if top2_packet_count else 0.0
+    internal_pass_85 = task_exact_rate >= internal_threshold
+    if internal_pass_85:
+        level_hardening_reason = "task_exact_rate_meets_internal_threshold"
+    else:
+        level_hardening_reason = "task_exact_rate_below_internal_threshold"
+    return {
+        "generated_level_count": generated_level_count,
+        "task_exact_count": task_exact_count,
+        "task_partial_count": task_partial_count,
+        "task_unsupported_count": task_unsupported_count,
+        "task_failed_count": task_failed_count,
+        "task_exact_rate": task_exact_rate,
+        "task_partial_rate": task_partial_rate,
+        "task_unsupported_rate": task_unsupported_rate,
+        "packet_exact_rate": packet_exact_rate,
+        "packet_partial_rate": packet_partial_rate,
+        "packet_unsupported_rate": packet_unsupported_rate,
+        "internal_threshold": internal_threshold,
+        "threshold_basis": "task_exact_rate",
+        "internal_pass_85": internal_pass_85,
+        "level_hardening_allowed": internal_pass_85,
+        "level_hardening_reason": level_hardening_reason,
+    }
+
+
 def _background_value(grid_metadata: Mapping[str, Any]) -> Any:
     return grid_metadata.get("background_color") if isinstance(grid_metadata, Mapping) else None
 
@@ -848,6 +893,23 @@ def build_arc_style_synthetic_solver_suite_result_v1(
     synthetic_partial_count = sum(int(task_result.get("synthetic_partial_count", 0)) for task_result in task_results_out if isinstance(task_result, Mapping))
     synthetic_unsupported_count = sum(int(task_result.get("synthetic_unsupported_count", 0)) for task_result in task_results_out if isinstance(task_result, Mapping))
     synthetic_failed_count = sum(int(task_result.get("synthetic_failed_count", 0)) for task_result in task_results_out if isinstance(task_result, Mapping))
+    generated_level_count = len(family_level_summary)
+    task_exact_count = sum(1 for tr in task_results_out if tr.get("task_status") == "exact")
+    task_partial_count = sum(1 for tr in task_results_out if tr.get("task_status") == "partial")
+    task_unsupported_count = sum(1 for tr in task_results_out if tr.get("task_status") == "unsupported")
+    task_failed_count = sum(1 for tr in task_results_out if tr.get("task_status") == "failed")
+    metric_policy = compute_arc_unknown_engine_smoke_metrics_policy_v1(
+        generated_level_count=generated_level_count,
+        attempted_task_count=attempted_task_count,
+        task_exact_count=task_exact_count,
+        task_partial_count=task_partial_count,
+        task_unsupported_count=task_unsupported_count,
+        task_failed_count=task_failed_count,
+        top2_packet_count=top2_packet_count,
+        synthetic_exact_count=synthetic_exact_count,
+        synthetic_partial_count=synthetic_partial_count,
+        synthetic_unsupported_count=synthetic_unsupported_count,
+    )
     result = {
         "suite_id": SUITE_ID_V1,
         "synthetic_internal_result": True,
@@ -870,24 +932,7 @@ def build_arc_style_synthetic_solver_suite_result_v1(
         "no_score_claim": True,
         "official_score_claim": False,
         "synthetic_exact_ratio": (synthetic_exact_count / top2_packet_count) if top2_packet_count else 0.0,
-        # Task-level aggregates
-        "task_exact_count": sum(1 for tr in task_results_out if tr.get("task_status") == "exact"),
-        "task_partial_count": sum(1 for tr in task_results_out if tr.get("task_status") == "partial"),
-        "task_unsupported_count": sum(1 for tr in task_results_out if tr.get("task_status") == "unsupported"),
-        "task_failed_count": sum(1 for tr in task_results_out if tr.get("task_status") == "failed"),
-        # Rates
-        "task_exact_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0,
-        "task_partial_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "partial") / attempted_task_count) if attempted_task_count else 0.0,
-        "task_unsupported_rate": (sum(1 for tr in task_results_out if tr.get("task_status") == "unsupported") / attempted_task_count) if attempted_task_count else 0.0,
-        "packet_exact_rate": (synthetic_exact_count / top2_packet_count) if top2_packet_count else 0.0,
-        "packet_partial_rate": (synthetic_partial_count / top2_packet_count) if top2_packet_count else 0.0,
-        "packet_unsupported_rate": (synthetic_unsupported_count / top2_packet_count) if top2_packet_count else 0.0,
-        # Thresholds and hardening flags
-        "internal_threshold": 0.85,
-        "threshold_basis": "task_exact_rate",
-        "internal_pass_85": ((sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0) >= 0.85,
-        "level_hardening_allowed": ((sum(1 for tr in task_results_out if tr.get("task_status") == "exact") / attempted_task_count) if attempted_task_count else 0.0) >= 0.85,
-        "level_hardening_reason": "",
+        **metric_policy,
         # Frontier placeholders (to be filled by higher-level analysis)
         "hardest_exact_tier": None,
         "hardest_partial_tier": None,
@@ -1081,6 +1126,7 @@ __all__ = [
     "FAILURE_CATEGORIES_V1",
     "build_arc_style_synthetic_solver_failure_ledger_v1",
     "build_arc_style_synthetic_solver_suite_result_v1",
+    "compute_arc_unknown_engine_smoke_metrics_policy_v1",
     "run_arc_style_synthetic_solver_suite_v1",
     "summarize_arc_style_synthetic_solver_suite_result_v1",
     "to_arc_style_synthetic_solver_suite_json_safe_v1",
