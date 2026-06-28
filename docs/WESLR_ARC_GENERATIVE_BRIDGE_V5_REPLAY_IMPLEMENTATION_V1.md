@@ -18,9 +18,14 @@ Updated `docs/WESLR_ARC_GENERATIVE_BRIDGE_V5_REPLAY_DESIGN_V1.md` with section 1
 ## 4. Replay Implementation Summary
 
 **Module:** `weslr/arc_generative_bridge_v5_replay.py`
-**Tests:** `weslr/tests/test_arc_generative_bridge_v5_replay_v1.py` (27 tests)
+**Tests:** `weslr/tests/test_arc_generative_bridge_v5_replay_v1.py` (29 tests)
 
 The replay tests whether the bridge stack (helper diagnostics → controlled candidate generation → ledger deservedness assembly) produces deserved exact answers instead of only safe failures.
+
+**Middle-band discriminator:** Added in commit 5611d4f8.
+- `no_dominant_discriminator_middle_band` flag in emitter gate results
+- Routes moderate signals to analysis, not emitter
+- Cannot directly choose generator or assembler repair
 
 **NOT RUN** — implementation complete, replay run pending separate dispatch.
 
@@ -133,13 +138,14 @@ Do NOT call clean null result failure unless safety worsens, expected coverage a
 
 ## 15. Test Summary
 
-**27 tests passed** covering:
+**29 tests passed** covering:
 - Task suite structure (48 tasks, 8 groups, 6 per group)
 - Scoring boundary and order
 - Emitter hard stops (8 conditions)
 - Emitter threshold (6 exact, 2+ groups)
 - MDL generator-health warning (soft gate)
 - Generator vs assembler discriminator
+- Middle-band discriminator (moderate signals route to analysis)
 - Null-result interpretation
 - Safety boundaries (no public data, no runtime wiring)
 - Protected files unchanged
