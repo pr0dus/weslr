@@ -210,6 +210,10 @@ def _determine_overall_status(grammar_results: list[dict]) -> str:
     if len(grammar_results) == 0:
         return "all_grammars_eliminated"
     
+    # Check for candidate_not_deserved first
+    if len(not_deserved) > 0 and len(consistent) == 0:
+        return "candidate_not_deserved"
+    
     if len(consistent) == 0:
         return "all_grammars_eliminated"
     
@@ -217,14 +221,17 @@ def _determine_overall_status(grammar_results: list[dict]) -> str:
     if len(consistent) > 1:
         return "rival_grammar_alive"
     
-    # Exactly one grammar consistent
+    # Exactly one grammar consistent - check if it was forced or just the only option
     if len(consistent) == 1:
-        if len(eliminated) + len(not_deserved) == len(grammar_results) - 1:
-            # This is forced by train evidence (all rivals eliminated)
+        if len(grammar_results) == 1:
+            # Single grammar - NOT forced by train, just the only one
+            return "grammar_consistent"
+        elif len(eliminated) + len(not_deserved) == len(grammar_results) - 1:
+            # Multiple grammars existed, only one survived = forced by train
             return "candidate_deserved_if_unique_and_forced"
         else:
-            # Only one grammar exists, so it's unique
-            return "candidate_deserved_if_unique_and_forced"
+            # Can't determine - fall back to grammar_consistent
+            return "grammar_consistent"
     
     return "underdetermined"
 
@@ -242,6 +249,12 @@ def _compute_metrics(grammar_results: list[dict]) -> dict:
     # Count train-only eliminations
     train_only_elimination = len([g for g in eliminated if g.get("elimination_reason") == "train_io_mismatch"])
     
+    # Forced unique: exactly one consistent grammar and has been forced by train (not just single candidate)
+    forced_unique = 0
+    if len(consistent) == 1 and len(grammar_results) > 1:
+        # Exactly one grammar survived among multiple candidates = forced
+        forced_unique = 1
+    
     return {
         "candidate_grammar_count": len(grammar_results),
         "grammar_consistent_count": len(consistent),
@@ -249,7 +262,7 @@ def _compute_metrics(grammar_results: list[dict]) -> dict:
         "rival_grammar_alive_count": rivals,
         "underdetermined_count": 1 if len(consistent) > 1 else 0,
         "all_eliminated_count": 1 if len(consistent) == 0 else 0,
-        "forced_unique_candidate_count": 1 if len(consistent) == 1 and len(eliminated) + len(not_deserved) > 0 else 0,
+        "forced_unique_candidate_count": forced_unique,
         "unsupported_assumption_count": len(not_deserved),
         "contradiction_count": contradiction_count,
         "train_only_elimination_count": train_only_elimination,

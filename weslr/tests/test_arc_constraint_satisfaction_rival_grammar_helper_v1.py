@@ -102,10 +102,10 @@ class TestCandidateGrammarModel:
 class TestConstraintChecks:
     """Test constraint check implementation."""
     
-    def test_one_unique_forced_grammar(self):
-        """One unique forced grammar produces candidate_deserved_if_unique_and_forced."""
+    def test_consistency_is_not_forced_grammar(self):
+        """Single consistent grammar is NOT forced - should return grammar_consistent."""
         helper_input = build_constraint_helper_input_v1(
-            task_id="task_1",
+            task_id="task_consistency",
             train_examples=[
                 {"input": [1], "output": [2]},
             ],
@@ -120,8 +120,10 @@ class TestConstraintChecks:
         
         result = evaluate_candidate_grammar_constraints_v1(helper_input)
         
-        # Exactly one grammar consistent = candidate_deserved_if_unique_and_forced
-        assert result["overall_status"] == "candidate_deserved_if_unique_and_forced"
+        # Single consistent grammar is NOT forced by train - should NOT be deserved
+        assert result["overall_status"] == "grammar_consistent"
+        assert result["helper_generates_final_answer"] is False
+        assert result["final_answer_authority"] == "ledger"
     
     def test_multiple_consistent_grammars(self):
         """Multiple consistent grammars produce rival_grammar_alive."""
