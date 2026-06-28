@@ -421,6 +421,38 @@ def evaluate_emitter_decision_gate_v1(result: dict) -> dict:
     # Determine gate pass
     gate_passed = len(hard_stop_reasons) == 0 and threshold_passed
     
+    # Determine discriminator state for middle-band detection
+    generated_count = generation_metrics.get("candidate_generated_count", 0)
+    blocked_count = generation_metrics.get("candidate_generation_blocked_count", 0)
+    mdl_rejected_count = ledger_metrics.get("mdl_only_rejected_count", 0)
+    
+    # Generator repair signals (dominant = high)
+    generator_repair_signals = 0
+    if generated_count < 10:  # Low generation
+        generator_repair_signals += 1
+    if blocked_count > generated_count * 0.5:  # High blocking
+        generator_repair_signals += 1
+    if mdl_ratio >= 0.4:  # Very high MDL rejection
+        generator_repair_signals += 1
+    
+    # Assembler repair signals (dominant = clean generator but high rejection)
+    assembler_repair_signals = 0
+    if generated_count >= 20:  # Adequate generation
+        assembler_repair_signals += 1
+    if mdl_ratio < 0.3:  # Low MDL rejection (generator is fine)
+        assembler_repair_signals += 1
+    # High assembler rejection without clear cause
+    ledger_deserved = ledger_metrics.get("candidate_deserved_count", 0)
+    if generated_count > 0 and ledger_deserved == 0:  # All candidates rejected
+        assembler_repair_signals += 1
+    
+    # Middle-band detection
+    no_dominant_discriminator = (
+        generator_repair_signals <= 1 and 
+        assembler_repair_signals <= 1 and
+        len(hard_stop_reasons) == 0
+    )
+    
     # Determine recommended lane
     recommended_lane = None
     if not gate_passed:
@@ -431,6 +463,9 @@ def evaluate_emitter_decision_gate_v1(result: dict) -> dict:
         elif task_metrics.get("undeserved_exact_count", 0) > 0:
             recommended_lane = "ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1"
         elif generator_health_warning:
+            recommended_lane = "ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1"
+        elif no_dominant_discriminator:
+            # Middle-band: moderate signals, no clear path to repair
             recommended_lane = "ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1"
         else:
             recommended_lane = "ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1"
@@ -448,6 +483,9 @@ def evaluate_emitter_decision_gate_v1(result: dict) -> dict:
         "threshold_reasons": threshold_reasons,
         "generator_health_warning": generator_health_warning,
         "generator_health_warning_reasons": ["mdl_only_rejection_ratio_high"] if generator_health_warning else [],
+        "no_dominant_discriminator_middle_band": no_dominant_discriminator,
+        "generator_repair_signals": generator_repair_signals,
+        "assembler_repair_signals": assembler_repair_signals,
         "recommended_next_lane": recommended_lane,
     }
 

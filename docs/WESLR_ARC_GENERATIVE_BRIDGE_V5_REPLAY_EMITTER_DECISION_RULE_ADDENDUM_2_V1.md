@@ -63,10 +63,35 @@ Do NOT call clean null result failure unless:
 - Expected candidate coverage absent
 - Implementation contradicts replay design
 
+## 7. Middle-Band Definition
+
+If neither the generator-repair discriminator nor assembler-repair discriminator clearly dominates, and no hard safety stop fires, this is the middle band:
+
+- **Generator-health signals are moderate**, not clearly high (no dominant red flags)
+- **Assembler-cleanliness signals are moderate**, not clearly clean (eligible candidates exist but rejection rate is neither very high nor very low)
+- **Group behavior is consistent** rather than strongly divergent
+- **No single discriminator dominates** the decision
+
+**Middle-band recommended lane:** `ANALYZE_ARC_GENERATIVE_BRIDGE_V5_REPLAY_RESULTS_V1`
+
+**Middle-band cannot recommend:**
+- `DESIGN_ARC_SAFE_ANSWER_EMITTER_BOUNDARY_V1`
+- Direct generator repair
+- Direct assembler repair
+
+**Middle-band interpretation:**
+- A uniformly mediocre replay result is NOT emitter evidence
+- It is NOT enough to choose generator repair or assembler repair directly
+- It REQUIRES analysis before repair or emitter sequencing
+- Preserves neutral/caution stance
+
+**Label:** `no_dominant_discriminator_middle_band = True`
+
 ---
 
 Generator repair discriminator: defined
 Assembler repair discriminator: defined
 Mixed-signal interpretation: defined
+Middle-band definition: defined
 Null-result interpretation: defined
 Final judgment: arc_generative_bridge_v5_replay_emitter_decision_rule_addendum_2_ready

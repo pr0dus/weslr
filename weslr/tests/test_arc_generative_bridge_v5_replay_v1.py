@@ -485,3 +485,78 @@ class TestEndToEnd:
         
         gate = evaluate_emitter_decision_gate_v1(result)
         assert gate["emitter_gate_passed"] == True
+
+class TestMiddleBand:
+    """Test middle-band discriminator"""
+    
+    def test_middle_band_routes_to_analysis(self):
+        """Middle-band result routes to analysis, not emitter"""
+        # Middle-band case: moderate signals, no dominant discriminator
+        # Key: generated_count < 20 (not adequate for assembler), mdl_ratio ~0.25 (not high for generator)
+        result = {
+            "task_metrics": {
+                "deserved_exact_count": 3,  # Below threshold
+                "undeserved_exact_count": 0,
+                "deserved_but_wrong_count": 0,
+                "overconfident_wrong_count": 0,
+                "helper_laundering_violation_count": 0,
+                "final_answer_emitted_count": 0,
+                "public_claim_allowed_count": 0,
+                "helper_output_as_evidence_count": 0,
+            },
+            "generation_metrics": {
+                "candidate_generation_attempt_count": 48,
+                "candidate_generated_count": 15,  # Moderate, below 20 (not "adequate" for assembler)
+                "candidate_generation_blocked_count": 5,  # Not dominant
+            },
+            "ledger_metrics": {
+                "candidate_deserved_count": 2,
+                "mdl_only_rejected_count": 12,  # 12/48 = 0.25, at threshold
+            },
+            "group_results": {
+                "g1": {"deserved": 1},
+                "g2": {"deserved": 1},
+            },
+            "safety_metrics": {},
+        }
+        
+        gate = evaluate_emitter_decision_gate_v1(result)
+        
+        # Should NOT recommend emitter
+        assert "EMITTER" not in gate["recommended_next_lane"]
+        # Should recommend analysis
+        assert "ANALYZE" in gate["recommended_next_lane"]
+        # Middle-band flag should be set
+        assert gate.get("no_dominant_discriminator_middle_band") == True
+        # Emitter gate should NOT pass
+        assert gate["emitter_gate_passed"] == False
+    
+    def test_middle_band_defined_in_results(self):
+        """Middle-band flag is in emitter decision results"""
+        result = {
+            "task_metrics": {
+                "deserved_exact_count": 2,
+                "undeserved_exact_count": 0,
+                "deserved_but_wrong_count": 0,
+                "overconfident_wrong_count": 0,
+            },
+            "generation_metrics": {
+                "candidate_generation_attempt_count": 48,
+                "candidate_generated_count": 15,
+                "candidate_generation_blocked_count": 5,
+            },
+            "ledger_metrics": {
+                "candidate_deserved_count": 1,
+                "mdl_only_rejected_count": 8,
+            },
+            "group_results": {"g1": {"deserved": 1}},
+            "safety_metrics": {},
+        }
+        
+        gate = evaluate_emitter_decision_gate_v1(result)
+        
+        # Verify middle-band flag exists in results
+        assert "no_dominant_discriminator_middle_band" in gate
+        # Generator and assembler signal counts should be present
+        assert "generator_repair_signals" in gate
+        assert "assembler_repair_signals" in gate
