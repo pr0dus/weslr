@@ -229,6 +229,7 @@ _arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
     "docs/WESLR_ARC_UNKNOWN_ENGINE_SMOKE_METRICS_COVERAGE_TESTS_V1.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_SYNTHETIC_SMOKE_V2.md",
     "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_DESIGN_V1.md",
+    "docs/WESLR_ARC_UNKNOWN_ENGINE_LEVEL_LADDER_DIFFICULTY_PROBE_DESIGN_REVIEW_V1.md",
 }
 
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
