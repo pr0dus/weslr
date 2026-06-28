@@ -248,6 +248,9 @@ _arc_unknown_engine_recovered_artifact_docs_allowed_paths = {
     "docs/WESLR_RELATION_FIRST_COMPILER_HELPER_DESIGN_REVIEW_V1.md",
     "docs/WESLR_RELATION_FIRST_COMPILER_HELPER_IMPLEMENTATION_V1.md",
     "docs/WESLR_RELATION_FIRST_COMPILER_HELPER_IMPLEMENTATION_REVIEW_V1.md",
+    "weslr/relation_first_compiler_helper.py",
+    "weslr/tests/test_relation_first_compiler_helper_v1.py",
+    "weslr/tests/test_arc_moved_anchor_probe_v1.py",
 }
 
 # Narrow, exact-path allowance for the micro-theory solver design doc only.
