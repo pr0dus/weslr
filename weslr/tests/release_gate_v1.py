@@ -291,6 +291,13 @@ _arc_composed_and_mdl_alternative_enumeration_diagnostic_design_allowed_paths = 
     _arc_composed_and_mdl_alternative_enumeration_diagnostic_design_doc,
 }
 
+_arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_doc = (
+    "docs/WESLR_ARC_COMPOSED_AND_MDL_ALTERNATIVE_ENUMERATION_DIAGNOSTIC_IMPLEMENTATION_V1.md"
+)
+_arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_allowed_paths = {
+    _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
