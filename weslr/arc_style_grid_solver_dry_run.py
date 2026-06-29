@@ -651,9 +651,24 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
         object_extraction = extract_arc_style_object_candidates_v1(input_grid, task_id=_safe_text(pair.get("pair_id")))
     evidence_labels: list[str] = []
     candidate: dict[str, Any] | None = None
+    # Check line_completion BEFORE symmetry - line_completion may match more pairs than symmetry
+    line_completion_parameters = _infer_line_completion_parameters(input_grid, output_grid, background_value)
+    if line_completion_parameters is not None:
+        evidence_labels.append("line_completion")
+        candidate = {
+            "primitive_id": "line_completion",
+            "parameters": line_completion_parameters,
+            "candidate_role": "primary_exact",
+            "source": "structural_grid_delta",
+            "required_constraints": ["line_row_known"],
+            "unsupported_assumptions": [],
+            "bounded_depth": 1,
+            "is_executable": True,
+            "candidate_rank": 0,
+            "train_fit_status": "fit",
+        }
     # Check symmetry BEFORE identical_grids - symmetry may preserve input as-is
-    symmetry_parameters = _infer_complete_symmetry_parameters(input_grid, output_grid, background_value)
-    if symmetry_parameters is not None:
+    elif symmetry_parameters := _infer_complete_symmetry_parameters(input_grid, output_grid, background_value):
         evidence_labels.append("symmetry_completion")
         candidate = {
             "primitive_id": "complete_symmetry",
