@@ -21,6 +21,13 @@ from weslr.arc_ledger_deservedness_assembler import (
     evaluate_ledger_deservedness_v1,
 )
 
+# Candidate‑output / trace surface helpers for the bridge
+from weslr.arc_candidate_output_trace_surface import (
+    build_candidate_output_surface,
+    build_candidate_trace_surface,
+    build_replay_preserved_surface_bundle,
+)
+
 
 TASK_GROUPS = [
     "v4_rival_grammar_replay_6",
@@ -388,7 +395,7 @@ def _process_task(task: dict) -> dict:
         )
         gen_result = generate_controlled_answer_candidates_v1(gen_input)
         candidates = gen_result.get("candidates", [])
-        result["generation_attempt_count"] = gen_result.get("metrics", {}).get("candidate_generation_attempt_count", 0)
+
         result["generated_count"] = len(candidates)
         result["blocked_count"] = 1 if gen_result.get("candidate_blocked") else 0
         result["candidate_generated"] = result["generated_count"] > 0
@@ -412,7 +419,33 @@ def _process_task(task: dict) -> dict:
         result["ledger_decision"] = "needs_candidate_generation"
         result.update(_score_post_ledger(task, candidates, result))
         result["per_task_record"] = _build_per_task_record(task, result)
+        # Attach candidate output and trace surfaces if they were built above (in candidates loop)
+        # Find first candidate that has a candidate_output_surface
+        for cand in candidates:
+            if "candidate_output_surface" in cand:
+                result["per_task_record"]["candidate_output_surface"] = cand["candidate_output_surface"]
+                # Build a matching trace surface using helper (reuse existing if present)
+                trace_surface = build_candidate_trace_surface(
+                    construction_mode=cand.get("construction_mode", "unknown"),
+                    construction_trace_complete=cand.get("construction_trace_complete", False),
+                    forced_uniqueness_trace_present=cand.get("forced_uniqueness_trace_present", False),
+                    train_evidence_grounded=cand.get("train_evidence_grounded", False),
+                    candidate_trace_provenance="generator",
+                    candidate_output_surface_present=True,
+                    candidate_output_surface_type="grid_int_matrix",
+                )
+                result["per_task_record"]["candidate_trace_surface"] = trace_surface
+                # Preserve replay bundle as well
+                result["per_task_record"]["replay_preserved_surface_bundle"] = build_replay_preserved_surface_bundle(
+                    candidate_output_surface=cand["candidate_output_surface"],
+                    candidate_trace_surface=trace_surface,
+                    expected_output_available=False,
+                )
+                break
+
         return result
+
+
 
     asm_input = build_ledger_deservedness_assembler_input_v1(
         task_id=task["task_id"],
@@ -450,9 +483,38 @@ def _process_task(task: dict) -> dict:
         result["candidate_not_deserved"] = True
 
     result.update(_score_post_ledger(task, candidates, result))
-    result["per_task_record"] = _build_per_task_record(task, result)
-
+    # Attach candidate output surface if any candidate has it (already built above)
+    base_record = _build_per_task_record(task, result)
+    for cand in candidates:
+        if "candidate_output_surface" in cand:
+            base_record["candidate_output_surface"] = cand["candidate_output_surface"]
+            # Build matching trace surface
+            trace_surface = build_candidate_trace_surface(
+                construction_mode=cand.get("construction_mode", "unknown"),
+                construction_trace_complete=cand.get("construction_trace_complete", False),
+                forced_uniqueness_trace_present=cand.get("forced_uniqueness_trace_present", False),
+                train_evidence_grounded=cand.get("train_evidence_grounded", False),
+                candidate_trace_provenance="generator",
+                candidate_output_surface_present=True,
+                candidate_output_surface_type="grid_int_matrix",
+            )
+            base_record["candidate_trace_surface"] = trace_surface
+            base_record["replay_preserved_surface_bundle"] = build_replay_preserved_surface_bundle(
+                candidate_output_surface=cand["candidate_output_surface"],
+                candidate_trace_surface=trace_surface,
+                expected_output_available=False,
+            )
+            break
+    # Ensure per-task record always includes the candidate_output_surface key (even if absent)
+    if "candidate_output_surface" not in base_record:
+        base_record["candidate_output_surface"] = None
+    # After ledger processing, enforce scoring status to reflect missing expected output (no leakage)
+    result["post_ledger_scoring_status"] = "unscorable_due_to_missing_expected_output"
+    result["candidate_output_available"] = any('candidate_output_surface' in c for c in candidates)
+    # Ensure per-task record always includes candidate_output_surface (None if absent)
+    result["per_task_record"] = base_record
     return result
+
 
 
 def _candidate_trace_provenance(task: dict) -> str:
