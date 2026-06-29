@@ -354,6 +354,13 @@ _arc_candidate_output_and_trace_surface_schema_helpers_implementation_allowed_pa
     _arc_candidate_output_and_trace_surface_schema_helpers_implementation_doc,
 }
 
+_arc_candidate_output_and_trace_surface_schema_helpers_implementation_review_doc = (
+    "docs/WESLR_ARC_CANDIDATE_OUTPUT_AND_TRACE_SURFACE_SCHEMA_HELPERS_IMPLEMENTATION_REVIEW_V1.md"
+)
+_arc_candidate_output_and_trace_surface_schema_helpers_implementation_review_allowed_paths = {
+    _arc_candidate_output_and_trace_surface_schema_helpers_implementation_review_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16400,6 +16407,8 @@ def _check_git_scope():
         if path in _arc_candidate_output_and_trace_surface_for_real_scoring_design_allowed_paths:
             allowed = True
         if path in _arc_candidate_output_and_trace_surface_schema_helpers_implementation_allowed_paths:
+            allowed = True
+        if path in _arc_candidate_output_and_trace_surface_schema_helpers_implementation_review_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
