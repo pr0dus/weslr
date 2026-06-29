@@ -312,6 +312,13 @@ _arc_composed_and_mdl_alternative_enumeration_diagnostic_run_allowed_paths = {
     _arc_composed_and_mdl_alternative_enumeration_diagnostic_run_doc,
 }
 
+_arc_mdl_provenance_and_composed_trace_surface_gap_diagnosis_doc = (
+    "docs/WESLR_ARC_MDL_PROVENANCE_AND_COMPOSED_TRACE_SURFACE_GAP_DIAGNOSIS_V1.md"
+)
+_arc_mdl_provenance_and_composed_trace_surface_gap_diagnosis_allowed_paths = {
+    _arc_mdl_provenance_and_composed_trace_surface_gap_diagnosis_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16346,6 +16353,8 @@ def _check_git_scope():
         if path in _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_review_allowed_paths:
             allowed = True
         if path in _arc_composed_and_mdl_alternative_enumeration_diagnostic_run_allowed_paths:
+            allowed = True
+        if path in _arc_mdl_provenance_and_composed_trace_surface_gap_diagnosis_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
