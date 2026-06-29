@@ -242,6 +242,13 @@ _arc_controlled_candidate_trace_grounding_for_assembler_repair_review_allowed_pa
     _arc_controlled_candidate_trace_grounding_for_assembler_repair_review_doc,
 }
 
+_arc_v5_known_bad_cases_and_safe_failure_routing_pre_rerun_verification_doc = (
+    "docs/WESLR_ARC_V5_KNOWN_BAD_CASES_AND_SAFE_FAILURE_ROUTING_PRE_RERUN_VERIFICATION_V1.md"
+)
+_arc_v5_known_bad_cases_and_safe_failure_routing_pre_rerun_verification_allowed_paths = {
+    _arc_v5_known_bad_cases_and_safe_failure_routing_pre_rerun_verification_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16256,6 +16263,8 @@ def _check_git_scope():
         if path in _arc_controlled_candidate_trace_grounding_for_assembler_repair_allowed_paths:
             allowed = True
         if path in _arc_controlled_candidate_trace_grounding_for_assembler_repair_review_allowed_paths:
+            allowed = True
+        if path in _arc_v5_known_bad_cases_and_safe_failure_routing_pre_rerun_verification_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
