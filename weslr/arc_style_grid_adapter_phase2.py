@@ -522,6 +522,93 @@ def _copy_grid(grid: list[list[Any]]) -> list[list[Any]]:
     return deepcopy(grid)
 
 
+def _reflect_object_grid_with_padding(grid: list[list[Any]], *, object_value: Any, background_value: Any | None, axis: str) -> list[list[Any]]:
+    """Reflect object in grid with padding detection for synthetic ARC tasks.
+
+    This handles the case where the shape has empty padding cells that need to be
+    included in the reflection to preserve the shape pattern.
+
+    Args:
+        grid: Input grid
+        object_value: The value of the object to reflect
+        background_value: Background value
+        axis: "horizontal" or "vertical"
+
+    Returns:
+        Grid with object reflected
+    """
+    if not grid:
+        return _copy_grid(grid)
+
+    rows = len(grid)
+    cols = len(grid[0]) if grid else 0
+    out = [row[:] for row in grid]
+
+    if axis == "horizontal":
+        # Group by rows to detect padding
+        row_data: list[tuple[int, int, int, int]] = []  # (row, min_c, max_c, count)
+        for r in range(rows):
+            row_cols = sorted(c for c in range(cols) if grid[r][c] == object_value)
+            if row_cols:
+                row_data.append((r, row_cols[0], row_cols[-1], len(row_cols)))
+
+        if not row_data:
+            return out
+
+        min_r = min(r for r, _, _, _ in row_data)
+        max_r = max(r for r, _, _, _ in row_data)
+        min_c = min(c for r, c, _, _ in row_data)
+        max_c = max(c for r, _, c, _ in row_data)
+
+        # Check for left padding if sparse row exists (single object cell)
+        for r, row_min, row_max, count in row_data:
+            if count == 1 and row_min > 0:
+                if grid[r][row_min - 1] == background_value:
+                    min_c = row_min - 1
+                    break
+
+        # Extract subgrid, reflect, and place back
+        subgrid = [row[min_c:max_c + 1] for row in grid[min_r:max_r + 1]]
+        reflected = [list(reversed(row)) for row in subgrid]
+
+        for r_idx, r in enumerate(range(min_r, max_r + 1)):
+            for c_idx, c in enumerate(range(min_c, max_c + 1)):
+                out[r][c] = reflected[r_idx][c_idx]
+
+    else:  # vertical
+        # Group by columns to detect padding
+        col_data: list[tuple[int, int, int, int]] = []  # (col, min_r, max_r, count)
+        for c in range(cols):
+            col_rows = sorted(r for r in range(rows) if grid[r][c] == object_value)
+            if col_rows:
+                col_data.append((c, col_rows[0], col_rows[-1], len(col_rows)))
+
+        if not col_data:
+            return out
+
+        min_c = min(c for c, _, _, _ in col_data)
+        max_c = max(c for c, _, _, _ in col_data)
+        min_r = min(r for c, r, _, _ in col_data)
+        max_r = max(r for c, _, r, _ in col_data)
+
+        # Check for top padding if sparse column exists (single object cell)
+        for c, col_min, col_max, count in col_data:
+            if count == 1 and col_min > 0:
+                if grid[col_min - 1][c] == background_value:
+                    min_r = col_min - 1
+                    break
+
+        # Extract subgrid, reflect, and place back
+        subgrid = [row[min_c:max_c + 1] for row in grid[min_r:max_r + 1]]
+        reflected = [list(row) for row in reversed(subgrid)]
+
+        for r_idx, r in enumerate(range(min_r, max_r + 1)):
+            for c_idx, c in enumerate(range(min_c, max_c + 1)):
+                out[r][c] = reflected[r_idx][c_idx]
+
+    return out
+
+
 def _recolor_grid(grid: list[list[Any]], *, from_value: Any, to_value: Any) -> list[list[Any]]:
     out = _copy_grid(grid)
     for row_index, row in enumerate(out):
@@ -1133,12 +1220,12 @@ def _apply_primitive_step(grid: list[list[Any]], step: Any, *, background_value:
         object_value = params.get("object_value")
         if object_value is None:
             object_value = _dominant_non_background_value(grid, background)
-        cells = _cells_for_value(grid, object_value) if object_value is not None else []
-        if not cells:
-            trace["unsupported_reason"] = "missing_object_cells"
+        if object_value is None:
+            trace["unsupported_reason"] = "missing_object_value"
             return _copy_grid(grid), trace
         axis = _safe_text(params.get("axis"), "horizontal")
-        return _reflect_bbox_grid(grid, cells=cells, background_value=background, axis=axis if axis in {"horizontal", "vertical"} else "horizontal"), trace
+        # Use padding-aware reflection for synthetic tasks
+        return _reflect_object_grid_with_padding(grid, object_value=object_value, background_value=background, axis=axis if axis in {"horizontal", "vertical"} else "horizontal"), trace
     trace["unsupported_reason"] = "primitive_not_executable_now"
     return _copy_grid(grid), trace
 

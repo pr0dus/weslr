@@ -27,6 +27,7 @@ from weslr.arc_style_grid_adapter_phase2 import (
     _line_completion_grid,
     _object_count_to_pattern_grid,
     _reflect_bbox_grid,
+    _reflect_object_grid_with_padding,
     _rotate_bbox_grid,
     _cells_for_value,
     build_arc_style_phase2_adapter_packet_v1,
@@ -624,8 +625,17 @@ def _infer_reflect_object_parameters(input_grid: Sequence[Sequence[Any]], output
     cells = _cells_for_value(input_grid, object_value)
     if not cells:
         return None
+
+    # Try padding-aware reflection first (for synthetic ARC tasks)
+    input_list = [list(row) for row in input_grid]
     for axis in ("horizontal", "vertical"):
-        predicted = _reflect_bbox_grid([list(row) for row in input_grid], cells=cells, background_value=background_value, axis=axis)
+        predicted = _reflect_object_grid_with_padding(input_list, object_value=object_value, background_value=background_value, axis=axis)
+        if predicted == [list(row) for row in output_grid]:
+            return {"axis": axis, "object_value": object_value, "background_value": background_value}
+
+    # Fall back to bbox-based reflection for other tasks
+    for axis in ("horizontal", "vertical"):
+        predicted = _reflect_bbox_grid(input_list, cells=cells, background_value=background_value, axis=axis)
         if predicted == [list(row) for row in output_grid]:
             return {"axis": axis, "object_value": object_value, "background_value": background_value}
     return None
@@ -789,6 +799,20 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
                 "candidate_rank": 0,
                 "train_fit_status": "fit",
             }
+        elif (reflect_object_parameters := _infer_reflect_object_parameters(input_grid, output_grid, background_value)) is not None:
+            evidence_labels.append("reflect_object_horizontal_or_vertical")
+            candidate = {
+                "primitive_id": "reflect_object_horizontal_or_vertical",
+                "parameters": reflect_object_parameters,
+                "candidate_role": "primary_exact",
+                "source": "structural_grid_delta",
+                "required_constraints": ["axis_known", "single_object_known"],
+                "unsupported_assumptions": [],
+                "bounded_depth": 1,
+                "is_executable": True,
+                "candidate_rank": 0,
+                "train_fit_status": "fit",
+            }
         elif (rotate_object_parameters := _infer_rotate_object_parameters(input_grid, output_grid, background_value)) is not None:
             evidence_labels.append("rotate_object_90")
             candidate = {
@@ -817,7 +841,6 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
                 "candidate_rank": 0,
                 "train_fit_status": "fit",
             }
-        elif (reflect_object_parameters := _infer_reflect_object_parameters(input_grid, output_grid, background_value)) is not None:
             evidence_labels.append("reflect_object_horizontal_or_vertical")
             candidate = {
                 "primitive_id": "reflect_object_horizontal_or_vertical",

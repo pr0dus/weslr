@@ -34,6 +34,7 @@ from weslr.arc_style_grid_adapter_phase2 import (
     _line_completion_grid,
     _object_count_to_pattern_grid,
     _reflect_bbox_grid,
+    _reflect_object_grid_with_padding,
     _rotate_bbox_grid,
 )
 from weslr.arc_style_grid_solver_dry_run import run_arc_style_bounded_solver_dry_run_v1
@@ -382,10 +383,10 @@ def _supported_primitive_grid(candidate_packet: Mapping[str, Any], input_grid: S
         if object_value is None and grid:
             object_value = _dominant_non_background_value(grid, background_value)
         axis = _safe_text(params.get("axis", "horizontal"))
-        cells = _cells_for_value(grid, object_value) if object_value is not None else []
-        if not cells:
+        if object_value is None:
             return None
-        return _reflect_bbox_grid(grid, cells=cells, background_value=background_value, axis=axis)
+        # Use padding-aware reflection for synthetic tasks
+        return _reflect_object_grid_with_padding(grid, object_value=object_value, background_value=background_value, axis=axis)
     if primitive_id == "complete_symmetry":
         axes = params.get("axes")
         if not isinstance(axes, list):
