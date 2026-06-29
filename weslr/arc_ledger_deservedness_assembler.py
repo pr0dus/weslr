@@ -5,8 +5,8 @@ The assembler receives candidate descriptors from the controlled answer candidat
 plus helper diagnostics, then decides whether a candidate deserves ledger approval.
 
 Core law:
-A candidate can become deserved only if train evidence plus diagnostics force a unique output
-or a bounded top candidate under the local synthetic policy.
+A candidate can become deserved only from its own candidate-level, trace-grounded train evidence.
+Task-level context may inform review, but it may not independently create deservedness.
 
 Repeated rehearsal cannot create deservedness.
 Helper output cannot become evidence.
@@ -57,6 +57,22 @@ FORBIDDEN_STATUSES = [
     "deserved_with_public_arc_answer",
 ]
 
+_FORBIDDEN_SCORING_KEYS = {
+    "synthetic_expected_answer_for_scoring_only",
+    "expected_output",
+    "expected_answer",
+    "post_ledger_scoring_result",
+    "deserved_exact_result",
+    "deserved_but_wrong_result",
+    "scoring_result",
+}
+
+_SAFE_FAILURE_REASON_TO_METRIC = {
+    "insufficient_train_evidence": "safe_failure_from_insufficient_evidence_count",
+    "incomplete_construction_trace": "safe_failure_from_incomplete_trace_count",
+    "unresolved_rivals": "safe_failure_from_unresolved_rival_count",
+}
+
 
 def build_ledger_deservedness_assembler_input_v1(
     task_id: str,
@@ -77,31 +93,7 @@ def build_ledger_deservedness_assembler_input_v1(
     hidden_test_output_available: bool = False,
     public_arc_answer_available: bool = False,
 ) -> dict:
-    """
-    Build input for the ledger deservedness assembler.
-    
-    Args:
-        task_id: Unique task identifier
-        candidate_descriptors: Candidates from controlled generator
-        helper_diagnostics: Diagnostics from helpers
-        candidate_grammars: Grammar candidates
-        forced_constraints: Train-forced constraints
-        train_evidence_support: Train evidence alignment
-        unresolved_rival_grammars: Unresolved rival grammars
-        ambiguity_flags: Ambiguity detected
-        invariant_symmetry_findings: Invariant/symmetry findings
-        object_correspondence_findings: Object mapping findings
-        mdl_diagnostics: MDL signals
-        divergence_findings: Counterexample results
-        constraint_findings: Constraint satisfaction
-        rehearsal_context: Rehearsal context (for policy check)
-        evidence_scope: Must be "train_only"
-        hidden_test_output_available: Must be False
-        public_arc_answer_available: Must be False
-    
-    Returns:
-        Input dictionary for assembler evaluation
-    """
+    """Build input for the ledger deservedness assembler."""
     return {
         "task_id": task_id,
         "candidate_descriptors": candidate_descriptors or [],
@@ -124,17 +116,113 @@ def build_ledger_deservedness_assembler_input_v1(
 
 
 def evaluate_ledger_deservedness_v1(assembler_input: dict) -> dict:
-    """
-    Evaluate whether candidates deserve ledger approval.
-    
-    Args:
-        assembler_input: Input from build_ledger_deservedness_assembler_input_v1
-    
-    Returns:
-        Deservedness evaluation result
-    """
-    # Initialize metrics
-    metrics = {
+    """Evaluate whether candidates deserve ledger approval."""
+    metrics = _build_metrics()
+
+    evidence_scope = assembler_input.get("evidence_scope", "train_only")
+    hidden_test_available = assembler_input.get("hidden_test_output_available", False)
+    public_arc_available = assembler_input.get("public_arc_answer_available", False)
+
+    if evidence_scope != "train_only":
+        return _build_fail_closed_result(assembler_input, "evidence_scope_not_train_only", metrics)
+
+    if hidden_test_available:
+        metrics["hidden_test_blocked_count"] += 1
+        return _build_fail_closed_result(assembler_input, "hidden_test_output_available", metrics)
+
+    if public_arc_available:
+        metrics["public_arc_answer_blocked_count"] += 1
+        return _build_fail_closed_result(assembler_input, "public_arc_answer_available", metrics)
+
+    if _contains_forbidden_scoring_content(assembler_input):
+        return _build_fail_closed_result(assembler_input, "scoring_answer_leakage_detected", metrics)
+
+    candidates = assembler_input.get("candidate_descriptors", [])
+    if not candidates:
+        metrics["needs_candidate_generation_count"] += 1
+        return _build_result(
+            assembler_input,
+            decision="needs_candidate_generation",
+            metrics=metrics,
+            traces=[_build_trace("no_candidates", "system", "candidate_descriptors", False, "required", "none")],
+            candidate_results=[],
+        )
+
+    evaluation_results = []
+    safe_failure_reasons: list[str] = []
+    any_deserved = False
+    forced_unique_output_available = False
+
+    for candidate in candidates:
+        metrics["candidate_review_count"] += 1
+        result = _evaluate_candidate(candidate, assembler_input, metrics)
+        evaluation_results.append(result)
+
+        if candidate.get("requires_ledger_review") is True:
+            metrics["ledger_review_required_count"] += 1
+        if candidate.get("construction_trace_complete") is True:
+            metrics["construction_trace_complete_count"] += 1
+        if candidate.get("forced_uniqueness_trace_present") is True:
+            metrics["forced_uniqueness_trace_present_count"] += 1
+        if candidate.get("rival_elimination_trace_present") is True:
+            metrics["rival_elimination_trace_present_count"] += 1
+        if candidate.get("train_evidence_grounded") is True:
+            metrics["train_evidence_grounded_count"] += 1
+
+        if result["decision"] == "candidate_deserved":
+            any_deserved = True
+            forced_unique_output_available = (
+                forced_unique_output_available or result.get("forced_unique_output_available", False)
+            )
+            metrics["candidate_deserved_count"] += 1
+        else:
+            metrics["candidate_not_deserved_count"] += 1
+            if result.get("safe_failure_reason"):
+                safe_failure_reasons.append(result["safe_failure_reason"])
+
+        if result.get("unresolved_rivals_present"):
+            metrics["rival_unresolved_count"] += 1
+
+    if any_deserved:
+        decision = "candidate_deserved"
+        if forced_unique_output_available:
+            metrics["forced_unique_output_count"] += 1
+    else:
+        decision = "safe_failure_required"
+        metrics["safe_failure_required_count"] += 1
+        for reason in set(safe_failure_reasons):
+            metric_name = _SAFE_FAILURE_REASON_TO_METRIC.get(reason)
+            if metric_name:
+                metrics[metric_name] += 1
+
+    rehearsal_context = assembler_input.get("rehearsal_context", {})
+    rehearsal_count = rehearsal_context.get("repeat_count", 0)
+    memorization_risk = rehearsal_context.get("memorization_risk", "none")
+    fresh_holdout_confirmed = rehearsal_context.get("fresh_holdout_confirmed", False)
+
+    return {
+        "task_id": assembler_input.get("task_id"),
+        "decision": decision,
+        "candidate_results": evaluation_results,
+        "metrics": metrics,
+        "final_answer_emitted": False,
+        "public_claim_allowed": False,
+        "official_arc_claim_allowed": False,
+        "runtime_wiring_changed": False,
+        "helper_output_as_evidence": False,
+        "rehearsal_repeat_as_evidence": False,
+        "ledger_decision_only": True,
+        "rehearsal_repeat_count": rehearsal_count,
+        "memorization_risk_flag": memorization_risk,
+        "fresh_holdout_confirmed": fresh_holdout_confirmed,
+        "rehearsal_does_not_create_deservedness": True,
+        "fresh_holdout_may_count": True,
+        "antilaundering_laws": ANTILAUNDERING_LAWS,
+    }
+
+
+def _build_metrics() -> dict:
+    return {
         "candidate_review_count": 0,
         "candidate_deserved_count": 0,
         "candidate_not_deserved_count": 0,
@@ -151,280 +239,243 @@ def evaluate_ledger_deservedness_v1(assembler_input: dict) -> dict:
         "helper_output_as_evidence_blocked_count": 0,
         "final_answer_emitted_count": 0,
         "public_claim_allowed_count": 0,
+        "ledger_review_required_count": 0,
+        "construction_trace_complete_count": 0,
+        "forced_uniqueness_trace_present_count": 0,
+        "rival_elimination_trace_present_count": 0,
+        "train_evidence_grounded_count": 0,
+        "safe_failure_from_insufficient_evidence_count": 0,
+        "safe_failure_from_incomplete_trace_count": 0,
+        "safe_failure_from_unresolved_rival_count": 0,
     }
-    
-    # Check fail-closed conditions first
-    evidence_scope = assembler_input.get("evidence_scope", "train_only")
-    hidden_test_available = assembler_input.get("hidden_test_output_available", False)
-    public_arc_available = assembler_input.get("public_arc_answer_available", False)
-    
-    if evidence_scope != "train_only":
-        return _build_fail_closed_result(assembler_input, "evidence_scope_not_train_only", metrics)
-    
-    if hidden_test_available:
-        metrics["hidden_test_blocked_count"] += 1
-        return _build_fail_closed_result(assembler_input, "hidden_test_output_available", metrics)
-    
-    if public_arc_available:
-        metrics["public_arc_answer_blocked_count"] += 1
-        return _build_fail_closed_result(assembler_input, "public_arc_answer_available", metrics)
-    
-    # Get candidates
-    candidates = assembler_input.get("candidate_descriptors", [])
-    
-    # No candidates case
-    if not candidates:
-        metrics["needs_candidate_generation_count"] += 1
-        return _build_result(
-            assembler_input,
-            decision="needs_candidate_generation",
-            metrics=metrics,
-            traces=[_build_trace("no_candidates", "system", "candidate_descriptors", False, "required", "none")],
-        )
-    
-    # Evaluate each candidate
-    evaluation_results = []
-    unique_forced_output = False
-    resolved_rivals = True
-    
-    for candidate in candidates:
-        result = _evaluate_candidate(candidate, assembler_input, metrics)
-        evaluation_results.append(result)
-        
-        if result.get("decision") == "candidate_deserved":
-            metrics["candidate_deserved_count"] += 1
-            if result.get("forced_unique_output_available"):
-                unique_forced_output = True
-        else:
-            metrics["candidate_not_deserved_count"] += 1
-        
-        if result.get("unresolved_rivals_present"):
-            resolved_rivals = False
-    
-    # Determine overall decision
-    if metrics["candidate_deserved_count"] > 0 and unique_forced_output:
-        overall_decision = "candidate_deserved"
-        metrics["forced_unique_output_count"] += 1
-    elif metrics["candidate_deserved_count"] > 0:
-        overall_decision = "candidate_deserved"
-    elif not resolved_rivals:
-        overall_decision = "rival_grammar_unresolved"
-        metrics["rival_unresolved_count"] += 1
-    else:
-        overall_decision = "candidate_not_deserved"
-    
-    # Check rehearsal context
-    rehearsal_context = assembler_input.get("rehearsal_context", {})
-    rehearsal_count = rehearsal_context.get("repeat_count", 0)
-    memorization_risk = rehearsal_context.get("memorization_risk", "none")
-    fresh_holdout_confirmed = rehearsal_context.get("fresh_holdout_confirmed", False)
-    
-    # Build result
-    result = {
-        "task_id": assembler_input.get("task_id"),
-        "decision": overall_decision,
-        "candidate_results": evaluation_results,
-        "metrics": metrics,
-        # Ledger boundary
-        "final_answer_emitted": False,
-        "public_claim_allowed": False,
-        "official_arc_claim_allowed": False,
-        "runtime_wiring_changed": False,
-        "helper_output_as_evidence": False,
-        "rehearsal_repeat_as_evidence": False,
-        "ledger_decision_only": True,
-        # Rehearsal relationship
-        "rehearsal_repeat_count": rehearsal_count,
-        "memorization_risk_flag": memorization_risk,
-        "fresh_holdout_confirmed": fresh_holdout_confirmed,
-        "rehearsal_does_not_create_deservedness": True,
-        "fresh_holdout_may_count": True,
-        # Anti-laundering
-        "antilaundering_laws": ANTILAUNDERING_LAWS,
-    }
-    
-    return result
 
 
 def _evaluate_candidate(candidate: dict, assembler_input: dict, metrics: dict) -> dict:
-    """Evaluate a single candidate."""
-    traces = []
-    decision = "candidate_not_deserved"
-    forced_unique = False
-    unresolved_rivals_present = False
-    
-    # Check: candidate requires ledger review
-    if not candidate.get("requires_ledger_review", False):
+    traces: list[dict[str, Any]] = []
+
+    if _contains_forbidden_scoring_content(candidate):
+        traces.append(_build_trace("scoring_boundary_check", "system", "scoring_only_fields", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if "requires_ledger_review" not in candidate or candidate.get("requires_ledger_review") is not True:
+        traces.append(_build_trace("ledger_review_check", "system", "requires_ledger_review", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("treated_as_final_answer") or candidate.get("candidate_treated_as_final_answer"):
+        traces.append(_build_trace("final_answer_check", "system", "treated_as_final_answer", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("helper_output_as_evidence"):
         metrics["helper_output_as_evidence_blocked_count"] += 1
-        traces.append(_build_trace(
-            "ledger_review_check", "system", "requires_ledger_review", False, "required", "violated"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "bypassed_ledger_review",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: candidate not treated as final answer
-    if candidate.get("treated_as_final_answer", False):
-        traces.append(_build_trace(
-            "final_answer_check", "system", "treated_as_final_answer", False, "required", "violated"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "treated_as_final_answer",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: partial candidate cannot be complete
+        traces.append(_build_trace("helper_output_check", "helper", "helper_output_as_evidence", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("rehearsal_repeat_as_evidence"):
+        metrics["rehearsal_only_rejected_count"] += 1
+        traces.append(_build_trace("rehearsal_check", "system", "rehearsal_repeat_as_evidence", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("mdl_only_support") or candidate.get("elegance_only_support"):
+        metrics["mdl_only_rejected_count"] += 1
+        traces.append(_build_trace("mdl_check", "system", "mdl_only_support", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("hidden_test_output_used") or candidate.get("public_arc_answer_used") or candidate.get("scoring_answer_used"):
+        traces.append(_build_trace("external_answer_check", "system", "forbidden_answer_source", False, "required", "violated"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
     if candidate.get("generation_status") == "partial":
         metrics["insufficient_train_evidence_count"] += 1
-        traces.append(_build_trace(
-            "partial_check", "system", "generation_status", False, "required", "partial"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "partial_candidate",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: unsupported assumptions
+        traces.append(_build_trace("partial_candidate_check", "system", "generation_status", False, "required", "partial"))
+        return _candidate_rejection(candidate, traces, "incomplete_construction_trace")
+
     unsupported = candidate.get("unsupported_assumptions", [])
     if unsupported:
         metrics["unsupported_assumption_rejected_count"] += 1
-        traces.append(_build_trace(
-            "unsupported_check", "system", "unsupported_assumptions", False, "required", "present"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "unsupported_assumptions",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: unresolved rivals
+        traces.append(_build_trace("unsupported_assumption_check", "system", "unsupported_assumptions", False, "required", "present"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
     unresolved = candidate.get("unresolved_rivals", [])
     if unresolved:
-        unresolved_rivals_present = True
-        metrics["rival_unresolved_count"] += 1
-        traces.append(_build_trace(
-            "rival_check", "system", "unresolved_rivals", False, "required", "present"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "unresolved_rivals",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": True,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: MDL-only selection
-    grammars = assembler_input.get("candidate_grammars", [])
-    # Check if any grammar for this candidate is MDL-only without train evidence
-    mdl_only_grammars = [g for g in grammars if g.get("mdl_only") and not g.get("rules_from_train")]
-    if mdl_only_grammars:
-        metrics["mdl_only_rejected_count"] += 1
-        traces.append(_build_trace(
-            "mdl_check", "system", "mdl_only", False, "required", "present"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "mdl_only_selection",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: output-affecting ambiguity requires safe failure
+        traces.append(_build_trace("unresolved_rival_check", "system", "unresolved_rivals", False, "required", "present"))
+        return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
+
     ambiguity_flags = assembler_input.get("ambiguity_flags", {})
-    output_affecting = ambiguity_flags.get("affects_output", False)
+    output_affecting = bool(
+        candidate.get("output_affecting_ambiguity")
+        or candidate.get("ambiguity_check") == "output_affecting"
+        or ambiguity_flags.get("affects_output", False)
+    )
     if output_affecting:
-        metrics["safe_failure_required_count"] += 1
-        traces.append(_build_trace(
-            "ambiguity_check", "system", "ambiguity_flags", False, "required", "output_affecting"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "safe_failure_required",
-            "reason": "output_affecting_ambiguity",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: rehearsal-only support
-    rehearsal_context = assembler_input.get("rehearsal_context", {})
-    rehearsal_repeat_count = rehearsal_context.get("repeat_count", 0)
-    if rehearsal_repeat_count > 0 and not rehearsal_context.get("fresh_holdout_confirmed"):
-        # Only rehearsal, no fresh confirmation
-        metrics["rehearsal_only_rejected_count"] += 1
-        traces.append(_build_trace(
-            "rehearsal_check", "system", "rehearsal_only", False, "required", "present"
-        ))
-        return {
-            "candidate_id": candidate.get("candidate_id"),
-            "decision": "candidate_not_deserved",
-            "reason": "rehearsal_only_support",
-            "deservedness_traces": traces,
-            "unresolved_rivals_present": False,
-            "forced_unique_output_available": False,
-        }
-    
-    # Check: forced constraints provide unique output
-    forced_constraints = assembler_input.get("forced_constraints", [])
-    train_evidence = assembler_input.get("train_evidence_support", {})
-    
-    if forced_constraints and train_evidence:
-        # Train evidence + forced constraints = deserves
-        forced_unique = True
-        metrics["forced_unique_output_count"] += 1
-        traces.append(_build_trace(
-            "forced_check", "train", "forced_constraints", True, "required", "explicit"
-        ))
-        traces.append(_build_trace(
-            "evidence_check", "train", "train_evidence_support", True, "required", "explicit"
-        ))
-        decision = "candidate_deserved"
-    elif forced_constraints:
-        # Has forced constraints but no train evidence
+        traces.append(_build_trace("ambiguity_check", "system", "output_affecting_ambiguity", False, "required", "present"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    trace = candidate.get("construction_trace") or []
+    if not trace or candidate.get("construction_trace_complete") is not True:
         metrics["insufficient_train_evidence_count"] += 1
-        traces.append(_build_trace(
-            "evidence_check", "train", "train_evidence_support", False, "required", "missing"
-        ))
-        decision = "insufficient_train_evidence"
-    else:
-        # No forced constraints
+        traces.append(_build_trace("construction_trace_check", "system", "construction_trace_complete", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "incomplete_construction_trace")
+
+    if candidate.get("construction_trace_source_grounded") is not True:
         metrics["insufficient_train_evidence_count"] += 1
-        traces.append(_build_trace(
-            "constraint_check", "system", "forced_constraints", False, "required", "missing"
-        ))
-        decision = "insufficient_train_evidence"
-    
+        traces.append(_build_trace("source_grounding_check", "train", "construction_trace_source_grounded", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("train_evidence_grounded") is not True:
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("train_evidence_check", "train", "train_evidence_grounded", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if candidate.get("forced_uniqueness_trace_present") is not True:
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("forced_uniqueness_check", "train", "forced_uniqueness_trace_present", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_source_train_ids(candidate, trace):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("train_source_id_check", "train", "source_train_example_ids", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_train_grounded_rule(candidate, trace):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("train_rule_check", "train", "train_grounded_transformation_rule", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_train_grounded_forced_constraints(candidate, trace):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("forced_constraints_check", "train", "forced_constraints_tied_to_train_evidence", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_ambiguity_check(candidate):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("ambiguity_trace_check", "train", "ambiguity_check", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_nonempty_text(candidate.get("competing_outputs_rejected_reason")):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("competing_outputs_check", "train", "competing_outputs_rejected_reason", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    if not _has_nonempty_text(candidate.get("uniquely_forced_reason")):
+        metrics["insufficient_train_evidence_count"] += 1
+        traces.append(_build_trace("uniquely_forced_check", "train", "uniquely_forced_reason", False, "required", "missing"))
+        return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
+
+    rival_case = _is_rival_case(candidate)
+    if rival_case:
+        rival_grammars = candidate.get("rival_grammars") or []
+        surviving_grammar = candidate.get("surviving_grammar")
+        if not rival_grammars or not surviving_grammar or candidate.get("rival_elimination_trace_present") is not True:
+            metrics["insufficient_train_evidence_count"] += 1
+            traces.append(_build_trace("rival_elimination_check", "train", "rival_elimination_trace_present", False, "required", "missing"))
+            return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
+        if not _has_nonempty_text(candidate.get("surviving_grammar_train_evidence")):
+            metrics["insufficient_train_evidence_count"] += 1
+            traces.append(_build_trace("surviving_grammar_train_evidence_check", "train", "surviving_grammar_train_evidence", False, "required", "missing"))
+            return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
+
+    traces.append(_build_trace("candidate_deserved", "train", "candidate_level_trace_grounding", True, "required", "explicit"))
     return {
         "candidate_id": candidate.get("candidate_id"),
-        "decision": decision,
+        "decision": "candidate_deserved",
+        "reason": "candidate_level_forced_unique_train_grounded",
         "deservedness_traces": traces,
-        "unresolved_rivals_present": unresolved_rivals_present,
-        "forced_unique_output_available": forced_unique,
+        "unresolved_rivals_present": False,
+        "forced_unique_output_available": True,
+        "safe_failure_reason": None,
     }
 
 
-def _build_trace(step_id: str, source: str, constraint: str, train_support: bool, 
-                 decision_relevance: str, evidence_status: str) -> dict:
-    """Build a trace step."""
+def _candidate_rejection(
+    candidate: dict,
+    traces: list[dict[str, Any]],
+    safe_failure_reason: str,
+    unresolved_rivals_present: bool = False,
+) -> dict:
+    reason = "candidate_not_deserved"
+    if safe_failure_reason == "incomplete_construction_trace":
+        reason = "incomplete_construction_trace"
+    elif safe_failure_reason == "unresolved_rivals":
+        reason = "unresolved_rivals"
+    elif safe_failure_reason == "insufficient_train_evidence":
+        reason = "insufficient_train_evidence"
+
+    return {
+        "candidate_id": candidate.get("candidate_id"),
+        "decision": "candidate_not_deserved",
+        "reason": reason,
+        "deservedness_traces": traces,
+        "unresolved_rivals_present": unresolved_rivals_present,
+        "forced_unique_output_available": False,
+        "safe_failure_reason": safe_failure_reason,
+    }
+
+
+def _contains_forbidden_scoring_content(value: Any) -> bool:
+    if isinstance(value, dict):
+        if _FORBIDDEN_SCORING_KEYS.intersection(value.keys()):
+            return True
+        return any(_contains_forbidden_scoring_content(v) for v in value.values())
+    if isinstance(value, list):
+        return any(_contains_forbidden_scoring_content(v) for v in value)
+    return False
+
+
+def _has_source_train_ids(candidate: dict, trace: list[dict]) -> bool:
+    if candidate.get("source_train_example_ids") or candidate.get("synthetic_local_train_ids"):
+        return True
+    for step in trace:
+        if step.get("source_train_example_ids") or step.get("synthetic_local_train_ids"):
+            return True
+    return False
+
+
+def _has_train_grounded_rule(candidate: dict, trace: list[dict]) -> bool:
+    if _has_nonempty_text(candidate.get("train_grounded_transformation_rule")):
+        return True
+    for step in trace:
+        if _has_nonempty_text(step.get("train_grounded_transformation_rule")):
+            return True
+    return False
+
+
+def _has_train_grounded_forced_constraints(candidate: dict, trace: list[dict]) -> bool:
+    constraints = candidate.get("forced_constraints_tied_to_train_evidence")
+    if isinstance(constraints, list) and constraints:
+        return True
+    for step in trace:
+        step_constraints = step.get("forced_constraints_tied_to_train_evidence")
+        if isinstance(step_constraints, list) and step_constraints:
+            return True
+    return False
+
+
+def _has_ambiguity_check(candidate: dict) -> bool:
+    ambiguity_check = candidate.get("ambiguity_check")
+    return ambiguity_check in {"clear", "resolved", False}
+
+
+def _is_rival_case(candidate: dict) -> bool:
+    return bool(
+        candidate.get("rival_grammar_case")
+        or "rival_grammars" in candidate
+        or "surviving_grammar" in candidate
+        or candidate.get("rival_elimination_trace_present") is True
+    )
+
+
+def _has_nonempty_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _build_trace(
+    step_id: str,
+    source: str,
+    constraint: str,
+    train_support: bool,
+    decision_relevance: str,
+    evidence_status: str,
+) -> dict:
     return {
         "step_id": step_id,
         "source": source,
@@ -438,13 +489,13 @@ def _build_trace(step_id: str, source: str, constraint: str, train_support: bool
     }
 
 
-def _build_result(assembler_input: dict, decision: str, metrics: dict, traces: list) -> dict:
-    """Build a result dictionary."""
+def _build_result(assembler_input: dict, decision: str, metrics: dict, traces: list, candidate_results: list) -> dict:
     return {
         "task_id": assembler_input.get("task_id"),
         "decision": decision,
-        "candidate_results": [],
+        "candidate_results": candidate_results,
         "metrics": metrics,
+        "deservedness_traces": traces,
         "final_answer_emitted": False,
         "public_claim_allowed": False,
         "official_arc_claim_allowed": False,
@@ -462,27 +513,19 @@ def _build_result(assembler_input: dict, decision: str, metrics: dict, traces: l
 
 
 def _build_fail_closed_result(assembler_input: dict, reason: str, metrics: dict) -> dict:
-    """Build a fail-closed result."""
     return _build_result(
         assembler_input,
         decision="safe_failure_required",
         metrics=metrics,
         traces=[_build_trace("fail_closed", "system", reason, False, "required", "violated")],
+        candidate_results=[],
     )
 
 
 def summarize_ledger_deservedness_v1(result: dict) -> dict:
-    """
-    Summarize the ledger deservedness evaluation result.
-    
-    Args:
-        result: Result from evaluate_ledger_deservedness_v1
-    
-    Returns:
-        Human-readable summary
-    """
+    """Summarize the ledger deservedness evaluation result."""
     metrics = result.get("metrics", {})
-    
+
     summary = f"""Ledger Deservedness Assembler Summary
 ==========================================
 Task: {result.get('task_id')}
@@ -505,7 +548,7 @@ Ledger boundary:
 
 Anti-laundering laws enforced: {len(result.get('antilaundering_laws', []))}
 """
-    
+
     return {
         "summary": summary,
         "result": result,
