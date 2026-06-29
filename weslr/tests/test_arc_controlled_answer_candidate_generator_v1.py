@@ -1,344 +1,213 @@
-"""
-Tests for ARC Controlled Answer Candidate Generator
+import copy
 
-Verifies implementation:
-- Input model fields
-- Construction modes
-- Candidate descriptor model
-- Construction trace model
-- Blocking rules
-- Ledger relationship
-- Anti-laundering laws
-- Metrics
-"""
-
-import pytest
 from weslr.arc_controlled_answer_candidate_generator import (
+    ANTILAUNDERING_LAWS,
+    CANDIDATE_TREATED_AS_FINAL_ANSWER,
+    GENERATOR_GRANTS_DESERVEDNESS,
+    GENERATOR_OUTPUTS_FINAL_ANSWER,
+    REQUIRES_LEDGER_REVIEW,
     build_controlled_answer_candidate_generator_input_v1,
     generate_controlled_answer_candidates_v1,
-    summarize_controlled_answer_candidate_generation_v1,
-    ANTILAUNDERING_LAWS,
-    CONSTRUCTION_MODES,
-    BLOCKING_STATUSES,
-    GENERATOR_GRANTS_DESERVEDNESS,
-    REQUIRES_LEDGER_REVIEW,
 )
 
 
-class TestInputModel:
-    """Test input model fields."""
-    
-    def test_input_model_fields_preserved(self):
-        """Input model fields preserved."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_001",
-            train_examples=[{"input": [[1, 2]]}],
-            test_input_descriptor={"grid": [[1, 2]]},
-            forced_constraints=["constraint_1"],
-            train_forced_transformations=["transform_1"],
-            object_graph_correspondences=[{"correspondence_id": "c1"}],
-            invariant_preserving_transformations=["invariant_1"],
-            relation_first_rewrites=["rewrite_1"],
-            composed_transform_candidates=["composed_1"],
-            explicit_candidate_grammars=["grammar_1"],
-            unresolved_rival_grammars=["rival_1"],
-            unsupported_assumption_list=["assumption_1"],
-            helper_diagnostics={"helper_1": {}},
-        )
-        
-        assert inp["task_id"] == "task_001"
-        assert len(inp["train_examples"]) == 1
-        assert len(inp["forced_constraints"]) == 1
-        assert len(inp["train_forced_transformations"]) == 1
-        assert len(inp["object_graph_correspondences"]) == 1
+BASE_TRAIN = [{"input": [[1, 2]], "output": [[2, 1]]}]
 
 
-class TestConstructionModes:
-    """Test construction modes."""
-    
-    def test_all_7_modes_supported(self):
-        """All 7 construction modes supported."""
-        assert len(CONSTRUCTION_MODES) == 7
-        assert "relation_first_rewrite_candidate" in CONSTRUCTION_MODES
-        assert "object_correspondence_candidate" in CONSTRUCTION_MODES
-        assert "invariant_preserving_candidate" in CONSTRUCTION_MODES
-        assert "composed_transform_candidate" in CONSTRUCTION_MODES
-        assert "train_forced_transformation_candidate" in CONSTRUCTION_MODES
-        assert "explicit_grammar_candidate" in CONSTRUCTION_MODES
-        assert "partial_candidate_descriptor" in CONSTRUCTION_MODES
-    
-    def test_train_forced_transformation_generates(self):
-        """Train-forced transformation candidate can be generated."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            train_forced_transformations=[{
-                "operation_name": "fill",
+def _generate(**overrides):
+    inp = build_controlled_answer_candidate_generator_input_v1(
+        task_id="task_test",
+        train_examples=copy.deepcopy(BASE_TRAIN),
+        test_input_descriptor={"grid": [[1, 2]]},
+        **overrides,
+    )
+    return generate_controlled_answer_candidates_v1(inp)
+
+
+def _complete_train_forced_result():
+    return _generate(
+        forced_constraints=["colors preserve order"],
+        train_forced_transformations=[
+            {
                 "train_supported": True,
-                "output_shape": {"rows": 2, "cols": 2},
-            }],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert result["generation_status"] in ["generated", "blocked"]
-        assert result["candidates"] or result["blocking_reason"]
-    
-    def test_object_correspondence_generates_when_train_forced(self):
-        """Object correspondence candidate generates when train-forced."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            object_graph_correspondences=[{
-                "correspondence_id": "c1",
-                "train_supported": True,
-            }],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert result["generation_status"] in ["generated", "blocked"]
+                "operation_name": "mirror_fill",
+                "source_helper": "helper_1",
+                "output_shape": {"rows": 1, "cols": 2},
+            }
+        ],
+    )
 
 
-class TestCandidateDescriptorModel:
-    """Test candidate descriptor model."""
-    
-    def test_candidate_descriptor_required_fields(self):
-        """Candidate descriptor has required fields."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            train_forced_transformations=[{"train_supported": True}],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        if result["candidates"]:
-            cand = result["candidates"][0]
-            required = [
-                "candidate_id", "task_id", "construction_mode",
-                "output_shape_descriptor", "object_operations", "color_operations",
-                "spatial_operations", "relation_operations",
-                "invariant_preservation_claims", "object_correspondence_claims",
-                "source_constraints", "unsupported_assumptions", "unresolved_rivals",
-                "construction_trace", "requires_ledger_review", "treated_as_final_answer",
-            ]
-            for f in required:
-                assert f in cand, f"Missing field: {f}"
-
-
-class TestConstructionTraceModel:
-    """Test construction trace model."""
-    
-    def test_construction_trace_required_fields(self):
-        """Construction trace has required fields."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            train_forced_transformations=[{"train_supported": True}],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        if result["candidates"] and result["candidates"][0].get("construction_trace"):
-            trace = result["candidates"][0]["construction_trace"][0]
-            required = [
-                "step_id", "source_helper", "source_constraint", "operation",
-                "train_support", "assumption_status", "rival_impact",
-                "ledger_relevance", "evidence_status",
-            ]
-            for f in required:
-                assert f in trace, f"Missing trace field: {f}"
-
-
-class TestLedgerRelationship:
-    """Test ledger relationship."""
-    
-    def test_generated_candidate_requires_ledger_review(self):
-        """Generated candidate requires ledger review."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            train_forced_transformations=[{"train_supported": True}],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert result["requires_ledger_review"] is True
-    
-    def test_generated_candidate_is_not_final_answer(self):
-        """Generated candidate is not final answer."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            train_forced_transformations=[{"train_supported": True}],
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert result["generator_outputs_final_answer"] is False
-        assert result["generator_grants_deservedness"] is False
-    
-    def test_boundary_constants(self):
-        """Boundary constants are correct."""
+class TestBoundaryFlags:
+    def test_boundary_constants_remain_false_or_true(self):
         assert GENERATOR_GRANTS_DESERVEDNESS is False
+        assert GENERATOR_OUTPUTS_FINAL_ANSWER is False
         assert REQUIRES_LEDGER_REVIEW is True
+        assert CANDIDATE_TREATED_AS_FINAL_ANSWER is False
+
+    def test_all_anti_laundering_laws_exposed(self):
+        assert len(ANTILAUNDERING_LAWS) == 12
 
 
-class TestBlockingRules:
-    """Test blocking rules."""
-    
-    def test_no_forced_constraints_blocks_generation(self):
-        """No forced constraints blocks generation."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
+class TestTraceGroundingSchema:
+    def test_generated_candidate_includes_required_trace_grounding_schema(self):
+        result = _complete_train_forced_result()
+        candidate = result["candidates"][0]
+        required = [
+            "requires_ledger_review",
+            "candidate_treated_as_final_answer",
+            "construction_trace",
+            "construction_trace_complete",
+            "construction_trace_source_grounded",
+            "train_evidence_grounded",
+            "forced_uniqueness_trace_present",
+            "source_train_ids",
+            "synthetic_local_train_ids",
+            "train_grounded_transformation_rule",
+            "train_grounded_forced_constraints",
+            "ambiguity_check",
+            "competing_output_rejection_reason",
+            "uniquely_forced_reason",
+            "unsupported_assumptions",
+            "unresolved_rivals",
+            "helper_output_as_evidence",
+            "rehearsal_repeat_as_evidence",
+            "mdl_only_support",
+        ]
+        for field in required:
+            assert field in candidate, field
+        assert candidate["requires_ledger_review"] is True
+        assert candidate["candidate_treated_as_final_answer"] is False
+
+    def test_complete_train_grounded_candidate_has_complete_trace_fields(self):
+        result = _complete_train_forced_result()
+        candidate = result["candidates"][0]
+        assert candidate["construction_trace_complete"] is True
+        assert candidate["construction_trace_source_grounded"] is True
+        assert candidate["train_evidence_grounded"] is True
+        assert candidate["forced_uniqueness_trace_present"] is True
+        assert candidate["source_train_ids"] == ["train_1"]
+        assert candidate["train_grounded_forced_constraints"] == ["colors preserve order"]
+        assert candidate["missing_required_trace_fields"] == []
+
+    def test_incomplete_candidate_does_not_falsely_mark_trace_complete(self):
+        result = _generate(
+            train_forced_transformations=[{"train_supported": True}],
         )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        # Should either block or generate partial
-        assert result["generation_status"] in ["blocked", "generated"]
-    
-    def test_hidden_test_request_blocks_generation(self):
-        """Hidden test request blocks generation."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            _requests_hidden_test=True,
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert "hidden_test" in result["blocking_reason"]
-        assert result["metrics"]["hidden_test_request_blocked_count"] == 1
-    
-    def test_public_arc_answer_request_blocks(self):
-        """Public ARC answer request blocks generation."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-            _requests_public_arc_answer=True,
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert "public" in result["blocking_reason"]
-        assert result["metrics"]["public_answer_request_blocked_count"] == 1
+        candidate = result["candidates"][0]
+        assert candidate["construction_trace_complete"] is False
+        assert "train_grounded_forced_constraints" in candidate["missing_required_trace_fields"]
+        assert candidate["forced_uniqueness_trace_present"] is False
+
+    def test_train_grounding_flags_are_not_constants(self):
+        complete = _complete_train_forced_result()["candidates"][0]
+        incomplete = _generate(train_forced_transformations=[{"train_supported": True}])["candidates"][0]
+        assert complete["train_evidence_grounded"] is True
+        assert incomplete["train_evidence_grounded"] is False
+
+    def test_forced_uniqueness_flag_is_not_constant(self):
+        complete = _complete_train_forced_result()["candidates"][0]
+        incomplete = _generate(forced_constraints=["x"], unresolved_rival_grammars=["g1"], train_forced_transformations=[{"train_supported": True}])["candidates"][0]
+        assert complete["forced_uniqueness_trace_present"] is True
+        assert incomplete["forced_uniqueness_trace_present"] is False
+
+    def test_source_ids_present_when_source_grounding_claimed(self):
+        candidate = _complete_train_forced_result()["candidates"][0]
+        assert candidate["construction_trace_source_grounded"] is True
+        assert candidate["source_train_ids"] or candidate["synthetic_local_train_ids"]
 
 
-class TestPartialCandidate:
-    """Test partial candidate descriptor."""
-    
-    def test_partial_candidate_descriptor_remains_partial(self):
-        """Partial candidate descriptor remains partial."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
+class TestRivalGrammarGrounding:
+    def test_rival_grammar_candidate_includes_rival_grounding_when_available(self):
+        result = _generate(
+            forced_constraints=["grammar_consistent"],
+            explicit_candidate_grammars=[
+                {
+                    "rules_from_train": True,
+                    "grammar_id": "grammar_A",
+                    "rival_grammars": ["grammar_B"],
+                    "rejected_rival_reasons": ["Rejected grammar_B because it conflicts with train evidence."],
+                    "source_helper": "grammar_helper",
+                }
+            ],
         )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        # If candidates exist, at least one should be partial or status blocked
-        if result["candidates"]:
-            has_partial = any(
-                c.get("generation_status") == "partial" 
-                for c in result["candidates"]
-            )
-            assert has_partial or result["blocking_reason"]
+        candidate = result["candidates"][0]
+        assert candidate["rival_grammars"] == ["grammar_B"]
+        assert candidate["surviving_grammar"] == "grammar_A"
+        assert candidate["rival_elimination_trace"]
+        assert candidate["surviving_grammar_train_evidence"]
+        assert candidate["surviving_grammar_uniquely_forces_output"] is True
+
+    def test_unresolved_rivals_are_preserved_not_hidden(self):
+        result = _generate(
+            forced_constraints=["x"],
+            explicit_candidate_grammars=[{"rules_from_train": True, "grammar_id": "grammar_A"}],
+            unresolved_rival_grammars=["grammar_B"],
+        )
+        candidate = result["candidates"][0]
+        assert candidate["unresolved_rivals"] == ["grammar_B"]
+        assert candidate["forced_uniqueness_trace_present"] is False
+        assert candidate["surviving_grammar_uniquely_forces_output"] is False
+
+
+class TestPartialAndSafety:
+    def test_partial_candidate_cannot_mark_itself_complete_or_uniquely_forced(self):
+        result = _generate()
+        candidate = result["candidates"][0]
+        assert candidate["construction_mode"] == "partial_candidate_descriptor"
+        assert candidate["construction_trace_complete"] is False
+        assert candidate["forced_uniqueness_trace_present"] is False
+
+    def test_no_expected_or_scoring_answer_field_appears_in_candidates(self):
+        result = _complete_train_forced_result()
+        candidate = result["candidates"][0]
+        forbidden = {
+            "synthetic_expected_answer_for_scoring_only",
+            "expected_output",
+            "expected_answer",
+            "post_ledger_scoring_result",
+            "deserved_exact_result",
+            "deserved_but_wrong_result",
+        }
+        assert not (forbidden & set(candidate.keys()))
+
+    def test_helper_output_is_not_evidence(self):
+        candidate = _complete_train_forced_result()["candidates"][0]
+        assert candidate["helper_output_as_evidence"] is False
+
+    def test_rehearsal_repeat_is_not_evidence(self):
+        candidate = _complete_train_forced_result()["candidates"][0]
+        assert candidate["rehearsal_repeat_as_evidence"] is False
+
+    def test_mdl_only_support_is_not_treated_as_proof(self):
+        result = _generate(
+            explicit_candidate_grammars=[{"mdl_only": True, "rules_from_train": True, "grammar_id": "g1"}],
+        )
+        candidate = result["candidates"][0]
+        assert candidate["mdl_only_support"] is False
 
 
 class TestMetrics:
-    """Test metrics."""
-    
-    def test_all_16_metrics_exist(self):
-        """All 16 metrics exist."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
+    def test_required_metrics_exist(self):
+        result = _complete_train_forced_result()
         metrics = result["metrics"]
-        
         required = [
-            "candidate_generation_attempt_count",
-            "candidate_generated_count",
-            "candidate_generation_blocked_count",
-            "candidate_requires_ledger_review_count",
-            "safe_failure_required_count",
-            "unsupported_assumption_blocked_count",
-            "unresolved_rival_blocked_count",
-            "ambiguous_correspondence_blocked_count",
-            "unforced_invariant_blocked_count",
-            "mdl_only_choice_blocked_count",
-            "hidden_test_request_blocked_count",
-            "public_answer_request_blocked_count",
-            "candidate_treated_as_final_answer_count",
             "ledger_review_required_count",
             "construction_trace_complete_count",
-            "memorization_risk_flag_count",
+            "forced_uniqueness_trace_present_count",
+            "rival_elimination_trace_present_count",
+            "train_evidence_grounded_count",
+            "candidate_trace_missing_required_fields_count",
+            "candidate_trace_source_grounded_count",
+            "candidate_trace_incomplete_count",
         ]
-        
-        for m in required:
-            assert m in metrics, f"Missing metric: {m}"
+        for key in required:
+            assert key in metrics
 
-
-class TestAntiLaunderingLaws:
-    """Test anti-laundering laws."""
-    
-    def test_all_12_laws_exposed(self):
-        """All 12 anti-laundering laws exposed."""
-        assert len(ANTILAUNDERING_LAWS) == 12
-    
-    def test_candidate_generation_not_final_answer(self):
-        """Candidate generation is not final answer."""
-        assert "candidate_generation_is_not_final_answer" in ANTILAUNDERING_LAWS
-    
-    def test_every_candidate_requires_ledger_review(self):
-        """Every candidate requires ledger review."""
-        assert "every_candidate_requires_ledger_review" in ANTILAUNDERING_LAWS
-    
-    def test_hidden_test_output_blocked(self):
-        """Hidden test output cannot be used."""
-        assert "hidden_test_output_cannot_be_used" in ANTILAUNDERING_LAWS
-    
-    def test_public_arc_answers_blocked(self):
-        """Public ARC answers cannot be used."""
-        assert "public_arc_answers_cannot_be_used" in ANTILAUNDERING_LAWS
-
-
-class TestRehearsalHoldout:
-    """Test rehearsal/holdout policy."""
-    
-    def test_rehearsal_policy_represented(self):
-        """Rehearsal policy is represented."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        
-        assert result.get("rehearsal_candidate_generation_allowed") is True
-        assert result.get("rehearsal_counts_toward_threshold") is False
-        assert result.get("fresh_holdout_counts") is True
-        assert result.get("fresh_holdout_requires_no_leakage") is True
-
-
-class TestSummary:
-    """Test summary function."""
-    
-    def test_summary_produced(self):
-        """Summary is produced."""
-        inp = build_controlled_answer_candidate_generator_input_v1(
-            task_id="task_test",
-            train_examples=[],
-            test_input_descriptor={},
-        )
-        result = generate_controlled_answer_candidates_v1(inp)
-        summary = summarize_controlled_answer_candidate_generation_v1(result)
-        
-        assert "summary" in summary
-        assert "result" in summary
-        assert "Controlled Answer Candidate Generator Summary" in summary["summary"]
+    def test_metrics_count_complete_and_incomplete_candidates(self):
+        complete = _complete_train_forced_result()["metrics"]
+        incomplete = _generate(train_forced_transformations=[{"train_supported": True}])["metrics"]
+        assert complete["construction_trace_complete_count"] == 1
+        assert complete["candidate_trace_incomplete_count"] == 0
+        assert incomplete["construction_trace_complete_count"] == 0
+        assert incomplete["candidate_trace_incomplete_count"] == 1

@@ -138,6 +138,12 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         "explicit_grammar_candidate_count": 0,
         "partial_candidate_descriptor_count": 0,
         "construction_trace_complete_count": 0,
+        "forced_uniqueness_trace_present_count": 0,
+        "rival_elimination_trace_present_count": 0,
+        "train_evidence_grounded_count": 0,
+        "candidate_trace_missing_required_fields_count": 0,
+        "candidate_trace_source_grounded_count": 0,
+        "candidate_trace_incomplete_count": 0,
     }
 
     ledger_metrics = {
@@ -203,6 +209,12 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         generation_metrics["candidate_generated_count"] += task_result.get("generated_count", 0)
         generation_metrics["candidate_generation_blocked_count"] += task_result.get("blocked_count", 0)
         generation_metrics["construction_trace_complete_count"] += task_result.get("generation_construction_trace_complete_count", 0)
+        generation_metrics["forced_uniqueness_trace_present_count"] += task_result.get("generation_forced_uniqueness_trace_present_count", 0)
+        generation_metrics["rival_elimination_trace_present_count"] += task_result.get("generation_rival_elimination_trace_present_count", 0)
+        generation_metrics["train_evidence_grounded_count"] += task_result.get("generation_train_evidence_grounded_count", 0)
+        generation_metrics["candidate_trace_missing_required_fields_count"] += task_result.get("generation_candidate_trace_missing_required_fields_count", 0)
+        generation_metrics["candidate_trace_source_grounded_count"] += task_result.get("generation_candidate_trace_source_grounded_count", 0)
+        generation_metrics["candidate_trace_incomplete_count"] += task_result.get("generation_candidate_trace_incomplete_count", 0)
         generation_metrics["relation_first_rewrite_candidate_count"] += task_result.get("relation_first_rewrite_candidate_count", 0)
         generation_metrics["object_correspondence_candidate_count"] += task_result.get("object_correspondence_candidate_count", 0)
         generation_metrics["invariant_preserving_candidate_count"] += task_result.get("invariant_preserving_candidate_count", 0)
@@ -245,6 +257,12 @@ def _process_task(task: dict) -> dict:
         "generated_count": 0,
         "blocked_count": 0,
         "generation_construction_trace_complete_count": 0,
+        "generation_forced_uniqueness_trace_present_count": 0,
+        "generation_rival_elimination_trace_present_count": 0,
+        "generation_train_evidence_grounded_count": 0,
+        "generation_candidate_trace_missing_required_fields_count": 0,
+        "generation_candidate_trace_source_grounded_count": 0,
+        "generation_candidate_trace_incomplete_count": 0,
         "relation_first_rewrite_candidate_count": 0,
         "object_correspondence_candidate_count": 0,
         "invariant_preserving_candidate_count": 0,
@@ -286,6 +304,24 @@ def _process_task(task: dict) -> dict:
         result["generation_construction_trace_complete_count"] = sum(
             1 for candidate in candidates if candidate.get("construction_trace_complete") is True
         )
+        result["generation_forced_uniqueness_trace_present_count"] = sum(
+            1 for candidate in candidates if candidate.get("forced_uniqueness_trace_present") is True
+        )
+        result["generation_rival_elimination_trace_present_count"] = sum(
+            1 for candidate in candidates if candidate.get("rival_elimination_trace_present") is True
+        )
+        result["generation_train_evidence_grounded_count"] = sum(
+            1 for candidate in candidates if candidate.get("train_evidence_grounded") is True
+        )
+        result["generation_candidate_trace_missing_required_fields_count"] = sum(
+            1 for candidate in candidates if candidate.get("missing_required_trace_fields")
+        )
+        result["generation_candidate_trace_source_grounded_count"] = sum(
+            1 for candidate in candidates if candidate.get("construction_trace_source_grounded") is True
+        )
+        result["generation_candidate_trace_incomplete_count"] = sum(
+            1 for candidate in candidates if candidate.get("construction_trace_complete") is not True
+        )
         _count_candidate_modes(candidates, result)
     else:
         gen_input = build_controlled_answer_candidate_generator_input_v1(
@@ -302,6 +338,12 @@ def _process_task(task: dict) -> dict:
         result["blocked_count"] = 1 if gen_result.get("candidate_blocked") else 0
         result["candidate_generated"] = result["generated_count"] > 0
         result["generation_construction_trace_complete_count"] = gen_result.get("metrics", {}).get("construction_trace_complete_count", 0)
+        result["generation_forced_uniqueness_trace_present_count"] = gen_result.get("metrics", {}).get("forced_uniqueness_trace_present_count", 0)
+        result["generation_rival_elimination_trace_present_count"] = gen_result.get("metrics", {}).get("rival_elimination_trace_present_count", 0)
+        result["generation_train_evidence_grounded_count"] = gen_result.get("metrics", {}).get("train_evidence_grounded_count", 0)
+        result["generation_candidate_trace_missing_required_fields_count"] = gen_result.get("metrics", {}).get("candidate_trace_missing_required_fields_count", 0)
+        result["generation_candidate_trace_source_grounded_count"] = gen_result.get("metrics", {}).get("candidate_trace_source_grounded_count", 0)
+        result["generation_candidate_trace_incomplete_count"] = gen_result.get("metrics", {}).get("candidate_trace_incomplete_count", 0)
         _count_candidate_modes(candidates, result)
 
     if result["generated_count"] == 0:

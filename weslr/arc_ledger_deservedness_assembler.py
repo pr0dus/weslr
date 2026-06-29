@@ -351,7 +351,8 @@ def _evaluate_candidate(candidate: dict, assembler_input: dict, metrics: dict) -
         traces.append(_build_trace("ambiguity_trace_check", "train", "ambiguity_check", False, "required", "missing"))
         return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
 
-    if not _has_nonempty_text(candidate.get("competing_outputs_rejected_reason")):
+    competing_output_rejection_reason = candidate.get("competing_outputs_rejected_reason") or candidate.get("competing_output_rejection_reason")
+    if not _has_nonempty_text(competing_output_rejection_reason):
         metrics["insufficient_train_evidence_count"] += 1
         traces.append(_build_trace("competing_outputs_check", "train", "competing_outputs_rejected_reason", False, "required", "missing"))
         return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
@@ -422,10 +423,10 @@ def _contains_forbidden_scoring_content(value: Any) -> bool:
 
 
 def _has_source_train_ids(candidate: dict, trace: list[dict]) -> bool:
-    if candidate.get("source_train_example_ids") or candidate.get("synthetic_local_train_ids"):
+    if candidate.get("source_train_ids") or candidate.get("source_train_example_ids") or candidate.get("synthetic_local_train_ids"):
         return True
     for step in trace:
-        if step.get("source_train_example_ids") or step.get("synthetic_local_train_ids"):
+        if step.get("source_train_ids") or step.get("source_train_example_ids") or step.get("synthetic_local_train_ids"):
             return True
     return False
 
@@ -440,11 +441,11 @@ def _has_train_grounded_rule(candidate: dict, trace: list[dict]) -> bool:
 
 
 def _has_train_grounded_forced_constraints(candidate: dict, trace: list[dict]) -> bool:
-    constraints = candidate.get("forced_constraints_tied_to_train_evidence")
+    constraints = candidate.get("forced_constraints_tied_to_train_evidence") or candidate.get("train_grounded_forced_constraints")
     if isinstance(constraints, list) and constraints:
         return True
     for step in trace:
-        step_constraints = step.get("forced_constraints_tied_to_train_evidence")
+        step_constraints = step.get("forced_constraints_tied_to_train_evidence") or step.get("train_grounded_forced_constraints")
         if isinstance(step_constraints, list) and step_constraints:
             return True
     return False
@@ -458,8 +459,8 @@ def _has_ambiguity_check(candidate: dict) -> bool:
 def _is_rival_case(candidate: dict) -> bool:
     return bool(
         candidate.get("rival_grammar_case")
-        or "rival_grammars" in candidate
-        or "surviving_grammar" in candidate
+        or candidate.get("rival_grammars")
+        or candidate.get("surviving_grammar")
         or candidate.get("rival_elimination_trace_present") is True
     )
 
