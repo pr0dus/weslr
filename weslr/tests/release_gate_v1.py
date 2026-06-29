@@ -277,6 +277,13 @@ _arc_non_rival_trace_complete_false_positives_split_diagnosis_allowed_paths = {
     _arc_non_rival_trace_complete_false_positives_split_diagnosis_doc,
 }
 
+_arc_composed_and_mdl_false_positive_root_cause_attribution_doc = (
+    "docs/WESLR_ARC_COMPOSED_AND_MDL_FALSE_POSITIVE_ROOT_CAUSE_ATTRIBUTION_V1.md"
+)
+_arc_composed_and_mdl_false_positive_root_cause_attribution_allowed_paths = {
+    _arc_composed_and_mdl_false_positive_root_cause_attribution_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16301,6 +16308,8 @@ def _check_git_scope():
         if path in _arc_generative_bridge_v5_replay_after_rival_false_uniqueness_repair_run_allowed_paths:
             allowed = True
         if path in _arc_non_rival_trace_complete_false_positives_split_diagnosis_allowed_paths:
+            allowed = True
+        if path in _arc_composed_and_mdl_false_positive_root_cause_attribution_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
