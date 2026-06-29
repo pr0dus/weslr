@@ -217,6 +217,17 @@ _arc_ledger_deservedness_assembler_after_v5_replay_repair_allowed_paths = {
     _arc_ledger_deservedness_assembler_after_v5_replay_repair_doc,
 }
 
+# Narrow, exact-path allowance for the ARC ledger deservedness assembler repair
+# review report after the V5 replay repair only. Same narrow intent as the
+# prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
+# wildcard, and does NOT weaken any protected-file rule.
+_arc_ledger_deservedness_assembler_after_v5_replay_repair_review_doc = (
+    "docs/WESLR_ARC_LEDGER_DESERVEDNESS_ASSEMBLER_AFTER_V5_REPLAY_REPAIR_REVIEW_V1.md"
+)
+_arc_ledger_deservedness_assembler_after_v5_replay_repair_review_allowed_paths = {
+    _arc_ledger_deservedness_assembler_after_v5_replay_repair_review_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16225,6 +16236,8 @@ def _check_git_scope():
         if path in _arc_unknown_engine_level_ladder_smoke_metrics_review_allowed_paths:
             allowed = True
         if path in _arc_ledger_deservedness_assembler_after_v5_replay_repair_allowed_paths:
+            allowed = True
+        if path in _arc_ledger_deservedness_assembler_after_v5_replay_repair_review_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
