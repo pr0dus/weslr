@@ -270,6 +270,13 @@ _arc_generative_bridge_v5_replay_after_rival_false_uniqueness_repair_run_allowed
     _arc_generative_bridge_v5_replay_after_rival_false_uniqueness_repair_run_doc,
 }
 
+_arc_non_rival_trace_complete_false_positives_split_diagnosis_doc = (
+    "docs/WESLR_ARC_NON_RIVAL_TRACE_COMPLETE_FALSE_POSITIVES_SPLIT_DIAGNOSIS_V1.md"
+)
+_arc_non_rival_trace_complete_false_positives_split_diagnosis_allowed_paths = {
+    _arc_non_rival_trace_complete_false_positives_split_diagnosis_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16292,6 +16299,8 @@ def _check_git_scope():
         if path in _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_review_allowed_paths:
             allowed = True
         if path in _arc_generative_bridge_v5_replay_after_rival_false_uniqueness_repair_run_allowed_paths:
+            allowed = True
+        if path in _arc_non_rival_trace_complete_false_positives_split_diagnosis_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
