@@ -651,7 +651,23 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
         object_extraction = extract_arc_style_object_candidates_v1(input_grid, task_id=_safe_text(pair.get("pair_id")))
     evidence_labels: list[str] = []
     candidate: dict[str, Any] | None = None
-    if input_grid == output_grid:
+    # Check symmetry BEFORE identical_grids - symmetry may preserve input as-is
+    symmetry_parameters = _infer_complete_symmetry_parameters(input_grid, output_grid, background_value)
+    if symmetry_parameters is not None:
+        evidence_labels.append("symmetry_completion")
+        candidate = {
+            "primitive_id": "complete_symmetry",
+            "parameters": symmetry_parameters,
+            "candidate_role": "primary_exact",
+            "source": "structural_grid_delta",
+            "required_constraints": ["mirror_completion"],
+            "unsupported_assumptions": [],
+            "bounded_depth": 1,
+            "is_executable": True,
+            "candidate_rank": 0,
+            "train_fit_status": "fit",
+        }
+    elif input_grid == output_grid:
         evidence_labels.append("identical_grids")
         candidate = {
             "primitive_id": "copy",
@@ -670,7 +686,6 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
         move_parameters = _infer_move_parameters(input_grid, output_grid, background_value)
         fill_parameters = _infer_fill_parameters(input_grid, output_grid, background_value)
         fill_region_parameters = _infer_fill_region_parameters(input_grid, output_grid, background_value)
-        symmetry_parameters = _infer_complete_symmetry_parameters(input_grid, output_grid, background_value)
         border_parameters = _infer_border_frame_parameters(input_grid, output_grid, background_value)
         if fill_region_parameters is not None:
             evidence_labels.append("fill_region")
@@ -737,20 +752,6 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
                 "candidate_role": "primary_exact",
                 "source": "structural_grid_delta",
                 "required_constraints": ["line_row_known"],
-                "unsupported_assumptions": [],
-                "bounded_depth": 1,
-                "is_executable": True,
-                "candidate_rank": 0,
-                "train_fit_status": "fit",
-            }
-        elif symmetry_parameters is not None:
-            evidence_labels.append("symmetry_completion")
-            candidate = {
-                "primitive_id": "complete_symmetry",
-                "parameters": symmetry_parameters,
-                "candidate_role": "primary_exact",
-                "source": "structural_grid_delta",
-                "required_constraints": ["mirror_completion"],
                 "unsupported_assumptions": [],
                 "bounded_depth": 1,
                 "is_executable": True,
