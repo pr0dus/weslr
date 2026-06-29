@@ -71,6 +71,48 @@ class TestCandidateOutputSurface:
         assert compare_normalized_grid_int_matrices([[1, 2]], [[1, 2]]) is True
         assert compare_normalized_grid_int_matrices([[1, 2]], [[2, 1]]) is False
 
+    @pytest.mark.parametrize(
+        "bad_normalized_output",
+        [
+            {"not": "a_grid"},
+            "abc",
+            7,
+            [[1, 2], [3]],
+            [[1, "2"]],
+            [[True, 0]],
+            [],
+        ],
+    )
+    def test_malformed_json_safe_normalized_output_cannot_become_comparable(self, bad_normalized_output):
+        surface = build_candidate_output_surface(
+            present=True,
+            output_type="grid_int_matrix",
+            normalized_output=bad_normalized_output,
+            raw_output_reference=bad_normalized_output,
+            output_provenance="candidate_override",
+            serialization_status="json_safe",
+            comparable_to_expected=False,
+            incomparable_reason_code="none",
+        )
+        checked = derive_candidate_output_comparability(surface, expected_output_available=True)
+        assert checked["comparable_to_expected"] is False
+        assert checked["incomparable_reason_code"] == "normalization_failed"
+
+    def test_valid_rectangular_nested_integer_list_remains_comparable(self):
+        surface = build_candidate_output_surface(
+            present=True,
+            output_type="grid_int_matrix",
+            normalized_output=[[1, 2], [3, 4]],
+            raw_output_reference=[[1, 2], [3, 4]],
+            output_provenance="candidate_override",
+            serialization_status="json_safe",
+            comparable_to_expected=False,
+            incomparable_reason_code="none",
+        )
+        checked = derive_candidate_output_comparability(surface, expected_output_available=True)
+        assert checked["comparable_to_expected"] is True
+        assert checked["incomparable_reason_code"] == "none"
+
     def test_missing_candidate_output_gives_candidate_output_missing(self):
         surface = build_candidate_output_surface()
         assert derive_unscorable_reason(surface, expected_output_available=True) == "candidate_output_missing"
@@ -86,6 +128,9 @@ class TestCandidateOutputSurface:
             comparable_to_expected=False,
             incomparable_reason_code="none",
         )
+        checked = derive_candidate_output_comparability(surface, expected_output_available=False)
+        assert checked["comparable_to_expected"] is False
+        assert checked["incomparable_reason_code"] == "expected_output_missing"
         assert derive_unscorable_reason(surface, expected_output_available=False) == "expected_output_missing"
 
     def test_ambiguous_output_gives_ambiguous_output_surface(self):

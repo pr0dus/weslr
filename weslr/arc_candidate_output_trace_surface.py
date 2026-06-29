@@ -158,6 +158,15 @@ def normalize_grid_int_matrix(value: Any) -> list[list[int]]:
 
 
 
+def _validate_comparable_grid_int_matrix(normalized_output: Any) -> bool:
+    try:
+        normalize_grid_int_matrix(normalized_output)
+    except ValueError:
+        return False
+    return True
+
+
+
 def validate_json_safe_candidate_output_surface(surface: dict) -> dict:
     cloned = _deepcopy(surface)
     if not _is_json_safe(cloned):
@@ -201,6 +210,11 @@ def derive_candidate_output_comparability(
     if normalized is None:
         surface["comparable_to_expected"] = False
         surface["incomparable_reason_code"] = "ambiguous_output_surface"
+        return surface
+
+    if not _validate_comparable_grid_int_matrix(normalized):
+        surface["comparable_to_expected"] = False
+        surface["incomparable_reason_code"] = "normalization_failed"
         return surface
 
     surface["comparable_to_expected"] = True
