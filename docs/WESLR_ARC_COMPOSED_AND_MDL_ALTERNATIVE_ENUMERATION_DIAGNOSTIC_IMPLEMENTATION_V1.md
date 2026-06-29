@@ -109,6 +109,11 @@ Meaning preserved:
 - search-insufficient labels are used when local structure is too thin to responsibly claim sufficiency
 
 ## 7. Forcedness-laundering audit helpers
+Addendum answer — audit coverage:
+- this lane fully implements forcedness-laundering checks for `composed_transform` and `explicit_grammar` / `mdl_trap` only
+- this lane does **not** fully implement object-graph, invariant, negative-evidence, helper-trap, or relation-first-rewrite audits
+- those other families are exposed only as future-family labels / fail-closed unsupported paths in this lane
+
 Implemented now for:
 - composed-transform forcedness laundering
 - MDL / simplicity laundering
@@ -142,10 +147,17 @@ The diagnostic rejects forbidden scoring-only fields when passed via the safe en
 It does not mutate the input candidate.
 
 ## 9. Tests added
+Addendum answer — enumeration scope:
+- tests explicitly confirm enumeration is bounded-local over defined alternative buckets
+- tests explicitly confirm enumeration is not limited only to already-generated candidates
+- tests do **not** claim global ARC exhaustiveness
+- tests preserve the rule that no specific alternative or rival rejection is claimed without an explicit diagnostic record
+
 Focused coverage now includes:
 - expected-answer field rejection
 - no final-answer emission / no input mutation
 - composed order enumeration
+- composed bounded-local enumeration beyond pre-generated candidates
 - composed thin-structure fail-closed behavior
 - composed component-support-only vs whole-composition support
 - composed direct-counterexample detection
@@ -154,10 +166,11 @@ Focused coverage now includes:
 - MDL train-forced vs merely-rules-from-train distinction
 - MDL simplicity-primary-evidence detection
 - MDL competing-grammar category enumeration
+- MDL bounded-local enumeration beyond generator-only rivals
 - MDL unrejected rival-output detection
 - MDL missing-proof-only path
 - MDL laundering type
-- unsupported future-family fail-closed behavior
+- unsupported future-family fail-closed behavior across object-graph / invariant / negative-evidence / helper-trap / relation-first labels
 
 ## 10. Safety boundaries
 Protected files were left outside this lane.
