@@ -256,6 +256,13 @@ _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_allowed_paths =
     _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_doc,
 }
 
+_arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_review_doc = (
+    "docs/WESLR_ARC_RIVAL_GRAMMAR_FALSE_UNIQUENESS_AFTER_TRACE_GROUNDING_REPAIR_REVIEW_V1.md"
+)
+_arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_review_allowed_paths = {
+    _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_review_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16274,6 +16281,8 @@ def _check_git_scope():
         if path in _arc_v5_known_bad_cases_and_safe_failure_routing_pre_rerun_verification_allowed_paths:
             allowed = True
         if path in _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_allowed_paths:
+            allowed = True
+        if path in _arc_rival_grammar_false_uniqueness_after_trace_grounding_repair_review_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
