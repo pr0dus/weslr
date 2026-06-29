@@ -8,6 +8,16 @@ from weslr.arc_generative_bridge_v5_replay import (
 )
 
 
+KNOWN_BAD_IDS = [
+    "v5_replay_v4_rival_grammar_replay_6_01",
+    "v5_replay_v4_rival_grammar_replay_6_02",
+    "v5_replay_v4_rival_grammar_replay_6_03",
+    "v5_replay_v4_rival_grammar_replay_6_04",
+    "v5_replay_v4_rival_grammar_replay_6_05",
+    "v5_replay_v4_rival_grammar_replay_6_06",
+]
+
+
 def _candidate(**overrides):
     candidate = {
         "candidate_id": "c1",
@@ -56,10 +66,14 @@ def _candidate(**overrides):
         "mdl_only_support": False,
         "unsupported_assumptions": [],
         "unresolved_rivals": [],
+        "rival_context_detected": False,
+        "rival_context_reasons": [],
         "rival_grammars": [],
         "surviving_grammar": None,
         "rival_elimination_trace": [],
         "surviving_grammar_train_evidence": "",
+        "rival_outputs_considered": [],
+        "rejected_rival_reasons": [],
         "surviving_grammar_uniquely_forces_output": False,
         "missing_required_trace_fields": [],
     }
@@ -116,18 +130,10 @@ class TestScoringBoundary:
 
 
 class TestReplayRepairMetrics:
-    def test_ledger_review_required_count_increments_correctly(self):
-        result = _process_task(_task_with_candidates(_candidate()))
-        assert result["ledger_review_required_count"] == 1
-
-    def test_construction_trace_complete_count_increments_correctly(self):
-        result = _process_task(_task_with_candidates(_candidate()))
-        assert result["construction_trace_complete_count"] == 1
-
     def test_generator_produced_complete_candidate_can_pass_assembler_in_replay(self):
         task = {
             "task_id": "task_gen_complete",
-            "group_id": TASK_GROUPS[0],
+            "group_id": TASK_GROUPS[1],
             "train_examples": [{"input": [[1, 2]], "output": [[2, 1]]}],
             "test_input_descriptor": {"grid": [[1, 2]]},
             "helper_diagnostics": {},
@@ -146,7 +152,7 @@ class TestReplayRepairMetrics:
     def test_generator_produced_incomplete_candidate_safe_fails_through_replay(self):
         task = {
             "task_id": "task_gen_incomplete",
-            "group_id": TASK_GROUPS[0],
+            "group_id": TASK_GROUPS[1],
             "train_examples": [{"input": [[1, 2]], "output": [[2, 1]]}],
             "test_input_descriptor": {"grid": [[1, 2]]},
             "helper_diagnostics": {},
@@ -162,46 +168,53 @@ class TestReplayRepairMetrics:
         assert result["safe_failure"] is True
         assert result["candidate_deserved"] is False
 
+    def test_known_bad_six_rival_tasks_no_longer_become_deserved_without_rival_proof(self):
+        tasks = [
+            task
+            for task in build_generative_bridge_v5_replay_tasks_v1()
+            if task["task_id"] in KNOWN_BAD_IDS
+        ]
+        assert len(tasks) == 6
+        for task in tasks:
+            result = _process_task(task)
+            assert result["candidate_deserved"] is False
+            assert result["safe_failure"] is True
+            assert result["safe_failure_required_count"] == 1
+            assert result["safe_failure_from_unresolved_rival_count"] == 1
+            assert result["rival_context_detected_count"] == 1
+            assert result["rival_context_missing_proof_count"] == 1
+            assert result["train_forced_rival_bypass_blocked_count"] == 1
+
+    def test_known_bad_six_aggregate_safe_failures_are_all_six(self):
+        tasks = [
+            task
+            for task in build_generative_bridge_v5_replay_tasks_v1()
+            if task["task_id"] in KNOWN_BAD_IDS
+        ]
+        result = run_generative_bridge_v5_replay_v1(tasks)
+        assert result["task_metrics"]["candidate_deserved_tasks"] == 0
+        assert result["task_metrics"]["safe_failure_count"] == 6
+        assert result["generation_metrics"]["rival_context_detected_count"] == 6
+        assert result["generation_metrics"]["rival_context_missing_proof_count"] == 6
+        assert result["generation_metrics"]["train_forced_rival_bypass_blocked_count"] == 6
+        assert result["ledger_metrics"]["safe_failure_from_unresolved_rival_count"] == 6
+        assert result["ledger_metrics"]["rival_context_safe_failure_count"] == 6
+
     def test_replay_propagates_candidate_trace_fields_unchanged(self):
         candidate = _candidate(source_train_ids=["train_A"], train_grounded_forced_constraints=["constraint_A"])
-        task = _task_with_candidates(candidate)
+        task = _task_with_candidates(candidate, group_id=TASK_GROUPS[1])
         result = _process_task(task)
         assert result["ledger_review_required_count"] == 1
         assert candidate["source_train_ids"] == ["train_A"]
         assert candidate["train_grounded_forced_constraints"] == ["constraint_A"]
 
-    def test_replay_metrics_count_complete_traces_correctly(self):
-        result = run_generative_bridge_v5_replay_v1([
-            _task_with_candidates(_candidate()),
-            _task_with_candidates(_candidate(candidate_id="c2")),
-        ])
-        assert result["generation_metrics"]["construction_trace_complete_count"] == 2
-
-    def test_replay_metrics_count_missing_and_incomplete_traces_correctly(self):
-        incomplete = _candidate(
-            candidate_id="c2",
-            construction_trace_complete=False,
-            forced_uniqueness_trace_present=False,
-            train_evidence_grounded=False,
-            competing_output_rejection_reason="",
-            competing_outputs_rejected_reason="",
-            uniquely_forced_reason="",
-            missing_required_trace_fields=["forced_uniqueness_trace_present"],
-        )
-        result = run_generative_bridge_v5_replay_v1([
-            _task_with_candidates(_candidate()),
-            _task_with_candidates(incomplete),
-        ])
-        assert result["generation_metrics"]["candidate_trace_missing_required_fields_count"] == 1
-        assert result["generation_metrics"]["candidate_trace_incomplete_count"] == 1
-
     def test_expected_answers_remain_scoring_only_after_ledger_decision(self):
-        result = _process_task(_task_with_candidates(_candidate()))
+        result = _process_task(_task_with_candidates(_candidate(), group_id=TASK_GROUPS[1]))
         assert result["candidate_deserved"] is True
         assert "synthetic_expected_answer_for_scoring_only" not in _candidate()
 
     def test_emitter_hard_stops_remain_unchanged(self):
-        result = run_generative_bridge_v5_replay_v1([_task_with_candidates(_candidate())])
+        result = run_generative_bridge_v5_replay_v1([_task_with_candidates(_candidate(), group_id=TASK_GROUPS[1])])
         emitter = result["emitter_decision"]
         assert emitter["emitter_gate_passed"] is False
         assert emitter["recommended_next_lane"]

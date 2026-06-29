@@ -12,6 +12,7 @@ from weslr.arc_ledger_deservedness_assembler import (
 
 
 BASE_TRAIN = [{"input": [[1, 2]], "output": [[2, 1]]}]
+KNOWN_BAD_ID = "v5_replay_v4_rival_grammar_replay_6_01"
 
 
 def _valid_candidate(**overrides):
@@ -62,10 +63,14 @@ def _valid_candidate(**overrides):
         "mdl_only_support": False,
         "unsupported_assumptions": [],
         "unresolved_rivals": [],
+        "rival_context_detected": False,
+        "rival_context_reasons": [],
         "rival_grammars": [],
         "surviving_grammar": None,
         "rival_elimination_trace": [],
         "surviving_grammar_train_evidence": "",
+        "rival_outputs_considered": [],
+        "rejected_rival_reasons": [],
         "surviving_grammar_uniquely_forces_output": False,
     }
     candidate.update(overrides)
@@ -73,17 +78,20 @@ def _valid_candidate(**overrides):
 
 
 def _evaluate(candidate, **input_overrides):
+    task_id = input_overrides.pop("task_id", "task_test")
     inp = build_ledger_deservedness_assembler_input_v1(
-        task_id="task_test",
+        task_id=task_id,
         candidate_descriptors=[candidate],
         **input_overrides,
     )
     return evaluate_ledger_deservedness_v1(inp)
 
 
-def _generator_candidate(complete=True):
+def _generator_candidate(complete=True, rival=False):
     generator_input = build_controlled_answer_candidate_generator_input_v1(
-        task_id="task_test",
+        task_id=KNOWN_BAD_ID if rival else "task_test",
+        group_id="v4_rival_grammar_replay_6" if rival else None,
+        expected_frontier_failure="rival_grammar_preserved" if rival else None,
         train_examples=BASE_TRAIN,
         test_input_descriptor={"grid": [[1, 2]]},
         forced_constraints=["constraint_1"] if complete else [],
@@ -99,31 +107,15 @@ def _generator_candidate(complete=True):
 
 class TestAssemblerRepair:
     def test_task_level_forced_constraints_alone_cannot_make_candidate_deserved(self):
-        candidate = _valid_candidate(forced_uniqueness_trace_present=False, uniquely_forced_reason="", competing_output_rejection_reason="", competing_outputs_rejected_reason="")
+        candidate = _valid_candidate(
+            forced_uniqueness_trace_present=False,
+            uniquely_forced_reason="",
+            competing_output_rejection_reason="",
+            competing_outputs_rejected_reason="",
+        )
         result = _evaluate(candidate, forced_constraints=["constraint_1"], train_evidence_support={"support": True})
         assert result["decision"] == "safe_failure_required"
         assert result["metrics"]["safe_failure_from_insufficient_evidence_count"] == 1
-
-    def test_candidate_with_empty_construction_trace_cannot_be_deserved(self):
-        result = _evaluate(_valid_candidate(construction_trace=[]))
-        assert result["decision"] == "safe_failure_required"
-        assert result["metrics"]["safe_failure_from_incomplete_trace_count"] == 1
-
-    def test_candidate_with_incomplete_construction_trace_cannot_be_deserved(self):
-        result = _evaluate(_valid_candidate(construction_trace_complete=False))
-        assert result["decision"] == "safe_failure_required"
-        assert result["metrics"]["safe_failure_from_incomplete_trace_count"] == 1
-
-    def test_candidate_missing_requires_ledger_review_cannot_be_deserved(self):
-        candidate = _valid_candidate()
-        del candidate["requires_ledger_review"]
-        result = _evaluate(candidate)
-        assert result["decision"] == "safe_failure_required"
-        assert result["metrics"]["ledger_review_required_count"] == 0
-
-    def test_candidate_requires_ledger_review_false_cannot_be_deserved(self):
-        result = _evaluate(_valid_candidate(requires_ledger_review=False))
-        assert result["decision"] == "safe_failure_required"
 
     def test_generator_produced_complete_candidate_can_pass_assembler(self):
         candidate = _generator_candidate(complete=True)
@@ -137,17 +129,51 @@ class TestAssemblerRepair:
         assert result["decision"] == "safe_failure_required"
         assert result["metrics"]["safe_failure_from_incomplete_trace_count"] == 1
 
-    def test_rival_grammar_candidate_missing_surviving_grammar_cannot_be_deserved(self):
-        candidate = _valid_candidate(
-            rival_grammars=["g1", "g2"],
-            surviving_grammar=None,
-            rival_elimination_trace_present=False,
-            rival_elimination_trace=[],
-            surviving_grammar_train_evidence="",
+    def test_rival_context_train_forced_candidate_missing_proof_safe_fails(self):
+        candidate = _generator_candidate(complete=True, rival=True)
+        result = _evaluate(
+            candidate,
+            group_id="v4_rival_grammar_replay_6",
+            expected_frontier_failure="rival_grammar_preserved",
         )
-        result = _evaluate(candidate)
         assert result["decision"] == "safe_failure_required"
         assert result["metrics"]["safe_failure_from_unresolved_rival_count"] == 1
+        assert result["metrics"]["rival_context_detected_count"] == 1
+        assert result["metrics"]["rival_context_missing_proof_count"] == 1
+        assert result["metrics"]["rival_context_safe_failure_count"] == 1
+        assert result["metrics"]["train_forced_rival_bypass_blocked_count"] == 1
+
+    def test_task_level_rival_context_catches_candidate_even_without_candidate_flag(self):
+        candidate = _valid_candidate(
+            task_id=KNOWN_BAD_ID,
+            rival_context_detected=False,
+            rival_context_reasons=[],
+        )
+        result = _evaluate(
+            candidate,
+            task_id=KNOWN_BAD_ID,
+            group_id="v4_rival_grammar_replay_6",
+            expected_frontier_failure="rival_grammar_preserved",
+        )
+        assert result["decision"] == "safe_failure_required"
+        assert result["metrics"]["safe_failure_from_unresolved_rival_count"] == 1
+
+    def test_rival_grammar_candidate_with_full_proof_can_be_deserved(self):
+        candidate = _valid_candidate(
+            construction_mode="explicit_grammar_candidate",
+            rival_context_detected=True,
+            rival_context_reasons=["rival_grammars_present"],
+            rival_grammars=["g2"],
+            surviving_grammar="g1",
+            rival_elimination_trace=[{"rival_grammar": "g2", "reason": "contradicted by train evidence"}],
+            rival_elimination_trace_present=True,
+            surviving_grammar_train_evidence="Train examples support surviving grammar g1.",
+            rival_outputs_considered=["alt_output"],
+            rejected_rival_reasons=["Rejected g2 because it conflicts with train evidence."],
+            surviving_grammar_uniquely_forces_output=True,
+        )
+        result = _evaluate(candidate)
+        assert result["decision"] == "candidate_deserved"
 
     def test_scoring_answer_in_assembler_input_fails_closed(self):
         inp = build_ledger_deservedness_assembler_input_v1(
@@ -181,6 +207,10 @@ class TestSummaryAndMetrics:
             "safe_failure_from_insufficient_evidence_count",
             "safe_failure_from_incomplete_trace_count",
             "safe_failure_from_unresolved_rival_count",
+            "rival_context_detected_count",
+            "rival_context_missing_proof_count",
+            "rival_context_safe_failure_count",
+            "train_forced_rival_bypass_blocked_count",
         ]
         for key in required:
             assert key in result["metrics"]

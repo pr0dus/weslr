@@ -89,6 +89,9 @@ def build_ledger_deservedness_assembler_input_v1(
     divergence_findings: list | None = None,
     constraint_findings: list | None = None,
     rehearsal_context: dict | None = None,
+    group_id: str | None = None,
+    expected_frontier_failure: str | None = None,
+    rival_context_hint: bool = False,
     evidence_scope: str = "train_only",
     hidden_test_output_available: bool = False,
     public_arc_answer_available: bool = False,
@@ -109,6 +112,9 @@ def build_ledger_deservedness_assembler_input_v1(
         "divergence_findings": divergence_findings or [],
         "constraint_findings": constraint_findings or [],
         "rehearsal_context": rehearsal_context or {},
+        "group_id": group_id,
+        "expected_frontier_failure": expected_frontier_failure,
+        "rival_context_hint": rival_context_hint,
         "evidence_scope": evidence_scope,
         "hidden_test_output_available": hidden_test_output_available,
         "public_arc_answer_available": public_arc_answer_available,
@@ -247,6 +253,10 @@ def _build_metrics() -> dict:
         "safe_failure_from_insufficient_evidence_count": 0,
         "safe_failure_from_incomplete_trace_count": 0,
         "safe_failure_from_unresolved_rival_count": 0,
+        "rival_context_detected_count": 0,
+        "rival_context_missing_proof_count": 0,
+        "rival_context_safe_failure_count": 0,
+        "train_forced_rival_bypass_blocked_count": 0,
     }
 
 
@@ -295,8 +305,17 @@ def _evaluate_candidate(candidate: dict, assembler_input: dict, metrics: dict) -
         traces.append(_build_trace("unsupported_assumption_check", "system", "unsupported_assumptions", False, "required", "present"))
         return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
 
+    rival_case = _is_rival_case(candidate, assembler_input)
+    if rival_case:
+        metrics["rival_context_detected_count"] += 1
+
     unresolved = candidate.get("unresolved_rivals", [])
     if unresolved:
+        if rival_case:
+            metrics["rival_context_missing_proof_count"] += 1
+            metrics["rival_context_safe_failure_count"] += 1
+            if candidate.get("construction_mode") == "train_forced_transformation_candidate":
+                metrics["train_forced_rival_bypass_blocked_count"] += 1
         traces.append(_build_trace("unresolved_rival_check", "system", "unresolved_rivals", False, "required", "present"))
         return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
 
@@ -362,17 +381,31 @@ def _evaluate_candidate(candidate: dict, assembler_input: dict, metrics: dict) -
         traces.append(_build_trace("uniquely_forced_check", "train", "uniquely_forced_reason", False, "required", "missing"))
         return _candidate_rejection(candidate, traces, "insufficient_train_evidence")
 
-    rival_case = _is_rival_case(candidate)
     if rival_case:
         rival_grammars = candidate.get("rival_grammars") or []
         surviving_grammar = candidate.get("surviving_grammar")
-        if not rival_grammars or not surviving_grammar or candidate.get("rival_elimination_trace_present") is not True:
+        rival_outputs_considered = candidate.get("rival_outputs_considered") or []
+        rejected_rival_reasons = candidate.get("rejected_rival_reasons") or []
+        if not _candidate_has_rival_proof(candidate):
             metrics["insufficient_train_evidence_count"] += 1
-            traces.append(_build_trace("rival_elimination_check", "train", "rival_elimination_trace_present", False, "required", "missing"))
-            return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
-        if not _has_nonempty_text(candidate.get("surviving_grammar_train_evidence")):
-            metrics["insufficient_train_evidence_count"] += 1
-            traces.append(_build_trace("surviving_grammar_train_evidence_check", "train", "surviving_grammar_train_evidence", False, "required", "missing"))
+            metrics["rival_context_missing_proof_count"] += 1
+            metrics["rival_context_safe_failure_count"] += 1
+            if candidate.get("construction_mode") == "train_forced_transformation_candidate":
+                metrics["train_forced_rival_bypass_blocked_count"] += 1
+            missing_constraint = "rival_elimination_trace_present"
+            if not rival_grammars:
+                missing_constraint = "rival_grammars"
+            elif not surviving_grammar:
+                missing_constraint = "surviving_grammar"
+            elif not rival_outputs_considered:
+                missing_constraint = "rival_outputs_considered"
+            elif not rejected_rival_reasons:
+                missing_constraint = "rejected_rival_reasons"
+            elif not _has_nonempty_text(candidate.get("surviving_grammar_train_evidence")):
+                missing_constraint = "surviving_grammar_train_evidence"
+            elif candidate.get("surviving_grammar_uniquely_forces_output") is not True:
+                missing_constraint = "surviving_grammar_uniquely_forces_output"
+            traces.append(_build_trace("rival_elimination_check", "train", missing_constraint, False, "required", "missing"))
             return _candidate_rejection(candidate, traces, "unresolved_rivals", unresolved_rivals_present=True)
 
     traces.append(_build_trace("candidate_deserved", "train", "candidate_level_trace_grounding", True, "required", "explicit"))
@@ -456,12 +489,35 @@ def _has_ambiguity_check(candidate: dict) -> bool:
     return ambiguity_check in {"clear", "resolved", False}
 
 
-def _is_rival_case(candidate: dict) -> bool:
+def _is_rival_case(candidate: dict, assembler_input: dict) -> bool:
+    task_id = str(assembler_input.get("task_id") or candidate.get("task_id") or "")
+    group_id = str(assembler_input.get("group_id") or "")
+    expected_frontier_failure = str(assembler_input.get("expected_frontier_failure") or "")
     return bool(
         candidate.get("rival_grammar_case")
+        or candidate.get("rival_context_detected") is True
         or candidate.get("rival_grammars")
         or candidate.get("surviving_grammar")
         or candidate.get("rival_elimination_trace_present") is True
+        or candidate.get("unresolved_rivals")
+        or assembler_input.get("unresolved_rival_grammars")
+        or assembler_input.get("rival_context_hint") is True
+        or "rival_grammar" in task_id
+        or "rival_grammar" in group_id
+        or "rival_grammar" in expected_frontier_failure
+    )
+
+
+def _candidate_has_rival_proof(candidate: dict) -> bool:
+    return bool(
+        candidate.get("rival_grammars")
+        and candidate.get("surviving_grammar")
+        and candidate.get("rival_elimination_trace")
+        and candidate.get("rival_elimination_trace_present") is True
+        and _has_nonempty_text(candidate.get("surviving_grammar_train_evidence"))
+        and candidate.get("rival_outputs_considered")
+        and candidate.get("rejected_rival_reasons")
+        and candidate.get("surviving_grammar_uniquely_forces_output") is True
     )
 
 

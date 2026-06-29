@@ -148,6 +148,8 @@ def build_controlled_answer_candidate_generator_input_v1(
     task_id: str,
     train_examples: list,
     test_input_descriptor: dict,
+    group_id: str | None = None,
+    expected_frontier_failure: str | None = None,
     forced_constraints: list | None = None,
     train_forced_transformations: list | None = None,
     object_graph_correspondences: list | None = None,
@@ -155,7 +157,10 @@ def build_controlled_answer_candidate_generator_input_v1(
     relation_first_rewrites: list | None = None,
     composed_transform_candidates: list | None = None,
     explicit_candidate_grammars: list | None = None,
+    rival_grammars: list | None = None,
     unresolved_rival_grammars: list | None = None,
+    rival_context_hint: bool = False,
+    multiple_plausible_transformations: bool = False,
     unsupported_assumption_list: list | None = None,
     helper_diagnostics: dict | None = None,
     _requests_hidden_test: bool = False,
@@ -165,6 +170,8 @@ def build_controlled_answer_candidate_generator_input_v1(
         "task_id": task_id,
         "train_examples": train_examples or [],
         "test_input_descriptor": test_input_descriptor or {},
+        "group_id": group_id,
+        "expected_frontier_failure": expected_frontier_failure,
         "forced_constraints": forced_constraints or [],
         "train_forced_transformations": train_forced_transformations or [],
         "object_graph_correspondences": object_graph_correspondences or [],
@@ -172,7 +179,10 @@ def build_controlled_answer_candidate_generator_input_v1(
         "relation_first_rewrites": relation_first_rewrites or [],
         "composed_transform_candidates": composed_transform_candidates or [],
         "explicit_candidate_grammars": explicit_candidate_grammars or [],
+        "rival_grammars": rival_grammars or [],
         "unresolved_rival_grammars": unresolved_rival_grammars or [],
+        "rival_context_hint": rival_context_hint,
+        "multiple_plausible_transformations": multiple_plausible_transformations,
         "unsupported_assumption_list": unsupported_assumption_list or [],
         "helper_diagnostics": helper_diagnostics or {},
         "_requests_hidden_test": _requests_hidden_test,
@@ -263,6 +273,9 @@ def _build_metrics() -> dict:
         "candidate_trace_missing_required_fields_count": 0,
         "candidate_trace_source_grounded_count": 0,
         "candidate_trace_incomplete_count": 0,
+        "rival_context_detected_count": 0,
+        "rival_context_missing_proof_count": 0,
+        "train_forced_rival_bypass_blocked_count": 0,
         "memorization_risk_flag_count": 0,
     }
 
@@ -374,6 +387,8 @@ def _build_candidate(
     )
     construction_trace_source_grounded = bool(source_train_ids or synthetic_local_train_ids)
     ambiguity_check = _derive_ambiguity_check(generator_input, operations, unresolved_rivals)
+    rival_context_reasons = _derive_rival_context_reasons(generator_input, operations, mode)
+    rival_context_detected = bool(rival_context_reasons)
 
     rival_grammars = _derive_rival_grammars(generator_input, operations)
     surviving_grammar = _derive_surviving_grammar(operations, unresolved_rivals)
@@ -422,6 +437,22 @@ def _build_candidate(
         and forced_uniqueness_trace_present
     )
 
+    if rival_context_detected and not _has_rival_proof_fields(
+        rival_grammars=rival_grammars,
+        surviving_grammar=surviving_grammar,
+        rival_elimination_trace=rival_elimination_trace,
+        surviving_grammar_train_evidence=surviving_grammar_train_evidence,
+        rival_outputs_considered=rival_outputs_considered,
+        rejected_rival_reasons=rejected_rival_reasons,
+        surviving_grammar_uniquely_forces_output=surviving_grammar_uniquely_forces_output,
+    ):
+        unresolved_rivals = list(dict.fromkeys(unresolved_rivals + ["rival_context_unresolved"]))
+        ambiguity_check = "unresolved"
+        forced_uniqueness_trace_present = False
+        competing_output_rejection_reason = ""
+        uniquely_forced_reason = ""
+        surviving_grammar_uniquely_forces_output = False
+
     candidate = {
         "candidate_id": f"{task_id}_cand_{trace_count}",
         "task_id": task_id,
@@ -457,6 +488,8 @@ def _build_candidate(
         "helper_output_as_evidence": helper_output_as_evidence,
         "rehearsal_repeat_as_evidence": rehearsal_repeat_as_evidence,
         "mdl_only_support": mdl_only_support,
+        "rival_context_detected": rival_context_detected,
+        "rival_context_reasons": rival_context_reasons,
         "rival_grammars": rival_grammars,
         "surviving_grammar": surviving_grammar,
         "rival_elimination_trace": rival_elimination_trace,
@@ -484,6 +517,7 @@ def _build_candidate(
 def _build_partial_candidate(task_id: str, trace_count: int, generator_input: dict) -> dict:
     unsupported = _listify(generator_input.get("unsupported_assumption_list"))
     unresolved_rivals = _listify(generator_input.get("unresolved_rival_grammars"))
+    rival_context_reasons = _derive_rival_context_reasons(generator_input, {}, "partial_candidate_descriptor")
     missing_fields = list(_TRACE_REQUIRED_FIELDS_BY_MODE["train_forced_transformation_candidate"])
     return {
         "candidate_id": f"{task_id}_cand_partial_{trace_count}",
@@ -517,6 +551,8 @@ def _build_partial_candidate(task_id: str, trace_count: int, generator_input: di
         "helper_output_as_evidence": False,
         "rehearsal_repeat_as_evidence": False,
         "mdl_only_support": False,
+        "rival_context_detected": bool(rival_context_reasons),
+        "rival_context_reasons": rival_context_reasons,
         "rival_grammars": [],
         "surviving_grammar": None,
         "rival_elimination_trace": [],
@@ -546,6 +582,14 @@ def _summarize_candidate_metrics(candidates: list[dict]) -> dict:
         "candidate_trace_missing_required_fields_count": sum(1 for c in candidates if c.get("missing_required_trace_fields")),
         "candidate_trace_source_grounded_count": sum(1 for c in candidates if c.get("construction_trace_source_grounded") is True),
         "candidate_trace_incomplete_count": sum(1 for c in candidates if c.get("construction_trace_complete") is not True),
+        "rival_context_detected_count": sum(1 for c in candidates if c.get("rival_context_detected") is True),
+        "rival_context_missing_proof_count": sum(1 for c in candidates if _rival_context_missing_proof(c)),
+        "train_forced_rival_bypass_blocked_count": sum(
+            1
+            for c in candidates
+            if c.get("construction_mode") == "train_forced_transformation_candidate"
+            and _rival_context_missing_proof(c)
+        ),
         "memorization_risk_flag_count": 0,
     }
 
@@ -628,7 +672,11 @@ def _derive_ambiguity_check(generator_input: dict, operations: dict, unresolved_
 
 
 def _derive_rival_grammars(generator_input: dict, operations: dict) -> list[str]:
-    return _listify(operations.get("rival_grammars")) or _listify(generator_input.get("unresolved_rival_grammars"))
+    return (
+        _listify(operations.get("rival_grammars"))
+        or _listify(generator_input.get("rival_grammars"))
+        or _listify(generator_input.get("unresolved_rival_grammars"))
+    )
 
 
 def _derive_surviving_grammar(operations: dict, unresolved_rivals: list[str]) -> str | None:
@@ -762,6 +810,22 @@ def _missing_required_trace_fields(candidate: dict) -> list[str]:
         elif field == "uniquely_forced_reason" and not candidate.get(field):
             missing.append(field)
 
+    if candidate.get("rival_context_detected") is True:
+        if not candidate.get("rival_grammars"):
+            missing.append("rival_grammars")
+        if not candidate.get("surviving_grammar"):
+            missing.append("surviving_grammar")
+        if not candidate.get("rival_elimination_trace"):
+            missing.append("rival_elimination_trace")
+        if not candidate.get("surviving_grammar_train_evidence"):
+            missing.append("surviving_grammar_train_evidence")
+        if not candidate.get("rival_outputs_considered"):
+            missing.append("rival_outputs_considered")
+        if not candidate.get("rejected_rival_reasons"):
+            missing.append("rejected_rival_reasons")
+        if candidate.get("surviving_grammar_uniquely_forces_output") is not True:
+            missing.append("surviving_grammar_uniquely_forces_output")
+
     if mode == "explicit_grammar_candidate" and candidate.get("rival_grammars"):
         if not candidate.get("surviving_grammar"):
             missing.append("surviving_grammar")
@@ -772,13 +836,94 @@ def _missing_required_trace_fields(candidate: dict) -> list[str]:
         if candidate.get("surviving_grammar_uniquely_forces_output") is not True:
             missing.append("surviving_grammar_uniquely_forces_output")
 
-    return missing
+    return list(dict.fromkeys(missing))
 
 
 def _derive_unresolved_rivals(generator_input: dict, operations: dict) -> list[str]:
     operation_rivals = _listify(operations.get("unresolved_rivals"))
     input_rivals = _listify(generator_input.get("unresolved_rival_grammars"))
     return list(dict.fromkeys(operation_rivals + input_rivals))
+
+
+def _derive_rival_context_reasons(generator_input: dict, operations: dict, mode: str) -> list[str]:
+    reasons = []
+    task_id = str(generator_input.get("task_id") or "")
+    group_id = str(generator_input.get("group_id") or "")
+    expected_frontier_failure = str(generator_input.get("expected_frontier_failure") or "")
+    forced_constraints = _listify(generator_input.get("forced_constraints"))
+    rival_grammars = _listify(operations.get("rival_grammars")) or _listify(generator_input.get("rival_grammars"))
+    unresolved_rivals = _listify(operations.get("unresolved_rivals")) or _listify(generator_input.get("unresolved_rival_grammars"))
+
+    if "rival_grammar" in task_id or "rival_grammar" in group_id:
+        reasons.append("task_id_or_group_indicates_rival_grammar")
+    if "rival_grammar" in expected_frontier_failure:
+        reasons.append("expected_frontier_failure_indicates_rival_grammar")
+    if generator_input.get("rival_context_hint") is True:
+        reasons.append("explicit_rival_context_hint")
+    if rival_grammars:
+        reasons.append("rival_grammars_present")
+    if unresolved_rivals:
+        reasons.append("unresolved_rivals_present")
+    if operations.get("competing_grammars") or operations.get("competing_grammar_ids"):
+        reasons.append("competing_grammars_present")
+    if operations.get("multiple_plausible_transformations") or generator_input.get("multiple_plausible_transformations"):
+        reasons.append("multiple_plausible_transformations")
+    if any("rival" in str(item).lower() or "grammar" in str(item).lower() for item in forced_constraints):
+        reasons.append("forced_constraints_indicate_rival_discrimination")
+    if mode == "train_forced_transformation_candidate" and (
+        "rival_grammar" in task_id or "rival_grammar" in group_id or "rival_grammar" in expected_frontier_failure
+    ):
+        reasons.append("train_forced_candidate_in_known_rival_context")
+    if any(key in operations for key in [
+        "rival_grammars",
+        "surviving_grammar",
+        "rival_elimination_trace",
+        "surviving_grammar_train_evidence",
+        "rival_outputs_considered",
+        "rejected_rival_reasons",
+    ]) and not _has_rival_proof_fields(
+        rival_grammars=_listify(operations.get("rival_grammars")) or _listify(generator_input.get("rival_grammars")),
+        surviving_grammar=operations.get("surviving_grammar"),
+        rival_elimination_trace=_listify(operations.get("rival_elimination_trace")),
+        surviving_grammar_train_evidence=operations.get("surviving_grammar_train_evidence", ""),
+        rival_outputs_considered=_listify(operations.get("rival_outputs_considered")),
+        rejected_rival_reasons=_listify(operations.get("rejected_rival_reasons")),
+        surviving_grammar_uniquely_forces_output=operations.get("surviving_grammar_uniquely_forces_output") is True,
+    ):
+        reasons.append("rival_fields_present_but_incomplete")
+    return list(dict.fromkeys(reasons))
+
+
+def _has_rival_proof_fields(
+    rival_grammars: list,
+    surviving_grammar: Any,
+    rival_elimination_trace: list,
+    surviving_grammar_train_evidence: Any,
+    rival_outputs_considered: list,
+    rejected_rival_reasons: list,
+    surviving_grammar_uniquely_forces_output: bool,
+) -> bool:
+    return bool(
+        rival_grammars
+        and surviving_grammar
+        and rival_elimination_trace
+        and _has_nonempty_text(surviving_grammar_train_evidence)
+        and rival_outputs_considered
+        and rejected_rival_reasons
+        and surviving_grammar_uniquely_forces_output is True
+    )
+
+
+def _rival_context_missing_proof(candidate: dict) -> bool:
+    return candidate.get("rival_context_detected") is True and not _has_rival_proof_fields(
+        rival_grammars=_listify(candidate.get("rival_grammars")),
+        surviving_grammar=candidate.get("surviving_grammar"),
+        rival_elimination_trace=_listify(candidate.get("rival_elimination_trace")),
+        surviving_grammar_train_evidence=candidate.get("surviving_grammar_train_evidence", ""),
+        rival_outputs_considered=_listify(candidate.get("rival_outputs_considered")),
+        rejected_rival_reasons=_listify(candidate.get("rejected_rival_reasons")),
+        surviving_grammar_uniquely_forces_output=candidate.get("surviving_grammar_uniquely_forces_output") is True,
+    )
 
 
 def _mode_has_train_support(mode: str, operations: dict) -> bool:
@@ -796,6 +941,10 @@ def _listify(value: Any) -> list:
     if isinstance(value, list):
         return value
     return [value]
+
+
+def _has_nonempty_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
 
 
 def summarize_controlled_answer_candidate_generation_v1(result: dict) -> dict:

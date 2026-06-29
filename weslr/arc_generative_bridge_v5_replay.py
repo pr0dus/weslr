@@ -144,6 +144,9 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         "candidate_trace_missing_required_fields_count": 0,
         "candidate_trace_source_grounded_count": 0,
         "candidate_trace_incomplete_count": 0,
+        "rival_context_detected_count": 0,
+        "rival_context_missing_proof_count": 0,
+        "train_forced_rival_bypass_blocked_count": 0,
     }
 
     ledger_metrics = {
@@ -166,6 +169,10 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         "safe_failure_from_insufficient_evidence_count": 0,
         "safe_failure_from_incomplete_trace_count": 0,
         "safe_failure_from_unresolved_rival_count": 0,
+        "rival_context_detected_count": 0,
+        "rival_context_missing_proof_count": 0,
+        "rival_context_safe_failure_count": 0,
+        "train_forced_rival_bypass_blocked_count": 0,
     }
 
     safety_metrics = {
@@ -215,6 +222,9 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         generation_metrics["candidate_trace_missing_required_fields_count"] += task_result.get("generation_candidate_trace_missing_required_fields_count", 0)
         generation_metrics["candidate_trace_source_grounded_count"] += task_result.get("generation_candidate_trace_source_grounded_count", 0)
         generation_metrics["candidate_trace_incomplete_count"] += task_result.get("generation_candidate_trace_incomplete_count", 0)
+        generation_metrics["rival_context_detected_count"] += task_result.get("generation_rival_context_detected_count", 0)
+        generation_metrics["rival_context_missing_proof_count"] += task_result.get("generation_rival_context_missing_proof_count", 0)
+        generation_metrics["train_forced_rival_bypass_blocked_count"] += task_result.get("generation_train_forced_rival_bypass_blocked_count", 0)
         generation_metrics["relation_first_rewrite_candidate_count"] += task_result.get("relation_first_rewrite_candidate_count", 0)
         generation_metrics["object_correspondence_candidate_count"] += task_result.get("object_correspondence_candidate_count", 0)
         generation_metrics["invariant_preserving_candidate_count"] += task_result.get("invariant_preserving_candidate_count", 0)
@@ -263,6 +273,9 @@ def _process_task(task: dict) -> dict:
         "generation_candidate_trace_missing_required_fields_count": 0,
         "generation_candidate_trace_source_grounded_count": 0,
         "generation_candidate_trace_incomplete_count": 0,
+        "generation_rival_context_detected_count": 0,
+        "generation_rival_context_missing_proof_count": 0,
+        "generation_train_forced_rival_bypass_blocked_count": 0,
         "relation_first_rewrite_candidate_count": 0,
         "object_correspondence_candidate_count": 0,
         "invariant_preserving_candidate_count": 0,
@@ -289,6 +302,10 @@ def _process_task(task: dict) -> dict:
         "safe_failure_from_insufficient_evidence_count": 0,
         "safe_failure_from_incomplete_trace_count": 0,
         "safe_failure_from_unresolved_rival_count": 0,
+        "rival_context_detected_count": 0,
+        "rival_context_missing_proof_count": 0,
+        "rival_context_safe_failure_count": 0,
+        "train_forced_rival_bypass_blocked_count": 0,
         "helper_output_as_evidence_count": 0,
         "hidden_test_blocked_count": 0,
         "public_arc_answer_blocked_count": 0,
@@ -322,12 +339,31 @@ def _process_task(task: dict) -> dict:
         result["generation_candidate_trace_incomplete_count"] = sum(
             1 for candidate in candidates if candidate.get("construction_trace_complete") is not True
         )
+        result["generation_rival_context_detected_count"] = sum(
+            1 for candidate in candidates if candidate.get("rival_context_detected") is True
+        )
+        result["generation_rival_context_missing_proof_count"] = sum(
+            1
+            for candidate in candidates
+            if candidate.get("rival_context_detected") is True and candidate.get("missing_required_trace_fields")
+        )
+        result["generation_train_forced_rival_bypass_blocked_count"] = sum(
+            1
+            for candidate in candidates
+            if candidate.get("construction_mode") == "train_forced_transformation_candidate"
+            and candidate.get("rival_context_detected") is True
+            and candidate.get("construction_trace_complete") is not True
+        )
         _count_candidate_modes(candidates, result)
     else:
         gen_input = build_controlled_answer_candidate_generator_input_v1(
             task_id=task["task_id"],
             train_examples=task["train_examples"],
             test_input_descriptor=task["test_input_descriptor"],
+            group_id=task.get("group_id"),
+            expected_frontier_failure=task.get("expected_frontier_failure"),
+            rival_context_hint=task.get("rival_context_hint", False),
+            multiple_plausible_transformations=task.get("multiple_plausible_transformations", False),
             forced_constraints=task.get("forced_constraints", []),
             **task.get("candidate_generation_inputs", {}),
         )
@@ -344,6 +380,9 @@ def _process_task(task: dict) -> dict:
         result["generation_candidate_trace_missing_required_fields_count"] = gen_result.get("metrics", {}).get("candidate_trace_missing_required_fields_count", 0)
         result["generation_candidate_trace_source_grounded_count"] = gen_result.get("metrics", {}).get("candidate_trace_source_grounded_count", 0)
         result["generation_candidate_trace_incomplete_count"] = gen_result.get("metrics", {}).get("candidate_trace_incomplete_count", 0)
+        result["generation_rival_context_detected_count"] = gen_result.get("metrics", {}).get("rival_context_detected_count", 0)
+        result["generation_rival_context_missing_proof_count"] = gen_result.get("metrics", {}).get("rival_context_missing_proof_count", 0)
+        result["generation_train_forced_rival_bypass_blocked_count"] = gen_result.get("metrics", {}).get("train_forced_rival_bypass_blocked_count", 0)
         _count_candidate_modes(candidates, result)
 
     if result["generated_count"] == 0:
@@ -361,6 +400,9 @@ def _process_task(task: dict) -> dict:
         unresolved_rival_grammars=task.get("unresolved_rival_grammars_override", []),
         ambiguity_flags=task.get("ambiguity_flags_override", {}),
         rehearsal_context=task.get("rehearsal_context_override", {}),
+        group_id=task.get("group_id"),
+        expected_frontier_failure=task.get("expected_frontier_failure"),
+        rival_context_hint=task.get("rival_context_hint", False),
     )
 
     asm_result = evaluate_ledger_deservedness_v1(asm_input)
