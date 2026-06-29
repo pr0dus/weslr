@@ -298,6 +298,13 @@ _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_allowed_
     _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_doc,
 }
 
+_arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_review_doc = (
+    "docs/WESLR_ARC_COMPOSED_AND_MDL_ALTERNATIVE_ENUMERATION_DIAGNOSTIC_IMPLEMENTATION_REVIEW_V1.md"
+)
+_arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_review_allowed_paths = {
+    _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_review_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE branch-state
 # reconciliation report after smoke metrics repair only. Same narrow intent as
 # the prior allowances: a single exact path, NOT a broad docs/ allowlist, NOT a
@@ -16326,6 +16333,10 @@ def _check_git_scope():
         if path in _arc_composed_and_mdl_false_positive_root_cause_attribution_allowed_paths:
             allowed = True
         if path in _arc_composed_and_mdl_alternative_enumeration_diagnostic_design_allowed_paths:
+            allowed = True
+        if path in _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_allowed_paths:
+            allowed = True
+        if path in _arc_composed_and_mdl_alternative_enumeration_diagnostic_implementation_review_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
             allowed = True
