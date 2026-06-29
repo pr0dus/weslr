@@ -1,4 +1,7 @@
 import inspect
+import json
+import subprocess
+import sys
 
 from weslr.arc_generative_bridge_v5_replay import (
     TASK_GROUPS,
@@ -81,10 +84,11 @@ def _candidate(**overrides):
     return candidate
 
 
+
 def _task_with_candidates(*candidates, **overrides):
     task = {
         "task_id": "task_test",
-        "group_id": TASK_GROUPS[0],
+        "group_id": TASK_GROUPS[1],
         "train_examples": [{"input": [[1]], "output": [[1]]}],
         "test_input_descriptor": {"grid": [[1]]},
         "helper_diagnostics": {},
@@ -126,7 +130,13 @@ class TestScoringBoundary:
 
     def test_ledger_decision_before_scoring(self):
         source = inspect.getsource(_process_task)
-        assert source.find("evaluate_ledger_deservedness_v1") < source.find("synthetic_expected_answer_for_scoring_only")
+        assert source.find("decision = asm_result.get") < source.rfind("_score_post_ledger")
+
+    def test_no_python_hash_or_rng_used_for_scoring(self):
+        source = inspect.getsource(sys.modules["weslr.arc_generative_bridge_v5_replay"])
+        assert "hash(task" not in source
+        assert "random.seed" not in source
+        assert "random.random" not in source
 
 
 class TestReplayRepairMetrics:
@@ -148,6 +158,7 @@ class TestReplayRepairMetrics:
         result = _process_task(task)
         assert result["candidate_deserved"] is True
         assert result["generation_construction_trace_complete_count"] == 1
+        assert result["post_ledger_scoring_status"] == "unscorable_due_to_missing_candidate_output"
 
     def test_generator_produced_incomplete_candidate_safe_fails_through_replay(self):
         task = {
@@ -207,6 +218,7 @@ class TestReplayRepairMetrics:
         assert result["ledger_review_required_count"] == 1
         assert candidate["source_train_ids"] == ["train_A"]
         assert candidate["train_grounded_forced_constraints"] == ["constraint_A"]
+        assert result["candidate_trace_provenance"] == "candidate_descriptors_override"
 
     def test_expected_answers_remain_scoring_only_after_ledger_decision(self):
         result = _process_task(_task_with_candidates(_candidate(), group_id=TASK_GROUPS[1]))
@@ -223,3 +235,126 @@ class TestReplayRepairMetrics:
         source = inspect.getsource(_process_task)
         assert "ChatResponder" not in source
         assert "runtime" not in source.lower() or "runtime_behavior_changed" not in source
+
+
+class TestScoringRepair:
+    def test_real_expected_comparison_used_when_candidate_output_available(self):
+        candidate = _candidate(synthetic_candidate_output_for_scoring_only=[[1]])
+        result = _process_task(_task_with_candidates(candidate))
+        assert result["candidate_deserved"] is True
+        assert result["deserved_exact"] is True
+        assert result["deserved_but_wrong"] is False
+        assert result["post_ledger_scoring_status"] == "scored_deserved_exact"
+        assert result["post_ledger_scoring_mechanism"] == "deterministic_expected_output_equality"
+
+    def test_real_expected_comparison_marks_deserved_but_wrong(self):
+        candidate = _candidate(synthetic_candidate_output_for_scoring_only=[[9]])
+        result = _process_task(_task_with_candidates(candidate))
+        assert result["candidate_deserved"] is True
+        assert result["deserved_exact"] is False
+        assert result["deserved_but_wrong"] is True
+        assert result["post_ledger_scoring_status"] == "scored_deserved_but_wrong"
+
+    def test_candidate_output_missing_becomes_unscorable_not_random(self):
+        result = _process_task(_task_with_candidates(_candidate()))
+        assert result["candidate_deserved"] is True
+        assert result["deserved_exact"] is False
+        assert result["deserved_but_wrong"] is False
+        assert result["post_ledger_scoring_status"] == "unscorable_due_to_missing_candidate_output"
+        assert result["rng_or_hash_influenced_scoring"] is False
+
+    def test_undeserved_exact_uses_real_comparison(self):
+        incomplete = _candidate(
+            construction_trace_complete=False,
+            forced_uniqueness_trace_present=False,
+            train_evidence_grounded=False,
+            missing_required_trace_fields=["train_grounded_transformation_rule"],
+            synthetic_candidate_output_for_scoring_only=[[1]],
+        )
+        result = _process_task(_task_with_candidates(incomplete))
+        assert result["candidate_deserved"] is False
+        assert result["undeserved_exact"] is True
+        assert result["post_ledger_scoring_status"] == "scored_undeserved_exact"
+
+    def test_no_candidate_generated_is_not_scored_candidate_not_generated(self):
+        task = _task_with_candidates()
+        result = _process_task(task)
+        assert result["candidate_generated"] is False
+        assert result["post_ledger_scoring_status"] == "not_scored_candidate_not_generated"
+
+
+class TestPerTaskProvenance:
+    def test_per_task_records_are_emitted_for_all_attempted_tasks(self):
+        result = run_generative_bridge_v5_replay_v1()
+        assert len(result["per_task_records"]) == result["task_metrics"]["attempted_tasks"]
+
+    def test_named_task_id_lists_match_per_task_records(self):
+        result = run_generative_bridge_v5_replay_v1([
+            _task_with_candidates(_candidate(synthetic_candidate_output_for_scoring_only=[[1]]), task_id="exact_task"),
+            _task_with_candidates(_candidate(synthetic_candidate_output_for_scoring_only=[[9]]), task_id="wrong_task"),
+        ])
+        records = {record["task_id"]: record for record in result["per_task_records"]}
+        assert set(result["candidate_deserved_task_ids"]) == {task_id for task_id, record in records.items() if record["candidate_deserved"]}
+        assert set(result["deserved_exact_task_ids"]) == {task_id for task_id, record in records.items() if record["deserved_exact"]}
+        assert set(result["deserved_but_wrong_task_ids"]) == {task_id for task_id, record in records.items() if record["deserved_but_wrong"]}
+        assert set(result["hard_stop_task_ids"]) == {task_id for task_id, record in records.items() if record["hard_stop_triggered"]}
+
+    def test_hard_stop_task_ids_are_preserved(self):
+        result = run_generative_bridge_v5_replay_v1([
+            _task_with_candidates(_candidate(synthetic_candidate_output_for_scoring_only=[[9]]), task_id="wrong_task")
+        ])
+        assert result["deserved_but_wrong_task_ids"] == ["wrong_task"]
+        assert result["hard_stop_task_ids"] == ["wrong_task"]
+        assert result["emitter_decision"]["emitter_hard_stop_reasons"] == ["deserved_but_wrong"]
+
+    def test_candidate_trace_provenance_is_recorded(self):
+        result = run_generative_bridge_v5_replay_v1([
+            _task_with_candidates(_candidate(synthetic_candidate_output_for_scoring_only=[[1]]), task_id="override_task"),
+            build_generative_bridge_v5_replay_tasks_v1()[0],
+        ])
+        records = {record["task_id"]: record for record in result["per_task_records"]}
+        assert records["override_task"]["candidate_trace_provenance"] == "candidate_descriptors_override"
+        generated_task_id = build_generative_bridge_v5_replay_tasks_v1()[0]["task_id"]
+        assert records[generated_task_id]["candidate_trace_provenance"] == "generated_from_candidate_generation_inputs"
+
+    def test_all_8_groups_have_explicit_scoring_classification(self):
+        result = run_generative_bridge_v5_replay_v1()
+        assert set(result["group_scoring_audit"].keys()) == set(TASK_GROUPS)
+        for group_id, audit in result["group_scoring_audit"].items():
+            assert audit["task_count"] == 6
+            assert audit["group_scoring_classification"] in {
+                "real_post_ledger_expected_comparison",
+                "synthetic_randomized_stress_label",
+                "mixed_real_and_randomized_path",
+                "rng_influenced_candidate_or_label_path",
+                "unscorable_due_to_missing_candidate_output",
+                "unknown",
+            }
+            assert audit["expected_output_available"] is True
+
+    def test_aggregate_metrics_remain_consistent_with_per_task_records(self):
+        result = run_generative_bridge_v5_replay_v1()
+        records = result["per_task_records"]
+        assert result["task_metrics"]["attempted_tasks"] == len(records)
+        assert result["task_metrics"]["candidate_generated_tasks"] == sum(1 for record in records if record["candidate_generated"])
+        assert result["task_metrics"]["candidate_deserved_tasks"] == sum(1 for record in records if record["candidate_deserved"])
+        assert result["task_metrics"]["safe_failure_count"] == sum(1 for record in records if record["safe_failure"])
+        assert result["task_metrics"]["deserved_exact_count"] == sum(1 for record in records if record["deserved_exact"])
+        assert result["task_metrics"]["deserved_but_wrong_count"] == sum(1 for record in records if record["deserved_but_wrong"])
+        assert result["task_metrics"]["undeserved_exact_count"] == sum(1 for record in records if record["undeserved_exact"])
+
+    def test_scoring_is_durable_across_separate_python_processes(self):
+        snippet = """
+import json
+from weslr.arc_generative_bridge_v5_replay import run_generative_bridge_v5_replay_v1
+result = run_generative_bridge_v5_replay_v1()
+print(json.dumps({
+    'deserved_exact_task_ids': result['deserved_exact_task_ids'],
+    'deserved_but_wrong_task_ids': result['deserved_but_wrong_task_ids'],
+    'unscorable_task_ids': result['unscorable_task_ids'],
+    'group_scoring_audit': result['group_scoring_audit'],
+}, sort_keys=True))
+"""
+        run1 = subprocess.check_output([sys.executable, "-c", snippet], text=True)
+        run2 = subprocess.check_output([sys.executable, "-c", snippet], text=True)
+        assert json.loads(run1) == json.loads(run2)

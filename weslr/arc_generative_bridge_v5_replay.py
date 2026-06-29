@@ -185,24 +185,28 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
     }
 
     group_results = {g: {"deserved": 0, "exact": 0, "safe_failure": 0} for g in TASK_GROUPS}
+    per_task_records = []
 
     for task in tasks:
         task_result = _process_task(task)
+        per_task_records.append(task_result["per_task_record"])
 
         if task_result["candidate_generated"]:
             task_metrics["candidate_generated_tasks"] += 1
         if task_result["candidate_deserved"]:
             task_metrics["candidate_deserved_tasks"] += 1
+            group_results[task["group_id"]]["deserved"] += 1
         if task_result["safe_failure"]:
             task_metrics["safe_failure_count"] += 1
             group_results[task["group_id"]]["safe_failure"] += 1
         if task_result["deserved_exact"]:
             task_metrics["deserved_exact_count"] += 1
             task_metrics["task_exact_count"] += 1
-            group_results[task["group_id"]]["deserved"] += 1
             group_results[task["group_id"]]["exact"] += 1
         if task_result["undeserved_exact"]:
             task_metrics["undeserved_exact_count"] += 1
+            task_metrics["task_exact_count"] += 1
+            group_results[task["group_id"]]["exact"] += 1
         if task_result["deserved_but_wrong"]:
             task_metrics["deserved_but_wrong_count"] += 1
         if task_result["overconfident_wrong"]:
@@ -247,8 +251,12 @@ def run_generative_bridge_v5_replay_v1(tasks: list[dict] | None = None) -> dict:
         "ledger_metrics": ledger_metrics,
         "safety_metrics": safety_metrics,
         "group_results": group_results,
+        "per_task_records": per_task_records,
     }
+    result.update(_build_named_task_id_lists(per_task_records))
+    result["group_scoring_audit"] = _build_group_scoring_audit(per_task_records)
     result["emitter_decision"] = evaluate_emitter_decision_gate_v1(result)
+    _attach_per_task_hard_stop_context(result)
     return result
 
 
@@ -263,6 +271,17 @@ def _process_task(task: dict) -> dict:
         "deserved_but_wrong": False,
         "overconfident_wrong": False,
         "candidate_not_deserved": False,
+        "candidate_blocked": False,
+        "ledger_decision": "",
+        "post_ledger_scoring_status": "not_scored_before_ledger_decision",
+        "post_ledger_scoring_mechanism": "not_scored",
+        "post_ledger_scoring_seed_or_determinism_note": "No post-ledger scoring executed yet.",
+        "rng_or_hash_influenced_scoring": False,
+        "rng_or_hash_influence_type": "none",
+        "candidate_output_available": False,
+        "expected_output_available": False,
+        "candidate_trace_provenance": _candidate_trace_provenance(task),
+        "scoring_mechanism_classification": "unknown",
         "generation_attempt_count": 0,
         "generated_count": 0,
         "blocked_count": 0,
@@ -385,9 +404,14 @@ def _process_task(task: dict) -> dict:
         result["generation_train_forced_rival_bypass_blocked_count"] = gen_result.get("metrics", {}).get("train_forced_rival_bypass_blocked_count", 0)
         _count_candidate_modes(candidates, result)
 
+    result["candidate_blocked"] = result["blocked_count"] > 0
+
     if result["generated_count"] == 0:
         result["safe_failure"] = True
         result["safe_failure_required_count"] = 1
+        result["ledger_decision"] = "needs_candidate_generation"
+        result.update(_score_post_ledger(task, candidates, result))
+        result["per_task_record"] = _build_per_task_record(task, result)
         return result
 
     asm_input = build_ledger_deservedness_assembler_input_v1(
@@ -416,6 +440,7 @@ def _process_task(task: dict) -> dict:
     result["public_claim_allowed_count"] = 1 if asm_result.get("public_claim_allowed") else 0
 
     decision = asm_result.get("decision", "")
+    result["ledger_decision"] = decision
     if decision == "candidate_deserved":
         result["candidate_deserved"] = True
     elif decision == "safe_failure_required":
@@ -424,16 +449,249 @@ def _process_task(task: dict) -> dict:
     else:
         result["candidate_not_deserved"] = True
 
-    expected = task.get("synthetic_expected_answer_for_scoring_only")
-    if result["candidate_deserved"] and expected:
-        import random
-        random.seed(hash(task["task_id"]) % 2**31)
-        if random.random() < 0.5:
-            result["deserved_exact"] = True
-        else:
-            result["deserved_but_wrong"] = True
+    result.update(_score_post_ledger(task, candidates, result))
+    result["per_task_record"] = _build_per_task_record(task, result)
 
     return result
+
+
+def _candidate_trace_provenance(task: dict) -> str:
+    if "candidate_descriptors_override" in task:
+        return "candidate_descriptors_override"
+    return "generated_from_candidate_generation_inputs"
+
+
+
+def _normalise_scoring_value(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return [_normalise_scoring_value(v) for v in value]
+    if isinstance(value, list):
+        return [_normalise_scoring_value(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _normalise_scoring_value(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
+    return value
+
+
+
+def _extract_candidate_output_for_scoring(task: dict, candidates: list[dict]) -> tuple[bool, Any, str]:
+    if "candidate_output_for_scoring_only_override" in task:
+        return True, task.get("candidate_output_for_scoring_only_override"), "task_candidate_output_override"
+
+    if len(candidates) != 1:
+        return False, None, "candidate_output_missing_or_ambiguous"
+
+    candidate = candidates[0]
+    for key in (
+        "synthetic_candidate_output_for_scoring_only",
+        "candidate_output_for_scoring_only",
+        "candidate_output",
+        "output_grid",
+    ):
+        if key in candidate:
+            return True, candidate.get(key), f"candidate_field:{key}"
+
+    return False, None, "candidate_output_missing_or_ambiguous"
+
+
+
+def _score_post_ledger(task: dict, candidates: list[dict], result: dict) -> dict:
+    expected_available = "synthetic_expected_answer_for_scoring_only" in task
+    expected = task.get("synthetic_expected_answer_for_scoring_only")
+    candidate_output_available, candidate_output, candidate_output_source = _extract_candidate_output_for_scoring(task, candidates)
+
+    scoring = {
+        "deserved_exact": False,
+        "undeserved_exact": False,
+        "deserved_but_wrong": False,
+        "post_ledger_scoring_status": "not_scored_before_ledger_decision",
+        "post_ledger_scoring_mechanism": "not_scored",
+        "post_ledger_scoring_seed_or_determinism_note": "No post-ledger scoring executed.",
+        "rng_or_hash_influenced_scoring": False,
+        "rng_or_hash_influence_type": "none",
+        "candidate_output_available": bool(candidate_output_available),
+        "expected_output_available": bool(expected_available),
+        "scoring_mechanism_classification": "unknown",
+    }
+
+    if result.get("ledger_decision") == "":
+        return scoring
+
+    if result.get("generated_count", 0) == 0:
+        scoring["post_ledger_scoring_status"] = "not_scored_candidate_not_generated"
+        scoring["post_ledger_scoring_mechanism"] = "candidate_output_unavailable"
+        scoring["post_ledger_scoring_seed_or_determinism_note"] = "No candidate was generated, so post-ledger scoring could not run."
+        scoring["scoring_mechanism_classification"] = "unscorable_due_to_missing_candidate_output"
+        return scoring
+
+    if not candidate_output_available:
+        scoring["post_ledger_scoring_status"] = "unscorable_due_to_missing_candidate_output"
+        scoring["post_ledger_scoring_mechanism"] = "candidate_output_unavailable"
+        scoring["post_ledger_scoring_seed_or_determinism_note"] = (
+            f"No comparable candidate output surface was available after ledger decision ({candidate_output_source})."
+        )
+        scoring["scoring_mechanism_classification"] = "unscorable_due_to_missing_candidate_output"
+        return scoring
+
+    if not expected_available:
+        scoring["post_ledger_scoring_status"] = "unscorable_due_to_missing_expected_output"
+        scoring["post_ledger_scoring_mechanism"] = "expected_output_unavailable"
+        scoring["post_ledger_scoring_seed_or_determinism_note"] = "No expected/scoring output was available for deterministic post-ledger comparison."
+        scoring["scoring_mechanism_classification"] = "unknown"
+        return scoring
+
+    candidate_normalized = _normalise_scoring_value(candidate_output)
+    expected_normalized = _normalise_scoring_value(expected)
+    exact = candidate_normalized == expected_normalized
+
+    scoring["post_ledger_scoring_mechanism"] = "deterministic_expected_output_equality"
+    scoring["post_ledger_scoring_seed_or_determinism_note"] = "Deterministic equality comparison after ledger decision; no RNG or hash influence."
+    scoring["scoring_mechanism_classification"] = "real_post_ledger_expected_comparison"
+
+    if result.get("candidate_deserved"):
+        if exact:
+            scoring["deserved_exact"] = True
+            scoring["post_ledger_scoring_status"] = "scored_deserved_exact"
+        else:
+            scoring["deserved_but_wrong"] = True
+            scoring["post_ledger_scoring_status"] = "scored_deserved_but_wrong"
+        return scoring
+
+    if exact:
+        scoring["undeserved_exact"] = True
+        scoring["post_ledger_scoring_status"] = "scored_undeserved_exact"
+    else:
+        scoring["post_ledger_scoring_status"] = "scored_candidate_not_deserved_non_exact"
+    return scoring
+
+
+
+def _build_per_task_record(task: dict, result: dict) -> dict:
+    hard_stop_reason_list = []
+    if result.get("overconfident_wrong"):
+        hard_stop_reason_list.append("overconfident_wrong")
+    if result.get("undeserved_exact"):
+        hard_stop_reason_list.append("undeserved_exact")
+    if result.get("deserved_but_wrong"):
+        hard_stop_reason_list.append("deserved_but_wrong")
+    if result.get("helper_laundering_violation_count", 0) > 0:
+        hard_stop_reason_list.append("helper_laundering")
+    if result.get("final_answer_emitted_count", 0) > 0:
+        hard_stop_reason_list.append("final_answer_emitted")
+    if result.get("public_claim_allowed_count", 0) > 0:
+        hard_stop_reason_list.append("public_claim_allowed")
+    if result.get("helper_output_as_evidence_count", 0) > 0:
+        hard_stop_reason_list.append("helper_output_as_evidence")
+
+    return {
+        "task_id": task["task_id"],
+        "group_id": task.get("group_id", "unknown"),
+        "candidate_generated": bool(result.get("candidate_generated")),
+        "candidate_blocked": bool(result.get("candidate_blocked")),
+        "ledger_decision": result.get("ledger_decision", ""),
+        "candidate_deserved": bool(result.get("candidate_deserved")),
+        "candidate_not_deserved": bool(result.get("candidate_not_deserved")),
+        "safe_failure": bool(result.get("safe_failure")),
+        "post_ledger_scoring_status": result.get("post_ledger_scoring_status", "unknown"),
+        "deserved_exact": bool(result.get("deserved_exact")),
+        "deserved_but_wrong": bool(result.get("deserved_but_wrong")),
+        "undeserved_exact": bool(result.get("undeserved_exact")),
+        "hard_stop_triggered": bool(hard_stop_reason_list),
+        "hard_stop_reason_list": hard_stop_reason_list,
+        "post_ledger_scoring_mechanism": result.get("post_ledger_scoring_mechanism", "unknown"),
+        "post_ledger_scoring_seed_or_determinism_note": result.get("post_ledger_scoring_seed_or_determinism_note", ""),
+        "rng_or_hash_influenced_scoring": bool(result.get("rng_or_hash_influenced_scoring")),
+        "rng_or_hash_influence_type": result.get("rng_or_hash_influence_type", "none"),
+        "candidate_output_available": bool(result.get("candidate_output_available")),
+        "expected_output_available": bool(result.get("expected_output_available")),
+        "candidate_trace_provenance": result.get("candidate_trace_provenance", "unknown"),
+        "scoring_mechanism_classification": result.get("scoring_mechanism_classification", "unknown"),
+    }
+
+
+
+def _build_named_task_id_lists(per_task_records: list[dict]) -> dict:
+    return {
+        "candidate_generated_task_ids": [r["task_id"] for r in per_task_records if r.get("candidate_generated")],
+        "candidate_deserved_task_ids": [r["task_id"] for r in per_task_records if r.get("candidate_deserved")],
+        "candidate_not_deserved_task_ids": [r["task_id"] for r in per_task_records if r.get("candidate_not_deserved")],
+        "safe_failure_task_ids": [r["task_id"] for r in per_task_records if r.get("safe_failure")],
+        "deserved_exact_task_ids": [r["task_id"] for r in per_task_records if r.get("deserved_exact")],
+        "deserved_but_wrong_task_ids": [r["task_id"] for r in per_task_records if r.get("deserved_but_wrong")],
+        "undeserved_exact_task_ids": [r["task_id"] for r in per_task_records if r.get("undeserved_exact")],
+        "unscorable_task_ids": [
+            r["task_id"]
+            for r in per_task_records
+            if str(r.get("post_ledger_scoring_status", "")).startswith("unscorable")
+        ],
+        "synthetic_randomized_stress_label_task_ids": [
+            r["task_id"]
+            for r in per_task_records
+            if r.get("scoring_mechanism_classification") == "synthetic_randomized_stress_label"
+        ],
+        "rng_influenced_scoring_task_ids": [r["task_id"] for r in per_task_records if r.get("rng_or_hash_influenced_scoring")],
+        "hard_stop_task_ids": [r["task_id"] for r in per_task_records if r.get("hard_stop_triggered")],
+    }
+
+
+
+def _build_group_scoring_audit(per_task_records: list[dict]) -> dict:
+    audit = {}
+    for group_id in TASK_GROUPS:
+        records = [record for record in per_task_records if record.get("group_id") == group_id]
+        mechanisms = sorted({record.get("post_ledger_scoring_mechanism", "unknown") for record in records})
+        classifications = sorted({record.get("scoring_mechanism_classification", "unknown") for record in records})
+        statuses = sorted({record.get("post_ledger_scoring_status", "unknown") for record in records})
+        audit[group_id] = {
+            "task_count": len(records),
+            "uses_real_expected_comparison": any(
+                record.get("post_ledger_scoring_mechanism") == "deterministic_expected_output_equality"
+                for record in records
+            ),
+            "uses_rng_or_hash_scoring": any(record.get("rng_or_hash_influenced_scoring") for record in records),
+            "uses_rng_or_hash_fallback": any(record.get("rng_or_hash_influence_type") == "fallback" for record in records),
+            "uses_rng_or_hash_tie_breaker": any(record.get("rng_or_hash_influence_type") == "tie_breaker" for record in records),
+            "uses_rng_or_hash_candidate_selection": any(
+                record.get("rng_or_hash_influence_type") == "candidate_selection" for record in records
+            ),
+            "candidate_output_surface_suitable": any(record.get("candidate_output_available") for record in records),
+            "expected_output_available": all(record.get("expected_output_available") for record in records) if records else False,
+            "expected_output_present_but_unused": any(
+                record.get("expected_output_available") and not record.get("candidate_output_available")
+                for record in records
+            ),
+            "post_ledger_scoring_mechanisms": mechanisms,
+            "post_ledger_scoring_statuses": statuses,
+            "scoring_mechanism_classifications": classifications,
+            "group_scoring_classification": _classify_group_scoring(records),
+        }
+    return audit
+
+
+
+def _classify_group_scoring(records: list[dict]) -> str:
+    if not records:
+        return "unknown"
+    if any(record.get("rng_or_hash_influenced_scoring") for record in records):
+        return "rng_influenced_candidate_or_label_path"
+    if all(record.get("scoring_mechanism_classification") == "real_post_ledger_expected_comparison" for record in records):
+        return "real_post_ledger_expected_comparison"
+    if all(record.get("scoring_mechanism_classification") == "unscorable_due_to_missing_candidate_output" for record in records):
+        return "unscorable_due_to_missing_candidate_output"
+    if any(record.get("scoring_mechanism_classification") == "real_post_ledger_expected_comparison" for record in records):
+        return "mixed_real_and_randomized_path"
+    return "unknown"
+
+
+
+def _attach_per_task_hard_stop_context(result: dict) -> None:
+    emitter_hard_stop_reasons = result.get("emitter_decision", {}).get("emitter_hard_stop_reasons", [])
+    for record in result.get("per_task_records", []):
+        task_specific_reasons = list(record.get("hard_stop_reason_list", []))
+        record["hard_stop_reason_list"] = sorted(set(task_specific_reasons + [
+            reason for reason in emitter_hard_stop_reasons if reason in task_specific_reasons
+        ]))
+        record["hard_stop_triggered"] = bool(record["hard_stop_reason_list"])
+
 
 
 def _count_candidate_modes(candidates: list[dict], result: dict) -> None:
