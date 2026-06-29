@@ -63,6 +63,62 @@ FORBIDDEN_UPSTREAM_SCORING_FIELDS = {
     "scoring_label",
 }
 
+CANDIDATE_OUTPUT_SURFACE_KEYS = {
+    "present",
+    "output_type",
+    "normalized_output",
+    "raw_output_reference",
+    "output_provenance",
+    "serialization_status",
+    "comparable_to_expected",
+    "incomparable_reason_code",
+    "schema_version",
+}
+
+CANDIDATE_TRACE_SURFACE_KEYS = {
+    "construction_mode",
+    "construction_trace_complete",
+    "forced_uniqueness_trace_present",
+    "train_evidence_grounded",
+    "missing_required_trace_fields",
+    "unresolved_rivals",
+    "candidate_trace_provenance",
+    "trace_schema_version",
+    "candidate_output_surface_present",
+    "candidate_output_surface_type",
+}
+
+COMPOSED_TRACE_SURFACE_KEYS = {
+    "ordered_component_list",
+    "component_execution_order",
+    "component_records",
+    "intermediate_outputs_after_each_component",
+    "component_support_map",
+    "component_only_support",
+    "whole_composition_support",
+    "interaction_assumptions",
+    "alternative_order_surfaces",
+    "alternative_subset_surfaces",
+    "partial_transform_surfaces",
+    "full_composition_alternatives",
+    "sufficient_for_alternative_enumeration",
+    "trace_schema_version",
+}
+
+MDL_TRACE_SURFACE_KEYS = {
+    "accepted_grammar_id",
+    "accepted_grammar_record",
+    "grammar_output_surface",
+    "grammar_train_support_evidence",
+    "simplicity_primary_evidence",
+    "negative_evidence_present",
+    "competing_grammar_records",
+    "train_forced_grammar",
+    "compact_but_not_forced",
+    "sufficient_for_competing_grammar_diagnosis",
+    "trace_schema_version",
+}
+
 _JSON_SAFE_PRIMITIVES = (str, int, float, bool, type(None))
 
 
@@ -95,6 +151,20 @@ def detect_forbidden_upstream_scoring_fields(payload: Any) -> list[str]:
 
     _walk(payload)
     return sorted(found)
+
+
+
+def strip_forbidden_upstream_scoring_fields(payload: Any) -> Any:
+    if isinstance(payload, dict):
+        sanitized: dict[str, Any] = {}
+        for key, value in payload.items():
+            if str(key) in FORBIDDEN_UPSTREAM_SCORING_FIELDS:
+                continue
+            sanitized[str(key)] = strip_forbidden_upstream_scoring_fields(value)
+        return sanitized
+    if isinstance(payload, list):
+        return [strip_forbidden_upstream_scoring_fields(item) for item in payload]
+    return _deepcopy(payload)
 
 
 
@@ -327,4 +397,105 @@ def build_mdl_trace_surface(
         "compact_but_not_forced": bool(compact_but_not_forced),
         "sufficient_for_competing_grammar_diagnosis": bool(sufficient_for_competing_grammar_diagnosis),
         "trace_schema_version": MDL_TRACE_SURFACE_SCHEMA_VERSION,
+    }
+
+
+
+def preserve_candidate_output_surface_for_replay(
+    candidate_output_surface: dict | None,
+    *,
+    expected_output_available: bool = False,
+) -> dict:
+    source = strip_forbidden_upstream_scoring_fields(candidate_output_surface or {})
+    preserved = build_candidate_output_surface(
+        present=source.get("present", False),
+        output_type=source.get("output_type", "missing"),
+        normalized_output=source.get("normalized_output"),
+        raw_output_reference=source.get("raw_output_reference"),
+        output_provenance=source.get("output_provenance", "missing"),
+        serialization_status=source.get("serialization_status", "missing"),
+        comparable_to_expected=False,
+        incomparable_reason_code=source.get("incomparable_reason_code", "candidate_output_missing"),
+    )
+    return derive_candidate_output_comparability(
+        preserved,
+        expected_output_available=expected_output_available,
+    )
+
+
+
+def preserve_candidate_trace_surface_for_replay(candidate_trace_surface: dict | None) -> dict:
+    source = strip_forbidden_upstream_scoring_fields(candidate_trace_surface or {})
+    return build_candidate_trace_surface(
+        construction_mode=source.get("construction_mode", ""),
+        construction_trace_complete=source.get("construction_trace_complete", False),
+        forced_uniqueness_trace_present=source.get("forced_uniqueness_trace_present", False),
+        train_evidence_grounded=source.get("train_evidence_grounded", False),
+        missing_required_trace_fields=source.get("missing_required_trace_fields") or [],
+        unresolved_rivals=source.get("unresolved_rivals") or [],
+        candidate_trace_provenance=source.get("candidate_trace_provenance", ""),
+        candidate_output_surface_present=source.get("candidate_output_surface_present", False),
+        candidate_output_surface_type=source.get("candidate_output_surface_type", "missing"),
+    )
+
+
+
+def preserve_composed_trace_surface_for_replay(composed_trace_surface: dict | None) -> dict:
+    source = strip_forbidden_upstream_scoring_fields(composed_trace_surface or {})
+    return build_composed_trace_surface(
+        ordered_component_list=source.get("ordered_component_list") or [],
+        component_execution_order=source.get("component_execution_order") or [],
+        component_records=source.get("component_records") or [],
+        intermediate_outputs_after_each_component=source.get("intermediate_outputs_after_each_component") or [],
+        component_support_map=source.get("component_support_map") or {},
+        component_only_support=source.get("component_only_support", False),
+        whole_composition_support=source.get("whole_composition_support", False),
+        interaction_assumptions=source.get("interaction_assumptions") or [],
+        alternative_order_surfaces=source.get("alternative_order_surfaces") or [],
+        alternative_subset_surfaces=source.get("alternative_subset_surfaces") or [],
+        partial_transform_surfaces=source.get("partial_transform_surfaces") or [],
+        full_composition_alternatives=source.get("full_composition_alternatives") or [],
+        sufficient_for_alternative_enumeration=source.get("sufficient_for_alternative_enumeration", False),
+    )
+
+
+
+def preserve_mdl_trace_surface_for_replay(mdl_trace_surface: dict | None) -> dict:
+    source = strip_forbidden_upstream_scoring_fields(mdl_trace_surface or {})
+    return build_mdl_trace_surface(
+        accepted_grammar_id=source.get("accepted_grammar_id", ""),
+        accepted_grammar_record=source.get("accepted_grammar_record") or {},
+        grammar_output_surface=source.get("grammar_output_surface") or {},
+        grammar_train_support_evidence=source.get("grammar_train_support_evidence") or [],
+        simplicity_primary_evidence=source.get("simplicity_primary_evidence", False),
+        negative_evidence_present=source.get("negative_evidence_present", False),
+        competing_grammar_records=source.get("competing_grammar_records") or [],
+        train_forced_grammar=source.get("train_forced_grammar", False),
+        compact_but_not_forced=source.get("compact_but_not_forced", False),
+        sufficient_for_competing_grammar_diagnosis=source.get("sufficient_for_competing_grammar_diagnosis", False),
+    )
+
+
+
+def build_replay_preserved_surface_bundle(
+    *,
+    candidate_output_surface: dict | None = None,
+    candidate_trace_surface: dict | None = None,
+    composed_trace_surface: dict | None = None,
+    mdl_trace_surface: dict | None = None,
+    expected_output_available: bool = False,
+) -> dict:
+    return {
+        "candidate_output_surface": preserve_candidate_output_surface_for_replay(
+            candidate_output_surface,
+            expected_output_available=expected_output_available,
+        ),
+        "candidate_trace_surface": preserve_candidate_trace_surface_for_replay(candidate_trace_surface),
+        "composed_trace_surface": preserve_composed_trace_surface_for_replay(composed_trace_surface),
+        "mdl_trace_surface": preserve_mdl_trace_surface_for_replay(mdl_trace_surface),
+        "replay_surface_provenance": {
+            "candidate_output_surface_source": "candidate_output_surface",
+            "expected_output_load_stage": "not_loaded_for_replay_preservation",
+            "expected_output_loaded_after_ledger_decision": False,
+        },
     }

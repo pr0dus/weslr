@@ -5,16 +5,23 @@ import pytest
 
 from weslr.arc_candidate_output_trace_surface import (
     ALLOWED_INCOMPARABLE_REASON_CODES,
+    CANDIDATE_OUTPUT_SURFACE_KEYS,
+    CANDIDATE_TRACE_SURFACE_KEYS,
+    COMPOSED_TRACE_SURFACE_KEYS,
     FORBIDDEN_UPSTREAM_SCORING_FIELDS,
+    MDL_TRACE_SURFACE_KEYS,
     build_candidate_output_surface,
     build_candidate_trace_surface,
     build_composed_trace_surface,
     build_mdl_trace_surface,
+    build_replay_preserved_surface_bundle,
     compare_normalized_grid_int_matrices,
     derive_candidate_output_comparability,
     derive_unscorable_reason,
     detect_forbidden_upstream_scoring_fields,
     normalize_grid_int_matrix,
+    preserve_candidate_output_surface_for_replay,
+    strip_forbidden_upstream_scoring_fields,
     validate_json_safe_candidate_output_surface,
 )
 
@@ -226,6 +233,143 @@ class TestTraceSurfaces:
         assert surface["train_forced_grammar"] is False
 
 
+class TestReplayPreservationHelpers:
+    def test_replay_preservation_records_only_allowed_surface_metadata(self):
+        bundle = build_replay_preserved_surface_bundle(
+            candidate_output_surface={
+                "present": True,
+                "output_type": "grid_int_matrix",
+                "normalized_output": [[1]],
+                "raw_output_reference": [[1]],
+                "output_provenance": "candidate_override",
+                "serialization_status": "json_safe",
+                "comparable_to_expected": True,
+                "incomparable_reason_code": "none",
+                "schema_version": "override_me",
+                "expected_output": [[9]],
+                "extra_field": "drop_me",
+            },
+            candidate_trace_surface={
+                "construction_mode": "mode_a",
+                "construction_trace_complete": True,
+                "forced_uniqueness_trace_present": False,
+                "train_evidence_grounded": True,
+                "missing_required_trace_fields": [],
+                "unresolved_rivals": [],
+                "candidate_trace_provenance": "generated",
+                "candidate_output_surface_present": True,
+                "candidate_output_surface_type": "grid_int_matrix",
+                "scoring_result": "forbidden",
+                "extra": "drop_me",
+            },
+            composed_trace_surface={
+                "ordered_component_list": ["a"],
+                "component_execution_order": ["a"],
+                "component_records": [{"expected_answer": [[1]], "name": "a"}],
+                "intermediate_outputs_after_each_component": [[[1]]],
+                "component_support_map": {"a": True},
+                "component_only_support": False,
+                "whole_composition_support": True,
+                "interaction_assumptions": [],
+                "alternative_order_surfaces": [],
+                "alternative_subset_surfaces": [],
+                "partial_transform_surfaces": [],
+                "full_composition_alternatives": [],
+                "sufficient_for_alternative_enumeration": True,
+                "unexpected": True,
+            },
+            mdl_trace_surface={
+                "accepted_grammar_id": "g1",
+                "accepted_grammar_record": {"rule": "mirror", "expected_output": [[1]]},
+                "grammar_output_surface": {"type": "grid_int_matrix"},
+                "grammar_train_support_evidence": ["train_rule"],
+                "simplicity_primary_evidence": True,
+                "negative_evidence_present": False,
+                "competing_grammar_records": [{"deserved_exact_result": True}],
+                "train_forced_grammar": False,
+                "compact_but_not_forced": True,
+                "sufficient_for_competing_grammar_diagnosis": True,
+                "unexpected": True,
+            },
+            expected_output_available=False,
+        )
+        assert set(bundle["candidate_output_surface"].keys()) == CANDIDATE_OUTPUT_SURFACE_KEYS
+        assert set(bundle["candidate_trace_surface"].keys()) == CANDIDATE_TRACE_SURFACE_KEYS
+        assert set(bundle["composed_trace_surface"].keys()) == COMPOSED_TRACE_SURFACE_KEYS
+        assert set(bundle["mdl_trace_surface"].keys()) == MDL_TRACE_SURFACE_KEYS
+        assert detect_forbidden_upstream_scoring_fields(bundle) == []
+        assert bundle["candidate_output_surface"]["comparable_to_expected"] is False
+        assert bundle["candidate_output_surface"]["incomparable_reason_code"] == "expected_output_missing"
+
+    def test_replay_preservation_preserves_valid_grid_without_scoring(self):
+        preserved = preserve_candidate_output_surface_for_replay(
+            {
+                "present": True,
+                "output_type": "grid_int_matrix",
+                "normalized_output": [[1, 2], [3, 4]],
+                "raw_output_reference": [[1, 2], [3, 4]],
+                "output_provenance": "generator_emitted_final_output",
+                "serialization_status": "json_safe",
+                "comparable_to_expected": False,
+                "incomparable_reason_code": "none",
+            },
+            expected_output_available=True,
+        )
+        assert preserved["comparable_to_expected"] is True
+        assert preserved["incomparable_reason_code"] == "none"
+        assert "scoring_result" not in preserved
+
+    def test_replay_preservation_blocks_malformed_json_safe_output_from_becoming_comparable(self):
+        preserved = preserve_candidate_output_surface_for_replay(
+            {
+                "present": True,
+                "output_type": "grid_int_matrix",
+                "normalized_output": [[True, 0]],
+                "raw_output_reference": [[True, 0]],
+                "output_provenance": "generator_emitted_final_output",
+                "serialization_status": "json_safe",
+                "comparable_to_expected": True,
+                "incomparable_reason_code": "none",
+            },
+            expected_output_available=True,
+        )
+        assert preserved["comparable_to_expected"] is False
+        assert preserved["incomparable_reason_code"] == "normalization_failed"
+
+    def test_replay_preservation_does_not_copy_expected_answer_values(self):
+        bundle = build_replay_preserved_surface_bundle(
+            candidate_output_surface={
+                "present": True,
+                "output_type": "grid_int_matrix",
+                "normalized_output": [[1]],
+                "raw_output_reference": {"expected_answer": [[999]], "value": [[1]]},
+                "output_provenance": "candidate_override",
+                "serialization_status": "json_safe",
+                "comparable_to_expected": False,
+                "incomparable_reason_code": "none",
+            },
+            expected_output_available=False,
+        )
+        assert detect_forbidden_upstream_scoring_fields(bundle) == []
+        assert bundle["replay_surface_provenance"]["expected_output_loaded_after_ledger_decision"] is False
+        assert bundle["replay_surface_provenance"]["expected_output_load_stage"] == "not_loaded_for_replay_preservation"
+
+    def test_replay_preservation_helpers_do_not_mutate_inputs(self):
+        candidate_output_surface = {
+            "present": True,
+            "output_type": "grid_int_matrix",
+            "normalized_output": [[1]],
+            "raw_output_reference": {"expected_answer": [[999]], "value": [[1]]},
+            "output_provenance": "candidate_override",
+            "serialization_status": "json_safe",
+            "comparable_to_expected": False,
+            "incomparable_reason_code": "none",
+        }
+        original = json.loads(json.dumps(candidate_output_surface))
+        _ = preserve_candidate_output_surface_for_replay(candidate_output_surface, expected_output_available=False)
+        assert candidate_output_surface == original
+
+
 class TestBoundaryLeakageHelpers:
     def test_forbidden_scoring_fields_are_detected_in_upstream_payloads(self):
         payload = {
@@ -261,6 +405,24 @@ class TestBoundaryLeakageHelpers:
         source = inspect.getsource(__import__("weslr.arc_candidate_output_trace_surface", fromlist=["*"]))
         assert "arc_generative_bridge_v5_replay" not in source
         assert "ChatResponder" not in source
+
+    def test_helpers_do_not_import_provider_model_tool_or_retrieval_calls(self):
+        source = inspect.getsource(__import__("weslr.arc_candidate_output_trace_surface", fromlist=["*"]))
+        assert "openai" not in source
+        assert "anthropic" not in source
+        assert "searx" not in source
+        assert "requests." not in source
+        assert "subprocess" not in source
+
+    def test_strip_forbidden_scoring_fields_is_recursive_and_non_mutating(self):
+        payload = {
+            "keep": {"inner": 1, "expected_output": [[1]]},
+            "items": [{"scoring_label": "bad"}, {"ok": True}],
+        }
+        original = json.loads(json.dumps(payload))
+        sanitized = strip_forbidden_upstream_scoring_fields(payload)
+        assert payload == original
+        assert detect_forbidden_upstream_scoring_fields(sanitized) == []
 
     def test_allowed_reason_codes_cover_ambiguous_and_missing(self):
         assert "ambiguous_output_surface" in ALLOWED_INCOMPARABLE_REASON_CODES
