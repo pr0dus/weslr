@@ -666,6 +666,156 @@ def _dedupe_parameter_options(options: Sequence[Mapping[str, Any]]) -> list[dict
     return deduped
 
 
+def _primitive_step_import_keys(primitive_id: str) -> tuple[str, ...]:
+    return {
+        "copy_grid": (),
+        "recolor_symbol": ("background_value", "from_value", "to_value"),
+        "move_single_object": ("background_value", "direction", "steps", "object_value"),
+        "fill_region": ("background_value", "fill_value"),
+        "extract_largest_object": ("background_value",),
+        "border_frame": ("frame_value",),
+        "complete_symmetry": ("background_value", "axes"),
+        "line_completion": ("background_value", "axis", "line_index", "line_value"),
+        "remove_background_noise": ("background_value",),
+        "object_count_to_pattern": ("background_value", "count", "pattern_value", "row_index"),
+        "rotate_object_90": ("background_value",),
+        "reflect_object_horizontal_or_vertical": ("background_value", "axis"),
+    }.get(primitive_id, ())
+
+
+def _build_step1_exports(
+    primitive_id: str,
+    input_grid: Sequence[Sequence[int]],
+    intermediate_grid: Sequence[Sequence[int]],
+    step1_parameters: Mapping[str, Any],
+) -> dict[str, Any]:
+    background_value = int(step1_parameters.get("background_value", _background_value_from_grid(input_grid)))
+    intermediate_values = _non_background_values(intermediate_grid, background_value)
+    exports: dict[str, Any] = {
+        "background_value": background_value,
+        "object_value": _dominant_non_background_value(intermediate_grid, background_value),
+        "intermediate_non_background_values": intermediate_values,
+    }
+    if primitive_id == "extract_largest_object":
+        exports["extracted_object_value"] = _dominant_non_background_value(intermediate_grid, background_value)
+    if primitive_id == "line_completion":
+        exports["line_value"] = step1_parameters.get("line_value")
+        exports["axis"] = step1_parameters.get("axis")
+        exports["line_index"] = step1_parameters.get("line_index")
+    if primitive_id == "recolor_symbol":
+        exports["from_value"] = step1_parameters.get("from_value")
+        exports["to_value"] = step1_parameters.get("to_value")
+    return exports
+
+
+def _sequence_visibility_reason_for_step2(
+    primitive_pair: Sequence[str],
+    predicted_intermediate: Sequence[Sequence[int]],
+    final_grid: Sequence[Sequence[int]],
+    step2_candidate: Mapping[str, Any] | None,
+) -> str:
+    if step2_candidate is not None and step2_candidate.get("identity_step"):
+        return "identity_recolor_visibility_repair"
+    if step2_candidate is not None:
+        return "standard_generated"
+    if len(primitive_pair) == 2 and primitive_pair[0] == "line_completion" and primitive_pair[1] == "recolor_symbol":
+        if _compare_grids(predicted_intermediate, final_grid)["exact_match"]:
+            return "recolor_step_parameter_option_collapse_after_exact_line_completion"
+        return "line_completion_visible_but_recolor_inference_missing"
+    return "step2_parameter_option_collapse"
+
+
+def _identity_recolor_candidate(
+    current_grid: Sequence[Sequence[int]],
+    final_grid: Sequence[Sequence[int]],
+    *,
+    background_value: int,
+    step1_parameters: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    if not _compare_grids(current_grid, final_grid)["exact_match"]:
+        return None
+    line_value = step1_parameters.get("line_value")
+    if line_value is None:
+        line_value = _dominant_non_background_value(current_grid, background_value)
+    if line_value is None:
+        return None
+    comparison = _compare_grids(final_grid, current_grid)
+    return {
+        "parameters": {
+            "from_value": int(line_value),
+            "to_value": int(line_value),
+            "background_value": background_value,
+        },
+        "predicted_grid": _clone_grid(current_grid),
+        "comparison": comparison,
+        "rank": (int(comparison["value_mismatch_count"]), 10**6),
+        "identity_step": True,
+    }
+
+
+def _build_carryover_trace(
+    primitive_id: str,
+    step1_exports: Mapping[str, Any],
+    step2_parameters: Mapping[str, Any],
+    current_grid: Sequence[Sequence[int]],
+) -> dict[str, Any]:
+    step2_imports = list(_primitive_step_import_keys(primitive_id))
+    carried_parameters: dict[str, Any] = {}
+    if primitive_id == "recolor_symbol":
+        if "background_value" in step2_parameters and step2_parameters.get("background_value") == step1_exports.get("background_value"):
+            carried_parameters["background_value"] = step1_exports.get("background_value")
+        object_value = step1_exports.get("object_value")
+        if object_value is not None and step2_parameters.get("from_value") == object_value:
+            carried_parameters["from_value"] = object_value
+        extracted_value = step1_exports.get("extracted_object_value")
+        if extracted_value is not None and step2_parameters.get("from_value") == extracted_value:
+            carried_parameters["from_value"] = extracted_value
+    elif primitive_id == "extract_largest_object":
+        if "background_value" in step2_parameters and step2_parameters.get("background_value") == step1_exports.get("background_value"):
+            carried_parameters["background_value"] = step1_exports.get("background_value")
+
+    parameter_origin_by_key: dict[str, str] = {}
+    current_background = _background_value_from_grid(current_grid)
+    for key in step2_imports:
+        if key not in step2_parameters:
+            continue
+        carried = key in carried_parameters
+        recomputed = False
+        if key == "background_value":
+            recomputed = step2_parameters.get(key) == current_background
+        elif key == "from_value":
+            recomputed = step2_parameters.get(key) in _non_background_values(current_grid, current_background)
+        if carried and recomputed:
+            parameter_origin_by_key[key] = "mixed"
+        elif carried:
+            parameter_origin_by_key[key] = "carried_from_step_1"
+        elif recomputed:
+            parameter_origin_by_key[key] = "dynamic_recomputed_from_current_input"
+        else:
+            parameter_origin_by_key[key] = "stable_train_inference"
+
+    dropped_parameters = sorted(
+        key
+        for key in step1_exports.keys()
+        if key not in {"intermediate_non_background_values"}
+        and key not in carried_parameters
+        and key not in step2_imports
+    )
+    carryover_success = all(
+        key in step2_parameters
+        for key in step2_imports
+        if key in {"background_value", "from_value", "object_value", "to_value", "fill_value", "count", "row_index", "pattern_value"}
+    )
+    return {
+        "step_1_exports": _json_safe(step1_exports),
+        "step_2_imports": step2_imports,
+        "carried_parameters": _json_safe(carried_parameters),
+        "dropped_parameters": dropped_parameters,
+        "parameter_origin_by_key": _json_safe(parameter_origin_by_key),
+        "carryover_success": bool(carryover_success),
+    }
+
+
 def _fill_region_parameter_options(current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> list[dict[str, Any]]:
     default_background = _background_value_from_grid(current_grid)
     border_value = _uniform_border_value(current_grid)
@@ -796,12 +946,15 @@ def _best_single_step_fit(primitive_id: str, current_grid: Sequence[Sequence[int
     return best
 
 
-def _best_sequence_pair_fit(primitive_pair: Sequence[str], input_grid: Sequence[Sequence[int]], final_grid: Sequence[Sequence[int]]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+def _best_sequence_pair_fit(
+    primitive_pair: Sequence[str], input_grid: Sequence[Sequence[int]], final_grid: Sequence[Sequence[int]]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any]]:
     if len(primitive_pair) != 2:
-        return None, None
+        return None, None, {"sequence_visibility_reason": "invalid_primitive_pair"}
     step1_options = _primitive_parameter_options(_safe_text(primitive_pair[0]), input_grid, final_grid)
     best_pair: tuple[dict[str, Any], dict[str, Any]] | None = None
     best_rank: tuple[int, int, int, int] | None = None
+    best_meta: dict[str, Any] = {"sequence_visibility_reason": "sequence_not_generated"}
     for step1_index, step1_parameters in enumerate(step1_options):
         try:
             predicted_intermediate = _apply_primitive(input_grid, _safe_text(primitive_pair[0]), step1_parameters)
@@ -819,6 +972,7 @@ def _best_sequence_pair_fit(primitive_pair: Sequence[str], input_grid: Sequence[
             if best_rank is None or pair_rank < best_rank:
                 best_pair = (step1_candidate, step2_candidate)  # type: ignore[arg-type]
                 best_rank = pair_rank
+                best_meta = {"sequence_visibility_reason": "step1_execution_failed"}
             continue
         step1_candidate = {
             "parameters": dict(step1_parameters),
@@ -827,11 +981,25 @@ def _best_sequence_pair_fit(primitive_pair: Sequence[str], input_grid: Sequence[
             "rank": (step1_comparison["value_mismatch_count"], step1_index),
         }
         step2_candidate = _best_single_step_fit(_safe_text(primitive_pair[1]), predicted_intermediate, final_grid)
+        if step2_candidate is None and tuple(primitive_pair) == ("line_completion", "recolor_symbol"):
+            step2_candidate = _identity_recolor_candidate(
+                predicted_intermediate,
+                final_grid,
+                background_value=int(step1_parameters.get("background_value", _background_value_from_grid(input_grid))),
+                step1_parameters=step1_parameters,
+            )
+        sequence_visibility_reason = _sequence_visibility_reason_for_step2(
+            primitive_pair,
+            predicted_intermediate,
+            final_grid,
+            step2_candidate,
+        )
         if step2_candidate is None:
             pair_rank = (10**6, step1_comparison["value_mismatch_count"], step1_index, 10**6)
             if best_rank is None or pair_rank < best_rank:
                 best_pair = (step1_candidate, step2_candidate)  # type: ignore[arg-type]
                 best_rank = pair_rank
+                best_meta = {"sequence_visibility_reason": sequence_visibility_reason}
             continue
         pair_rank = (
             int(step2_candidate["comparison"]["value_mismatch_count"]),
@@ -842,9 +1010,10 @@ def _best_sequence_pair_fit(primitive_pair: Sequence[str], input_grid: Sequence[
         if best_rank is None or pair_rank < best_rank:
             best_pair = (step1_candidate, step2_candidate)
             best_rank = pair_rank
+            best_meta = {"sequence_visibility_reason": sequence_visibility_reason}
     if best_pair is None:
-        return None, None
-    return best_pair
+        return None, None, best_meta
+    return best_pair[0], best_pair[1], best_meta
 
 
 def _parse_supported_pair_from_packet(packet: Mapping[str, Any]) -> list[str]:
@@ -892,14 +1061,19 @@ def _generate_bounded_sequence_candidates(entry: Mapping[str, Any]) -> list[dict
         generation_failed = False
         execution_failed = False
         total_mismatch = 0
+        blackboard_traces: list[dict[str, Any]] = []
+        sequence_visibility_reasons: list[str] = []
         for train_pair in train_pairs:
             input_grid = _pair_input_grid(train_pair)
             final_grid = _pair_output_grid(train_pair)
-            best_step1, best_step2 = _best_sequence_pair_fit(primitive_pair, input_grid, final_grid)
+            best_step1, best_step2, pair_meta = _best_sequence_pair_fit(primitive_pair, input_grid, final_grid)
             if best_step1 is None or best_step2 is None:
                 generation_failed = True
                 break
             intermediate_grid = best_step1["predicted_grid"]
+            step1_exports = _build_step1_exports(_safe_text(primitive_pair[0]), input_grid, intermediate_grid, best_step1["parameters"])
+            carryover_trace = _build_carryover_trace(_safe_text(primitive_pair[1]), step1_exports, best_step2["parameters"], intermediate_grid)
+            sequence_visibility_reasons.append(_safe_text(pair_meta.get("sequence_visibility_reason")))
             try:
                 final_prediction = _apply_primitive(intermediate_grid, primitive_pair[1], best_step2["parameters"])
                 final_comparison = _compare_grids(final_grid, final_prediction)
@@ -908,18 +1082,33 @@ def _generate_bounded_sequence_candidates(entry: Mapping[str, Any]) -> list[dict
                 final_comparison = {"exact_match": False, "value_mismatch_count": 10**6, "mismatch_cells": []}
                 best_step2 = {**best_step2, "error": _safe_text(exc)}
             per_pair_steps.append([
-                {"primitive_id": primitive_pair[0], "parameters": deepcopy(best_step1["parameters"])},
-                {"primitive_id": primitive_pair[1], "parameters": deepcopy(best_step2["parameters"])},
+                {"primitive_id": primitive_pair[0], "parameters": deepcopy(best_step1["parameters"])} ,
+                {"primitive_id": primitive_pair[1], "parameters": deepcopy(best_step2["parameters"])} ,
             ])
             pair_reports.append({
                 "pair_id": _safe_text(train_pair.get("pair_id")),
                 "step1": _json_safe(best_step1),
                 "step2": _json_safe(best_step2),
                 "final_comparison": _json_safe(final_comparison),
+                "step_1_exports": _json_safe(carryover_trace["step_1_exports"]),
+                "step_2_imports": _json_safe(carryover_trace["step_2_imports"]),
+                "carried_parameters": _json_safe(carryover_trace["carried_parameters"]),
+                "dropped_parameters": _json_safe(carryover_trace["dropped_parameters"]),
+                "parameter_origin_by_key": _json_safe(carryover_trace["parameter_origin_by_key"]),
+                "carryover_success": bool(carryover_trace["carryover_success"]),
+                "sequence_visibility_reason": _safe_text(pair_meta.get("sequence_visibility_reason")),
             })
+            blackboard_traces.append(carryover_trace)
             total_mismatch += int(final_comparison["value_mismatch_count"])
         if generation_failed:
             continue
+        aggregate_parameter_origin_by_key: dict[str, str] = {}
+        parameter_origin_sets: dict[str, set[str]] = {}
+        for trace in blackboard_traces:
+            for key, value in trace["parameter_origin_by_key"].items():
+                parameter_origin_sets.setdefault(key, set()).add(value)
+        for key, values in parameter_origin_sets.items():
+            aggregate_parameter_origin_by_key[key] = sorted(values)[0] if len(values) == 1 else "mixed"
         candidates.append({
             "candidate_id": f"{_safe_text(entry.get('task_id'))}:sequence:{candidate_rank}",
             "candidate_rank": candidate_rank,
@@ -931,6 +1120,13 @@ def _generate_bounded_sequence_candidates(entry: Mapping[str, Any]) -> list[dict
             "pair_reports": _json_safe(pair_reports),
             "total_mismatch": total_mismatch,
             "execution_failed": execution_failed,
+            "step_1_exports": _json_safe([trace["step_1_exports"] for trace in blackboard_traces]),
+            "step_2_imports": _json_safe([trace["step_2_imports"] for trace in blackboard_traces]),
+            "carried_parameters": _json_safe([trace["carried_parameters"] for trace in blackboard_traces]),
+            "dropped_parameters": _json_safe(sorted({item for trace in blackboard_traces for item in trace["dropped_parameters"]})),
+            "parameter_origin_by_key": _json_safe(aggregate_parameter_origin_by_key),
+            "carryover_success": all(trace["carryover_success"] for trace in blackboard_traces),
+            "sequence_visibility_reason": sequence_visibility_reasons[0] if sequence_visibility_reasons and len(set(sequence_visibility_reasons)) == 1 else "mixed",
             "generation_trace": {
                 "deterministic_order": True,
                 "candidate_budget": MAX_SEQUENCE_CANDIDATES_PER_TASK_V1,
@@ -1021,6 +1217,13 @@ def _evaluate_sequence_candidate(entry: Mapping[str, Any], candidate: Mapping[st
         "execution_failed": execution_failed,
         "pair_evaluations": _json_safe(evaluation_rows),
         "stable_sequence": _json_safe(candidate.get("stable_sequence", [])),
+        "step_1_exports": _json_safe(candidate.get("step_1_exports", [])),
+        "step_2_imports": _json_safe(candidate.get("step_2_imports", [])),
+        "carried_parameters": _json_safe(candidate.get("carried_parameters", [])),
+        "dropped_parameters": _json_safe(candidate.get("dropped_parameters", [])),
+        "parameter_origin_by_key": _json_safe(candidate.get("parameter_origin_by_key", {})),
+        "carryover_success": bool(candidate.get("carryover_success", False)),
+        "sequence_visibility_reason": _safe_text(candidate.get("sequence_visibility_reason")),
         "generation_trace": _json_safe(candidate.get("generation_trace", {})),
     }
 
@@ -1447,6 +1650,8 @@ def _classify_composition_failure(
 ) -> str:
     selected_ids = _normalized_solver_sequence(selected_sequence)
     intended_ids = _normalized_intended_sequence(intended_sequence)
+    if packet_status == "exact":
+        return ""
     if execution_failed or packet_status == "failed":
         return "intermediate_execution_failure"
     if not represented_sequence or not selected_ids:
@@ -1502,6 +1707,13 @@ def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, 
                 "execution_failed": False,
                 "pair_evaluations": [],
                 "stable_sequence": [],
+                "step_1_exports": [],
+                "step_2_imports": [],
+                "carried_parameters": [],
+                "dropped_parameters": [],
+                "parameter_origin_by_key": {},
+                "carryover_success": False,
+                "sequence_visibility_reason": "sequence_not_generated",
                 "generation_trace": {
                     "deterministic_order": True,
                     "candidate_budget": MAX_SEQUENCE_CANDIDATES_PER_TASK_V1,
@@ -1556,6 +1768,13 @@ def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, 
             "step1_plausible": bool(selected.get("step1_plausible")),
             "step2_plausible": bool(selected.get("step2_plausible")),
             "parameter_carryover_failure": parameter_carryover_failure,
+            "step_1_exports": _json_safe(selected.get("step_1_exports", [])),
+            "step_2_imports": _json_safe(selected.get("step_2_imports", [])),
+            "carried_parameters": _json_safe(selected.get("carried_parameters", [])),
+            "dropped_parameters": _json_safe(selected.get("dropped_parameters", [])),
+            "parameter_origin_by_key": _json_safe(selected.get("parameter_origin_by_key", {})),
+            "carryover_success": bool(selected.get("carryover_success", False)),
+            "sequence_visibility_reason": _safe_text(selected.get("sequence_visibility_reason")),
             "candidate_evaluations": _json_safe(evaluated_candidates),
             "pair_evaluations": _json_safe(selected.get("pair_evaluations", [])),
             "leakage_flags": _json_safe(entry.get("leakage_flags", {})),

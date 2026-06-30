@@ -114,6 +114,13 @@ def test_2_step_pilot_rows_have_required_fields_and_clean_leakage_posture() -> N
         "represented_sequence",
         "step1_plausible",
         "step2_plausible",
+        "step_1_exports",
+        "step_2_imports",
+        "carried_parameters",
+        "dropped_parameters",
+        "parameter_origin_by_key",
+        "carryover_success",
+        "sequence_visibility_reason",
         "pair_evaluations",
         "leakage_flags",
     }
@@ -143,17 +150,45 @@ def test_80_task_expansion_preserves_original_40_and_tracks_residuals() -> None:
     result = run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1()
     assert result["original_40_preserved"] is True
     assert result["original_40_result"] == {"exact": 39, "partial": 1, "unsupported": 0, "failed": 0}
-    assert result["new_40_result"] == {"exact": 36, "partial": 3, "unsupported": 1, "failed": 0}
+    assert result["new_40_result"] == {"exact": 37, "partial": 3, "unsupported": 0, "failed": 0}
     combined = result["combined_80_result"]
-    assert combined == {"exact": 75, "partial": 4, "unsupported": 1, "failed": 0}
+    assert combined == {"exact": 76, "partial": 4, "unsupported": 0, "failed": 0}
     assert sum(combined[key] for key in ("exact", "partial", "unsupported", "failed")) == EXPANDED_PILOT_TASK_COUNT_V1
-    assert result["represented_candidate_rows"] == 79
+    assert result["represented_candidate_rows"] == 80
     assert result["accepted_stress_residual_count"] == 1
     assert result["candidate_budget_cutoff_count"] == 0
     assert result["generator_ambiguity_count"] == 0
     assert result["new_unexplained_failures_count"] == 0
     assert result["accidental_composition_match_count"] == 1
     assert len(result["new_40_task_ids"]) == 40
+
+
+def test_structural_visibility_and_memory_traces_are_bounded_and_targeted() -> None:
+    result = run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1()
+    line_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_easy_gen_10_line_recolor_vertical_v1")
+    assert line_row["packet_status"] == "exact"
+    assert line_row["sequence_visibility_reason"] == "identity_recolor_visibility_repair"
+    assert line_row["represented_sequence"] is True
+    assert line_row["selected_primitive_sequence"][1]["primitive_id"] == "recolor_symbol"
+    assert line_row["selected_primitive_sequence"][1]["parameters"]["from_value"] == 3
+    assert line_row["selected_primitive_sequence"][1]["parameters"]["to_value"] == 3
+
+    carryover_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_easy_gen_03_extract_recolor_large_grid_v1")
+    assert carryover_row["packet_status"] == "partial"
+    assert carryover_row["composition_failure_category"] == "parameter_carryover_failure"
+    assert carryover_row["sequence_visibility_reason"] == "standard_generated"
+    assert carryover_row["step_1_exports"]
+    assert carryover_row["parameter_origin_by_key"]
+
+    untouched_noise_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_easy_gen_02_noise_recolor_color_swap_v1")
+    untouched_medium_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_medium_ctx_09_extract_recolor_bg_transfer_v1")
+    stress_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_stress_08_fill_then_count_v1")
+    assert untouched_noise_row["packet_status"] == "partial"
+    assert untouched_noise_row["composition_failure_category"] == "first_step_wrong_second_correct"
+    assert untouched_medium_row["packet_status"] == "partial"
+    assert untouched_medium_row["composition_failure_category"] == "first_step_wrong_second_correct"
+    assert stress_row["packet_status"] == "partial"
+    assert stress_row["composition_failure_category"] == "right_primitives_wrong_order"
 
 
 def test_existing_single_step_runner_summary_is_unchanged() -> None:

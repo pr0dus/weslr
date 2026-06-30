@@ -510,6 +510,15 @@ _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_allowed_paths = {
     _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_doc,
 }
 
+# Narrow, exact-path allowance for the ARC 2-step structural visibility/memory
+# repair report only.
+_arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc = (
+    "docs/WESLR_ARC_2_STEP_STRUCTURAL_SEQUENCE_VISIBILITY_AND_PARAMETER_MEMORY_REPAIR_V1.md"
+)
+_arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_allowed_paths = {
+    _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc,
+}
+
 # Narrow, exact-path allowances for recovered ARC UNKNOWN ENGINE audit/smoke
 # documentation on the current branch only. Same narrow intent as the prior
 # allowances: exact paths only, NOT a broad docs/ allowlist, NOT a wildcard,
@@ -16579,6 +16588,8 @@ def _check_git_scope():
         if path in _arc_2_step_parameter_carryover_and_contextual_inference_repair_allowed_paths:
             allowed = True
         if path in _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_allowed_paths:
+            allowed = True
+        if path in _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_recovered_artifact_docs_allowed_paths:
             allowed = True
