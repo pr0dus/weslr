@@ -388,20 +388,31 @@ def _family_copy_grid(spec: Mapping[str, Any]) -> dict[str, Any]:
     rows = int(params["rows"])
     cols = int(params["cols"])
     color = int(params["object_color"])
+    variant_index = int(params.get("variant_index", 0))
     test_inputs = []
     expected = []
     train_pairs = []
     for idx in range(int(spec["train_pair_count"])):
         input_grid = _grid(rows, cols, 0)
-        _set_cell(input_grid, idx % rows, idx % cols, color)
-        if idx % 2 == 1:
+        if variant_index == 1 and idx == 0:
+            _set_cell(input_grid, 0, 0, color)
+            _set_cell(input_grid, 0, 1, color)
+        elif variant_index == 1 and idx == 2:
+            _set_cell(input_grid, 1 % rows, 3 % cols, color)
+        else:
+            _set_cell(input_grid, idx % rows, idx % cols, color)
+        if idx % 2 == 1 and variant_index != 1:
             _set_cell(input_grid, rows - 1, cols - 1, params["accent_color"])
         output_grid = _clone_grid(input_grid)
         train_pairs.append(_make_train_pair(f"{spec['task_id']}_train_{idx}", input_grid, output_grid, "copy the grid exactly"))
     for idx in range(int(spec["test_input_count"])):
         test_grid = _grid(rows, cols, 0)
-        _set_cell(test_grid, idx % rows, (idx + 1) % cols, color)
-        if idx % 2 == 1:
+        if variant_index == 1 and idx == 0:
+            _set_cell(test_grid, 0, 1, color)
+            _set_cell(test_grid, 0, 2, color)
+        else:
+            _set_cell(test_grid, idx % rows, (idx + 1) % cols, color)
+        if idx % 2 == 1 and variant_index != 1:
             _set_cell(test_grid, 0, 0, params["accent_color"])
         test_inputs.append({"test_input_id": f"test_{idx}", "input_grid": test_grid, "notes": "copy task"})
         expected.append({"test_input_id": f"test_{idx}", "output_grid": _clone_grid(test_grid), "notes": "copy output", "synthetic_only": True})

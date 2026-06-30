@@ -10,6 +10,11 @@ from weslr.arc_style_grid_schema_helpers import (
     build_arc_style_grid_metadata_v1,
     validate_arc_style_grid_task_packet_v1,
 )
+from weslr.arc_style_grid_adapter_phase2 import (
+    build_arc_style_grid_candidate_result_v1,
+    validate_arc_style_train_pair_with_candidate_v1,
+)
+from weslr.arc_style_synthetic_solver_suite import _supported_primitive_grid
 from weslr.arc_style_synthetic_task_generators import (
     REQUIRED_FAMILIES_V1,
     build_arc_style_synthetic_generator_spec_v1,
@@ -147,4 +152,34 @@ def test_suite_summary_reports_expected_shape_counts() -> None:
     assert summary["train_pair_count"] >= 72
     assert summary["test_input_count"] >= 48
     assert summary["top2_contract_compatibility_checked"] is True
+
+
+def test_copy_grid_variant_2_generator_breaks_rotate_equivalence_but_preserves_copy() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    task = next(task for task in suite["tasks"] if task["task_id"] == "synthetic_copy_grid_variant_2_v1")
+    train_pairs = task["train_pairs"]
+    expected_outputs = task["validation_metadata"]["expected_outputs"]
+    copy_candidate = build_arc_style_grid_candidate_result_v1(
+        "copy",
+        candidate_type="copy_candidate",
+        primitive_sequence=[{"primitive_id": "copy", "parameters": {}}],
+        train_fit_status="unknown",
+        confidence_metadata={},
+        calibration_metadata={},
+    )
+    rotate_candidate = build_arc_style_grid_candidate_result_v1(
+        "rotate_object_90",
+        candidate_type="rotate_object_90_candidate",
+        primitive_sequence=[{"primitive_id": "rotate_object_90", "parameters": {"object_value": 2, "background_value": 0}}],
+        train_fit_status="unknown",
+        confidence_metadata={},
+        calibration_metadata={},
+    )
+    copy_fit = sum(1 for pair in train_pairs if validate_arc_style_train_pair_with_candidate_v1(pair, copy_candidate)["exact_match"])
+    rotate_fit = sum(1 for pair in train_pairs if validate_arc_style_train_pair_with_candidate_v1(pair, rotate_candidate)["exact_match"])
+    assert copy_fit == 3
+    assert rotate_fit < 3
+    for test_input, expected in zip(task["test_inputs"], expected_outputs):
+        copy_pred = _supported_primitive_grid({"primitive_id": "copy", "primitive_sequence": [{"primitive_id": "copy", "parameters": {}}]}, test_input["input_grid"])
+        assert copy_pred == expected["output_grid"]
 
