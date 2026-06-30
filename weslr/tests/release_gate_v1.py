@@ -460,6 +460,17 @@ _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths = {
     _arc_unknown_engine_branch_state_after_smoke_metrics_repair_doc,
 }
 
+# Narrow, exact-path allowance for the ARC synthetic 2-step 40 unsupported
+# pattern diagnosis report only. Same narrow intent as the prior allowances: a
+# single exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does NOT
+# weaken any protected-file rule.
+_arc_synthetic_2_step_40_unsupported_pattern_diagnosis_report_doc = (
+    "docs/WESLR_ARC_SYNTHETIC_2_STEP_40_PILOT_UNSUPPORTED_PATTERN_V1.md"
+)
+_arc_synthetic_2_step_40_unsupported_pattern_diagnosis_report_allowed_paths = {
+    _arc_synthetic_2_step_40_unsupported_pattern_diagnosis_report_doc,
+}
+
 # Narrow, exact-path allowances for recovered ARC UNKNOWN ENGINE audit/smoke
 # documentation on the current branch only. Same narrow intent as the prior
 # allowances: exact paths only, NOT a broad docs/ allowlist, NOT a wildcard,
@@ -16519,6 +16530,8 @@ def _check_git_scope():
         if path in _arc_primitive_sequence_grid_reconstruction_test_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_branch_state_after_smoke_metrics_repair_allowed_paths:
+            allowed = True
+        if path in _arc_synthetic_2_step_40_unsupported_pattern_diagnosis_report_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_recovered_artifact_docs_allowed_paths:
             allowed = True
