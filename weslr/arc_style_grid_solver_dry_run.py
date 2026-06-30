@@ -559,6 +559,15 @@ def _infer_line_completion_parameters(input_grid: Sequence[Sequence[Any]], outpu
     predicted = _line_completion_grid([list(row) for row in input_grid], row_index=row_index, line_value=line_value, background_value=background_value, span_start_column=span_start_column, span_end_column=span_end_column)
     if predicted != [list(row) for row in output_grid]:
         return None
+    changed = _changed_cells(input_grid, output_grid)
+    if not changed:
+        return None
+    if any(change_row != row_index for change_row, _, _, _ in changed):
+        return None
+    if any(input_value != background_value for _, _, input_value, _ in changed):
+        return None
+    if any(output_value != line_value for _, _, _, output_value in changed):
+        return None
     return {"row_index": row_index, "line_value": line_value, "background_value": background_value, "span_start_column": span_start_column, "span_end_column": span_end_column}
 
 
@@ -648,7 +657,7 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
     output_grid = _grid_from_payload(pair.get("output_grid"))
     background_value = pair.get("input_grid_metadata", {}).get("background_color") if isinstance(pair.get("input_grid_metadata"), Mapping) else None
     if background_value is None and input_grid:
-        background_value = _non_background_value(input_grid, None)
+        background_value = _background_value_from_grid(input_grid)
     if object_extraction is None:
         object_extraction = extract_arc_style_object_candidates_v1(input_grid, task_id=_safe_text(pair.get("pair_id")))
     evidence_labels: list[str] = []
@@ -853,19 +862,6 @@ def _infer_pair_structural_candidate_v1(pair: Mapping[str, Any], *, object_extra
                 "candidate_role": "primary_exact",
                 "source": "structural_grid_delta",
                 "required_constraints": ["train_only_parameter_proposal", "bounded_canvas_policy"],
-                "unsupported_assumptions": [],
-                "bounded_depth": 1,
-                "is_executable": True,
-                "candidate_rank": 0,
-                "train_fit_status": "fit",
-            }
-            evidence_labels.append("reflect_object_horizontal_or_vertical")
-            candidate = {
-                "primitive_id": "reflect_object_horizontal_or_vertical",
-                "parameters": reflect_object_parameters,
-                "candidate_role": "primary_exact",
-                "source": "structural_grid_delta",
-                "required_constraints": ["axis_known", "single_object_known"],
                 "unsupported_assumptions": [],
                 "bounded_depth": 1,
                 "is_executable": True,

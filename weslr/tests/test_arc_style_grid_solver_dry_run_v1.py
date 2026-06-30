@@ -258,11 +258,12 @@ def test_complete_symmetry_variant_2_selects_complete_symmetry_not_degenerate_li
     assert task_result["selected_primitive_sequence"][0]["primitive_id"] == "complete_symmetry"
 
 
-def test_reflect_object_family_remains_unsupported_honestly() -> None:
+def test_reflect_object_family_is_inferred_in_dry_run_even_though_suite_level_support_remains_blocked() -> None:
     suite = generate_arc_style_synthetic_task_suite_v1()
     task_family = next(task for task in suite["tasks"] if task["family_id"] == "reflect_object_horizontal_or_vertical")
     task_packet = task_family["generator_metadata"]["arc_style_task_packets"][0]
     packet = run_arc_style_bounded_solver_dry_run_v1([task_packet])
     task_result = packet["task_results"][0]
-    assert task_result["train_fit_status"] in {"unsupported", "mismatch", "partial_fit"}
-    assert packet["selected_unsupported_count"] >= 1
+    assert task_result["train_fit_status"] == "fit"
+    assert task_result["selected_primitive_sequence"][0]["primitive_id"] == "reflect_object_horizontal_or_vertical"
+    assert packet["selected_unsupported_count"] == 0
