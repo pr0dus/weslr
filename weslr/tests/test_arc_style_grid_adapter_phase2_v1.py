@@ -306,13 +306,12 @@ def test_new_synthetic_primitive_executors_validate_directly() -> None:
             assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
             continue
         if family_id == "object_count_to_pattern":
-            count = sum(1 for row in input_grid for cell in row if cell != background)
             pattern_value = next(cell for row in output_grid for cell in row if cell != background)
             row_index = max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell != background))
             candidate = {
                 "candidate_id": f"{family_id}:candidate",
                 "candidate_type": f"{family_id}_candidate",
-                "primitive_sequence": [{"primitive_id": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": row_index, "background_value": background}}],
+                "primitive_sequence": [{"primitive_id": "object_count_to_pattern", "parameters": {"count": None, "pattern_value": pattern_value, "row_index": row_index, "background_value": background}}],
                 "train_fit_status": "unknown",
                 "partial_fit_metadata": {},
                 "unsupported_assumptions": [],
@@ -338,6 +337,29 @@ def test_new_synthetic_primitive_executors_validate_directly() -> None:
             assert validate_arc_style_train_pair_with_candidate_v1(pair, candidate)["exact_match"] is True
             continue
         raise AssertionError(f"unexpected family: {family_id}")
+
+
+def test_object_count_to_pattern_dynamic_count_uses_current_input_grid() -> None:
+    input_grid = [
+        [2, 0, 0, 0, 0],
+        [0, 2, 0, 0, 0],
+        [0, 0, 2, 0, 0],
+        [0, 0, 0, 2, 0],
+        [0, 0, 0, 0, 0],
+    ]
+    predicted, trace = _apply_primitive_step(
+        input_grid,
+        {"primitive_id": "object_count_to_pattern", "parameters": {"count": None, "pattern_value": 5, "row_index": 2, "background_value": 0}},
+        background_value=0,
+    )
+    assert predicted == [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [5, 5, 5, 5, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+    ]
+    assert trace.get("unsupported_reason") is None
 
 
 

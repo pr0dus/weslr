@@ -40,8 +40,8 @@ def test_solver_suite_records_reflect_as_supported_without_non_reflect_regressio
     result = run_arc_style_synthetic_solver_suite_v1()
     ledger = result["failure_ledger"]
     category_counts = ledger["category_counts"]
-    assert result["synthetic_exact_count"] == 47
-    assert result["synthetic_partial_count"] == 1
+    assert result["synthetic_exact_count"] == 48
+    assert result["synthetic_partial_count"] == 0
     assert result["synthetic_unsupported_count"] == 0
     unsupported_family_ids = [family_id for family_id, summary in result["family_level_summary"].items() if summary["synthetic_unsupported_count"] > 0]
     assert unsupported_family_ids == []
@@ -53,8 +53,8 @@ def test_solver_suite_records_reflect_as_supported_without_non_reflect_regressio
     assert category_counts.get("missing_primitive_executor", 0) == 0
     assert result["family_level_summary"]["copy_grid"]["synthetic_exact_count"] == 4
     assert result["family_level_summary"]["copy_grid"]["synthetic_partial_count"] == 0
-    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_exact_count"] == 3
-    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_partial_count"] == 1
+    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_exact_count"] == 4
+    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_partial_count"] == 0
     assert result["family_level_summary"]["rotate_object_90"]["synthetic_exact_count"] == 4
     assert result["family_level_summary"]["rotate_object_90"]["synthetic_partial_count"] == 0
     assert set(FAILURE_CATEGORIES_V1).issuperset(set(ledger["category_counts"].keys()))
@@ -83,10 +83,14 @@ def test_top2_validation_works_on_synthetic_suite_packets() -> None:
 def test_failure_ledger_has_family_level_information() -> None:
     result = run_arc_style_synthetic_solver_suite_v1()
     ledger = build_arc_style_synthetic_solver_failure_ledger_v1(result["failure_ledger"]["entries"])
-    assert ledger["family_counts"]
-    assert ledger["family_category_counts"]
     assert all("family_id" in entry for entry in ledger["entries"])
     assert all(category in FAILURE_CATEGORIES_V1 for category in ledger["category_counts"].keys())
+    if ledger["entries"]:
+        assert ledger["family_counts"]
+        assert ledger["family_category_counts"]
+    else:
+        assert ledger["family_counts"] == {}
+        assert ledger["family_category_counts"] == {}
     assert json.dumps(ledger, ensure_ascii=False)
 
 
@@ -96,3 +100,12 @@ def test_copy_grid_variant_2_becomes_exact_without_rotate_family_regression() ->
     assert [packet["packet_status"] for packet in copy_task["packet_results"]] == ["exact", "exact"]
     assert result["family_level_summary"]["rotate_object_90"]["synthetic_exact_count"] == 4
     assert result["family_level_summary"]["rotate_object_90"]["synthetic_partial_count"] == 0
+
+
+def test_object_count_to_pattern_variant_2_becomes_exact_without_non_object_count_regressions() -> None:
+    result = run_arc_style_synthetic_solver_suite_v1()
+    object_count_task = next(task for task in result["task_results"] if task["task_id"] == "synthetic_object_count_to_pattern_variant_2_v1")
+    assert [packet["packet_status"] for packet in object_count_task["packet_results"]] == ["exact", "exact"]
+    assert result["family_level_summary"]["copy_grid"]["synthetic_exact_count"] == 4
+    assert result["family_level_summary"]["rotate_object_90"]["synthetic_exact_count"] == 4
+    assert result["family_level_summary"]["reflect_object_horizontal_or_vertical"]["synthetic_exact_count"] == 4

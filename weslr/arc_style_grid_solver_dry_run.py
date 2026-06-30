@@ -574,15 +574,14 @@ def _infer_line_completion_parameters(input_grid: Sequence[Sequence[Any]], outpu
 def _infer_object_count_to_pattern_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
     if not input_grid or not output_grid:
         return None
-    count = sum(1 for row in input_grid for cell in row if cell != background_value)
     pattern_value = _dominant_non_background_value(output_grid, background_value)
     if pattern_value is None:
         return None
     row_index = max(range(len(output_grid)), key=lambda index: sum(1 for cell in output_grid[index] if cell != background_value))
-    predicted = _object_count_to_pattern_grid([list(row) for row in input_grid], count=count, pattern_value=pattern_value, row_index=row_index, background_value=background_value)
+    predicted = _object_count_to_pattern_grid([list(row) for row in input_grid], count=None, pattern_value=pattern_value, row_index=row_index, background_value=background_value)
     if predicted != [list(row) for row in output_grid]:
         return None
-    return {"count": count, "pattern_value": pattern_value, "row_index": row_index, "background_value": background_value}
+    return {"count": None, "pattern_value": pattern_value, "row_index": row_index, "background_value": background_value}
 
 
 def _infer_rotate_object_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:

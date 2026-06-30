@@ -1568,12 +1568,11 @@ def _infer_candidate_for_toy_task(task_packet: Mapping[str, Any]) -> dict[str, A
         return candidate
     if toy_task_type == "object_count_to_pattern":
         candidate_background = background_value if background_value is not None else _background_value_from_grid(input_grid)
-        count = sum(1 for row in input_grid for cell in row if cell != candidate_background)
         pattern_value = _dominant_non_background_value(output_grid, candidate_background)
         candidate = build_arc_style_grid_candidate_result_v1(
             f"{task_packet.get('task_id')}:object_count_to_pattern",
             candidate_type="object_count_to_pattern_candidate",
-            primitive_sequence=[{"primitive_id": "object_count_to_pattern", "parameters": {"count": count, "pattern_value": pattern_value, "row_index": len(input_grid) // 2 if input_grid else 0, "background_value": candidate_background}}],
+            primitive_sequence=[{"primitive_id": "object_count_to_pattern", "parameters": {"count": None, "pattern_value": pattern_value, "row_index": len(input_grid) // 2 if input_grid else 0, "background_value": candidate_background}}],
             train_fit_status="unknown",
             confidence_metadata={"confidence": "high"},
             calibration_metadata={"calibration": "phase2_toy"},
