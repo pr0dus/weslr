@@ -698,6 +698,26 @@ def _build_step1_exports(
     }
     if primitive_id == "extract_largest_object":
         exports["extracted_object_value"] = _dominant_non_background_value(intermediate_grid, background_value)
+        # Additional bounded exports for memory contract
+        # Compute cells belonging to extracted object (non‑background)
+        cells = [
+            (r, c)
+            for r, row in enumerate(intermediate_grid)
+            for c, val in enumerate(row)
+            if val != background_value
+        ]
+        if cells:
+            rows = [r for r, _ in cells]
+            cols = [c for _, c in cells]
+            bbox = (min(rows), min(cols), max(rows), max(cols))
+            exports["extracted_object_handle"] = {"bbox": bbox, "cells": cells}
+            exports["extracted_object_bbox"] = bbox
+        exports["extracted_object_background"] = background_value
+        exports["original_background_value"] = background_value
+        # Non‑extracted non‑background values present in the grid
+        all_non_bg = _non_background_values(intermediate_grid, background_value)
+        extracted_val = exports.get("extracted_object_value")
+        exports["non_extracted_values"] = [v for v in all_non_bg if v != extracted_val]
     if primitive_id == "line_completion":
         exports["line_value"] = step1_parameters.get("line_value")
         exports["axis"] = step1_parameters.get("axis")
