@@ -522,8 +522,6 @@ _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_allowed_p
     _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc,
     "docs/WESLR_ARC_SYNTHETIC_80_AFTER_COMPLETE_SYMMETRY_VARIANT_2_FIX_V1.md",
 }
-    _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc,
-}
 
 # Narrow, exact-path allowances for recovered ARC UNKNOWN ENGINE audit/smoke
 # documentation on the current branch only. Same narrow intent as the prior
