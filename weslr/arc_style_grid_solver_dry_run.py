@@ -546,6 +546,8 @@ def _infer_remove_background_noise_parameters(input_grid: Sequence[Sequence[Any]
 def _infer_line_completion_parameters(input_grid: Sequence[Sequence[Any]], output_grid: Sequence[Sequence[Any]], background_value: Any) -> dict[str, Any] | None:
     if not input_grid or not output_grid:
         return None
+    if [list(row) for row in input_grid] == [list(row) for row in output_grid]:
+        return None
     row_index = max(range(len(input_grid)), key=lambda index: sum(1 for cell in input_grid[index] if cell != background_value))
     line_value = _dominant_non_background_value(output_grid, background_value)
     if line_value is None:
