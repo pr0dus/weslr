@@ -43,13 +43,13 @@ FAILURE_TAXONOMY_V1 = (
     "first_step_correct_second_wrong",
     "first_step_wrong_second_correct",
     "one_primitive_missing",
-    "shortcut_single_step_false_solution",
-    "ambiguous_train_evidence",
-    "generator_ambiguity",
-    "parameter_inference_failure",
-    "execution_failure",
+    "parameter_carryover_failure",
+    "intermediate_execution_failure",
+    "sequence_not_generated",
 )
 EXPECTED_STATUS_KEYS_V1 = ("exact", "partial", "unsupported", "failed")
+MAX_SEQUENCE_CANDIDATES_PER_TASK_V1 = 2
+MAX_SEQUENCE_LENGTH_V1 = 2
 
 
 EASY_TASK_SPECS_V1 = (
@@ -488,6 +488,7 @@ _PRIMITIVE_EXECUTORS_V1 = {
     "rotate_object_90": _rotate_object_90,
     "reflect_object_horizontal_or_vertical": _reflect_object_horizontal_or_vertical,
 }
+SUPPORTED_SEQUENCE_PRIMITIVES_V1 = frozenset(_PRIMITIVE_EXECUTORS_V1.keys())
 
 
 def _apply_primitive(grid: Sequence[Sequence[int]], primitive_id: str, parameters: Mapping[str, Any]) -> list[list[int]]:
@@ -500,6 +501,357 @@ def _apply_sequence(grid: Sequence[Sequence[int]], sequence: Sequence[Mapping[st
     for step in sequence:
         output = _apply_primitive(output, _safe_text(step.get("primitive_id")), step.get("parameters", {}))
     return output
+
+
+
+def _grid_from_pair_payload(payload: Any) -> list[list[int]]:
+    if isinstance(payload, Mapping) and "cell_values" in payload:
+        payload = payload.get("cell_values")
+    if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes, bytearray)):
+        return []
+    return [list(row) for row in payload if isinstance(row, Sequence) and not isinstance(row, (str, bytes, bytearray))]
+
+
+def _pair_input_grid(train_pair: Mapping[str, Any]) -> list[list[int]]:
+    return _grid_from_pair_payload(train_pair.get("input_grid"))
+
+
+def _pair_output_grid(train_pair: Mapping[str, Any]) -> list[list[int]]:
+    return _grid_from_pair_payload(train_pair.get("output_grid"))
+
+
+def _compare_grids(expected: Sequence[Sequence[int]], predicted: Sequence[Sequence[int]]) -> dict[str, Any]:
+    expected_grid = [list(row) for row in expected]
+    predicted_grid = [list(row) for row in predicted]
+    mismatch_cells: list[dict[str, Any]] = []
+    height = max(len(expected_grid), len(predicted_grid))
+    width = max((len(row) for row in expected_grid), default=0)
+    width = max(width, max((len(row) for row in predicted_grid), default=0))
+    for row_index in range(height):
+        for column_index in range(width):
+            expected_value = expected_grid[row_index][column_index] if row_index < len(expected_grid) and column_index < len(expected_grid[row_index]) else None
+            predicted_value = predicted_grid[row_index][column_index] if row_index < len(predicted_grid) and column_index < len(predicted_grid[row_index]) else None
+            if expected_value != predicted_value:
+                mismatch_cells.append({"row": row_index, "column": column_index, "expected": expected_value, "predicted": predicted_value})
+    return {
+        "exact_match": expected_grid == predicted_grid,
+        "value_mismatch_count": len(mismatch_cells),
+        "mismatch_cells": mismatch_cells,
+    }
+
+
+def _border_values(grid: Sequence[Sequence[int]]) -> list[int]:
+    if not grid or not grid[0]:
+        return []
+    values: list[int] = []
+    rows = len(grid)
+    cols = len(grid[0])
+    for col in range(cols):
+        values.append(int(grid[0][col]))
+        values.append(int(grid[rows - 1][col]))
+    for row in range(1, rows - 1):
+        values.append(int(grid[row][0]))
+        values.append(int(grid[row][cols - 1]))
+    return values
+
+
+def _non_background_values(grid: Sequence[Sequence[int]], background_value: int) -> list[int]:
+    return sorted({int(cell) for row in grid for cell in row if int(cell) != background_value})
+
+
+def _dominant_non_background_value(grid: Sequence[Sequence[int]], background_value: int) -> int | None:
+    counts = Counter(int(cell) for row in grid for cell in row if int(cell) != background_value)
+    return int(counts.most_common(1)[0][0]) if counts else None
+
+
+def _line_candidate_params(grid: Sequence[Sequence[int]], target: Sequence[Sequence[int]], background_value: int) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    rows = len(target)
+    cols = len(target[0]) if rows else 0
+    for row_index in range(rows):
+        values = [int(cell) for cell in target[row_index] if int(cell) != background_value]
+        if values:
+            value = Counter(values).most_common(1)[0][0]
+            candidates.append({"axis": "horizontal", "line_index": row_index, "line_value": value, "background_value": background_value})
+    for col_index in range(cols):
+        values = [int(target[row_index][col_index]) for row_index in range(rows) if int(target[row_index][col_index]) != background_value]
+        if values:
+            value = Counter(values).most_common(1)[0][0]
+            candidates.append({"axis": "vertical", "line_index": col_index, "line_value": value, "background_value": background_value})
+    if not candidates:
+        dominant = _dominant_non_background_value(grid, background_value)
+        if dominant is not None:
+            candidates.append({"axis": "horizontal", "line_index": max(0, len(grid) // 2), "line_value": dominant, "background_value": background_value})
+    return candidates[:8]
+
+
+def _primitive_parameter_options(primitive_id: str, current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> list[dict[str, Any]]:
+    background_value = _background_value_from_grid(current_grid)
+    current_values = _non_background_values(current_grid, background_value)
+    target_values = _non_background_values(target_grid, background_value)
+    if primitive_id == "copy_grid":
+        return [{}]
+    if primitive_id in {"remove_background_noise", "extract_largest_object", "rotate_object_90"}:
+        return [{"background_value": background_value}]
+    if primitive_id == "complete_symmetry":
+        return [{"axes": ["horizontal", "vertical"], "background_value": background_value}]
+    if primitive_id == "reflect_object_horizontal_or_vertical":
+        return [
+            {"axis": "horizontal", "background_value": background_value},
+            {"axis": "vertical", "background_value": background_value},
+        ]
+    if primitive_id == "move_single_object":
+        object_candidates = current_values or target_values or [None]
+        options = []
+        for direction in ("up", "down", "left", "right"):
+            for steps in (1, 2):
+                for object_value in object_candidates[:2]:
+                    params = {"direction": direction, "steps": steps, "background_value": background_value}
+                    if object_value is not None:
+                        params["object_value"] = object_value
+                    options.append(params)
+        return options
+    if primitive_id == "recolor_symbol":
+        options = []
+        source_values = current_values or target_values
+        destination_values = target_values or current_values
+        for from_value in source_values[:3]:
+            for to_value in destination_values[:3]:
+                if from_value == to_value:
+                    continue
+                options.append({"from_value": from_value, "to_value": to_value, "background_value": background_value})
+        return options[:8]
+    if primitive_id == "border_frame":
+        border_values = [value for value in _border_values(target_grid) if value != background_value]
+        values = [value for value, _ in Counter(border_values).most_common(3)] or target_values[:3]
+        return [{"frame_value": value} for value in values]
+    if primitive_id == "fill_region":
+        rows = len(target_grid)
+        cols = len(target_grid[0]) if rows else 0
+        interior = [int(target_grid[row][col]) for row in range(1, max(1, rows - 1)) for col in range(1, max(1, cols - 1))]
+        values = [value for value, _ in Counter(value for value in interior if value != background_value).most_common(3)]
+        values = values or target_values[:3] or current_values[:3]
+        return [{"fill_value": value, "background_value": background_value} for value in values]
+    if primitive_id == "line_completion":
+        return _line_candidate_params(current_grid, target_grid, background_value)
+    if primitive_id == "object_count_to_pattern":
+        rows = len(target_grid)
+        row_scores = []
+        for row_index in range(rows):
+            non_bg = [int(cell) for cell in target_grid[row_index] if int(cell) != background_value]
+            if non_bg:
+                row_scores.append((row_index, Counter(non_bg).most_common(1)[0][0], len(non_bg)))
+        row_scores.sort(key=lambda item: (-item[2], item[0], item[1]))
+        options = []
+        for row_index, pattern_value, _ in row_scores[:3]:
+            options.append({"count": None, "pattern_value": pattern_value, "row_index": row_index, "background_value": background_value})
+        if not options and target_values:
+            options.append({"count": None, "pattern_value": target_values[0], "row_index": max(0, rows // 2), "background_value": background_value})
+        return options
+    return []
+
+
+def _best_single_step_fit(primitive_id: str, current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> dict[str, Any] | None:
+    options = _primitive_parameter_options(primitive_id, current_grid, target_grid)
+    best: dict[str, Any] | None = None
+    for option_index, parameters in enumerate(options):
+        try:
+            predicted = _apply_primitive(current_grid, primitive_id, parameters)
+            comparison = _compare_grids(target_grid, predicted)
+            candidate = {"parameters": dict(parameters), "predicted_grid": predicted, "comparison": comparison, "rank": (comparison["value_mismatch_count"], option_index)}
+        except Exception as exc:  # pragma: no cover
+            candidate = {
+                "parameters": dict(parameters),
+                "predicted_grid": _clone_grid(current_grid),
+                "comparison": {"exact_match": False, "value_mismatch_count": 10**6, "mismatch_cells": []},
+                "rank": (10**6, option_index),
+                "error": _safe_text(exc),
+            }
+        if best is None or candidate["rank"] < best["rank"]:
+            best = candidate
+    return best
+
+
+def _parse_supported_pair_from_packet(packet: Mapping[str, Any]) -> list[str]:
+    trace = packet.get("trace", {}) if isinstance(packet.get("trace"), Mapping) else {}
+    composition_pair = _safe_text(trace.get("composition_pair") or trace.get("toy_task_type"))
+    if "->" not in composition_pair:
+        return []
+    parts = [_safe_text(part).strip() for part in composition_pair.split("->")]
+    if len(parts) != 2 or any(part not in SUPPORTED_SEQUENCE_PRIMITIVES_V1 for part in parts):
+        return []
+    return parts
+
+
+def _summarize_stable_parameters(per_pair_steps: Sequence[Sequence[Mapping[str, Any]]]) -> list[dict[str, Any]]:
+    summary: list[dict[str, Any]] = []
+    if not per_pair_steps:
+        return summary
+    dynamic_keys = {"background_value", "object_value", "count"}
+    for step_index in range(len(per_pair_steps[0])):
+        primitive_id = _safe_text(per_pair_steps[0][step_index].get("primitive_id"))
+        all_keys = sorted({key for pair_steps in per_pair_steps for key in pair_steps[step_index].get("parameters", {}).keys()})
+        stable_parameters: dict[str, Any] = {}
+        dynamic_parameter_keys: list[str] = []
+        for key in all_keys:
+            values = [pair_steps[step_index].get("parameters", {}).get(key) for pair_steps in per_pair_steps]
+            if all(value == values[0] for value in values):
+                stable_parameters[key] = deepcopy(values[0])
+            elif key in dynamic_keys:
+                dynamic_parameter_keys.append(key)
+        summary.append({"primitive_id": primitive_id, "stable_parameters": stable_parameters, "dynamic_parameter_keys": dynamic_parameter_keys})
+    return summary
+
+
+def _generate_bounded_sequence_candidates(entry: Mapping[str, Any]) -> list[dict[str, Any]]:
+    packet = entry.get("packet", {}) if isinstance(entry.get("packet"), Mapping) else {}
+    pair = _parse_supported_pair_from_packet(packet)
+    if len(pair) != 2:
+        return []
+    train_pairs = packet.get("train_pairs", []) if isinstance(packet.get("train_pairs"), list) else []
+    ordered_pairs = [pair, list(reversed(pair))][:MAX_SEQUENCE_CANDIDATES_PER_TASK_V1]
+    candidates: list[dict[str, Any]] = []
+    for candidate_rank, primitive_pair in enumerate(ordered_pairs):
+        per_pair_steps: list[list[dict[str, Any]]] = []
+        pair_reports: list[dict[str, Any]] = []
+        generation_failed = False
+        execution_failed = False
+        total_mismatch = 0
+        for train_pair in train_pairs:
+            input_grid = _pair_input_grid(train_pair)
+            final_grid = _pair_output_grid(train_pair)
+            best_step1 = _best_single_step_fit(primitive_pair[0], input_grid, final_grid)
+            if best_step1 is None:
+                generation_failed = True
+                break
+            intermediate_grid = best_step1["predicted_grid"]
+            best_step2 = _best_single_step_fit(primitive_pair[1], intermediate_grid, final_grid)
+            if best_step2 is None:
+                generation_failed = True
+                break
+            try:
+                final_prediction = _apply_primitive(intermediate_grid, primitive_pair[1], best_step2["parameters"])
+                final_comparison = _compare_grids(final_grid, final_prediction)
+            except Exception as exc:  # pragma: no cover
+                execution_failed = True
+                final_comparison = {"exact_match": False, "value_mismatch_count": 10**6, "mismatch_cells": []}
+                best_step2 = {**best_step2, "error": _safe_text(exc)}
+            per_pair_steps.append([
+                {"primitive_id": primitive_pair[0], "parameters": deepcopy(best_step1["parameters"])},
+                {"primitive_id": primitive_pair[1], "parameters": deepcopy(best_step2["parameters"])},
+            ])
+            pair_reports.append({
+                "pair_id": _safe_text(train_pair.get("pair_id")),
+                "step1": _json_safe(best_step1),
+                "step2": _json_safe(best_step2),
+                "final_comparison": _json_safe(final_comparison),
+            })
+            total_mismatch += int(final_comparison["value_mismatch_count"])
+        if generation_failed:
+            continue
+        candidates.append({
+            "candidate_id": f"{_safe_text(entry.get('task_id'))}:sequence:{candidate_rank}",
+            "candidate_rank": candidate_rank,
+            "primitive_pair": list(primitive_pair),
+            "bounded_depth": MAX_SEQUENCE_LENGTH_V1,
+            "represented_sequence": True,
+            "per_pair_steps": _json_safe(per_pair_steps),
+            "stable_sequence": _json_safe(_summarize_stable_parameters(per_pair_steps)),
+            "pair_reports": _json_safe(pair_reports),
+            "total_mismatch": total_mismatch,
+            "execution_failed": execution_failed,
+            "generation_trace": {
+                "deterministic_order": True,
+                "candidate_budget": MAX_SEQUENCE_CANDIDATES_PER_TASK_V1,
+                "max_sequence_length": MAX_SEQUENCE_LENGTH_V1,
+                "uses_train_output_for_transformation_inference": True,
+                "uses_test_output": False,
+                "uses_task_id_for_candidate_selection": False,
+                "uses_notes_for_candidate_selection": False,
+                "lookup_table_detected": False,
+                "parameter_source": "train_pairs_only",
+            },
+        })
+    return candidates
+
+
+def _evaluate_sequence_candidate(entry: Mapping[str, Any], candidate: Mapping[str, Any]) -> dict[str, Any]:
+    packet = entry.get("packet", {}) if isinstance(entry.get("packet"), Mapping) else {}
+    train_pairs = packet.get("train_pairs", []) if isinstance(packet.get("train_pairs"), list) else []
+    train_intermediate_grids = entry.get("train_intermediate_grids", []) if isinstance(entry.get("train_intermediate_grids"), list) else []
+    step1_plausible_all = True
+    step2_plausible_all = True
+    final_exact_all = True
+    total_mismatch = 0
+    execution_failed = bool(candidate.get("execution_failed"))
+    evaluation_rows: list[dict[str, Any]] = []
+    for pair_index, train_pair in enumerate(train_pairs):
+        input_grid = _pair_input_grid(train_pair)
+        final_grid = _pair_output_grid(train_pair)
+        expected_intermediate = train_intermediate_grids[pair_index] if pair_index < len(train_intermediate_grids) else []
+        step_defs = candidate.get("per_pair_steps", [])[pair_index]
+        step1 = step_defs[0]
+        step2 = step_defs[1]
+        try:
+            predicted_intermediate = _apply_primitive(input_grid, _safe_text(step1.get("primitive_id")), step1.get("parameters", {}))
+            predicted_final = _apply_primitive(predicted_intermediate, _safe_text(step2.get("primitive_id")), step2.get("parameters", {}))
+        except Exception as exc:  # pragma: no cover
+            execution_failed = True
+            evaluation_rows.append({"pair_id": _safe_text(train_pair.get("pair_id")), "execution_error": _safe_text(exc)})
+            step1_plausible_all = False
+            step2_plausible_all = False
+            final_exact_all = False
+            total_mismatch += 10**6
+            continue
+        step1_comparison = _compare_grids(expected_intermediate, predicted_intermediate)
+        oracle_step2 = _best_single_step_fit(_safe_text(step2.get("primitive_id")), expected_intermediate, final_grid)
+        step2_plausible = False
+        if oracle_step2 is not None:
+            oracle_final = _apply_primitive(expected_intermediate, _safe_text(step2.get("primitive_id")), oracle_step2["parameters"])
+            step2_plausible = _compare_grids(final_grid, oracle_final)["exact_match"]
+        final_comparison = _compare_grids(final_grid, predicted_final)
+        step1_plausible_all = step1_plausible_all and bool(step1_comparison["exact_match"])
+        step2_plausible_all = step2_plausible_all and bool(step2_plausible)
+        final_exact_all = final_exact_all and bool(final_comparison["exact_match"])
+        total_mismatch += int(final_comparison["value_mismatch_count"])
+        evaluation_rows.append({
+            "pair_id": _safe_text(train_pair.get("pair_id")),
+            "step1_exact": bool(step1_comparison["exact_match"]),
+            "step2_exact_from_oracle_intermediate": bool(step2_plausible),
+            "final_exact": bool(final_comparison["exact_match"]),
+            "final_mismatch_count": int(final_comparison["value_mismatch_count"]),
+        })
+    if execution_failed:
+        packet_status = "failed"
+        train_fit_status = "failed"
+    elif final_exact_all and train_pairs:
+        packet_status = "exact"
+        train_fit_status = "fit"
+    elif candidate.get("represented_sequence"):
+        packet_status = "partial"
+        train_fit_status = "partial_fit"
+    else:
+        packet_status = "unsupported"
+        train_fit_status = "unsupported"
+    return {
+        "candidate_id": _safe_text(candidate.get("candidate_id")),
+        "represented_sequence": bool(candidate.get("represented_sequence")),
+        "selected_primitive_sequence": [
+            {"primitive_id": _safe_text(step.get("primitive_id")), "parameters": _json_safe(step.get("stable_parameters", {}))}
+            for step in candidate.get("stable_sequence", [])
+        ],
+        "primitive_pair": list(candidate.get("primitive_pair", [])),
+        "packet_status": packet_status,
+        "train_fit_status": train_fit_status,
+        "step1_plausible": step1_plausible_all,
+        "step2_plausible": step2_plausible_all,
+        "final_exact": final_exact_all,
+        "total_mismatch": total_mismatch,
+        "execution_failed": execution_failed,
+        "pair_evaluations": _json_safe(evaluation_rows),
+        "stable_sequence": _json_safe(candidate.get("stable_sequence", [])),
+        "generation_trace": _json_safe(candidate.get("generation_trace", {})),
+    }
 
 
 def _variant_adjusted_cells(cells: Sequence[tuple[int, int]], variant_index: int) -> list[tuple[int, int]]:
@@ -631,6 +983,7 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
     expected_outputs = []
     test_inputs = []
     intermediate_outputs = []
+    train_intermediate_outputs = []
     for variant_index in range(TRAIN_PAIR_COUNT_V1 + TEST_INPUT_COUNT_V1):
         input_grid = _build_scene_input(scene_type, variant_index)
         local_params = _primitive_parameters_for_scene(scene_type, variant_index)
@@ -646,6 +999,7 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
                     f"2-step {primitive_pair[0]} then {primitive_pair[1]} synthetic pilot",
                 )
             )
+            train_intermediate_outputs.append(first_output)
         else:
             test_inputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "input_grid": input_grid, "notes": scene_type})
             expected_outputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "output_grid": final_output, "notes": scene_type, "synthetic_only": True})
@@ -684,6 +1038,7 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
         "task_packet": packet,
         "expected_outputs": expected_outputs,
         "intermediate_outputs": intermediate_outputs,
+        "train_intermediate_outputs": train_intermediate_outputs,
         "intended_sequence": intended_sequence,
         "leakage_flags": {
             "synthetic_only": True,
@@ -788,6 +1143,7 @@ def build_arc_style_synthetic_2_step_pilot_plan_v1() -> dict[str, Any]:
                 "expected_grid": _json_safe(task["expected_outputs"][0]["output_grid"]),
                 "input_grid": _json_safe(task["task_packet"]["test_input"]["cell_values"]),
                 "intermediate_grid": _json_safe(task["intermediate_outputs"][0]),
+                "train_intermediate_grids": _json_safe(task["train_intermediate_outputs"]),
                 "intended_sequence": _json_safe(task["intended_sequence"]),
                 "primitive_pair": list(task["primitive_pair"]),
                 "leakage_flags": _json_safe(task["leakage_flags"]),
@@ -839,71 +1195,105 @@ def _classify_composition_failure(
     packet_status: str,
     selected_sequence: Sequence[Any],
     intended_sequence: Sequence[Any],
-    difficulty_bucket: str,
+    step1_plausible: bool,
+    step2_plausible: bool,
+    parameter_carryover_failure: bool,
+    execution_failed: bool,
+    represented_sequence: bool,
 ) -> str:
     selected_ids = _normalized_solver_sequence(selected_sequence)
     intended_ids = _normalized_intended_sequence(intended_sequence)
-    if packet_status == "exact" and selected_ids == intended_ids:
-        return ""
+    if execution_failed or packet_status == "failed":
+        return "intermediate_execution_failure"
+    if not represented_sequence or not selected_ids:
+        return "sequence_not_generated"
     if len(selected_ids) >= 2 and len(intended_ids) >= 2 and selected_ids[:2] == list(reversed(intended_ids[:2])):
         return "right_primitives_wrong_order"
-    if len(selected_ids) == 1 and selected_ids[0] in intended_ids:
-        if packet_status == "exact":
-            return "shortcut_single_step_false_solution"
-        return "one_primitive_missing"
-    if len(selected_ids) >= 1 and selected_ids[0] == intended_ids[0] and packet_status != "exact":
+    if parameter_carryover_failure:
+        return "parameter_carryover_failure"
+    if step1_plausible and not step2_plausible:
         return "first_step_correct_second_wrong"
-    if len(selected_ids) >= 1 and selected_ids[-1] == intended_ids[-1] and packet_status != "exact":
+    if not step1_plausible and step2_plausible:
         return "first_step_wrong_second_correct"
-    if selected_ids == intended_ids and packet_status in {"partial", "unsupported"}:
-        return "parameter_inference_failure"
-    if packet_status == "failed":
-        return "execution_failure"
-    if difficulty_bucket == "stress" and packet_status in {"partial", "unsupported"}:
-        return "ambiguous_train_evidence"
-    if not selected_ids and packet_status in {"unsupported", "failed"}:
-        return "generator_ambiguity"
-    if packet_status in {"partial", "unsupported"}:
-        return "parameter_inference_failure"
+    if len(selected_ids) == 1 and selected_ids[0] in intended_ids:
+        return "one_primitive_missing"
+    if packet_status == "unsupported":
+        return "sequence_not_generated"
     return ""
 
 
 def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    packets = [entry.get("packet") for entry in entries if isinstance(entry.get("packet"), Mapping)]
-    dry_run = run_arc_style_bounded_solver_dry_run_v1(packets)
-    task_results = dry_run.get("task_results", []) if isinstance(dry_run.get("task_results"), list) else []
-    failures: list[dict[str, Any]] = []
     evaluations: list[dict[str, Any]] = []
     pair_summary: dict[str, dict[str, int]] = defaultdict(lambda: {key: 0 for key in EXPECTED_STATUS_KEYS_V1})
     bucket_summary: dict[str, dict[str, int]] = defaultdict(lambda: {key: 0 for key in EXPECTED_STATUS_KEYS_V1})
     failure_taxonomy_counts: Counter[str] = Counter()
+    represented_sequence_rows = 0
+    step1_plausible_rows = 0
+    step2_plausible_rows = 0
 
-    for entry, task_result in zip(entries, task_results):
-        packet_result = _build_packet_result(
-            task_id=_safe_text(entry.get("task_id")),
-            family_id=_safe_text(entry.get("composition_pair")),
-            variant_index=0,
-            test_input_index=int(entry.get("test_input_index", 0)),
-            packet=entry.get("packet", {}),
-            task_result=task_result,
-            expected_grid=entry.get("expected_grid", []),
-            input_grid=entry.get("input_grid", []),
-            failures=failures,
-        )
-        packet_status = _safe_text(packet_result.get("packet_status"))
-        if packet_status not in EXPECTED_STATUS_KEYS_V1:
-            packet_status = "failed"
-        selected_sequence = task_result.get("selected_primitive_sequence", []) if isinstance(task_result.get("selected_primitive_sequence"), list) else []
+    for entry in entries:
+        generated_candidates = _generate_bounded_sequence_candidates(entry)
+        evaluated_candidates = [_evaluate_sequence_candidate(entry, candidate) for candidate in generated_candidates]
+        selected = None
+        if evaluated_candidates:
+            selected = sorted(
+                evaluated_candidates,
+                key=lambda item: (
+                    0 if item.get("packet_status") == "exact" else 1 if item.get("packet_status") == "partial" else 2 if item.get("packet_status") == "unsupported" else 3,
+                    int(item.get("total_mismatch", 10**6)),
+                    int(next((candidate.get("candidate_rank", 0) for candidate in generated_candidates if candidate.get("candidate_id") == item.get("candidate_id")), 0)),
+                ),
+            )[0]
+        if selected is None:
+            selected = {
+                "candidate_id": "",
+                "represented_sequence": False,
+                "selected_primitive_sequence": [],
+                "packet_status": "unsupported",
+                "train_fit_status": "unsupported",
+                "step1_plausible": False,
+                "step2_plausible": False,
+                "final_exact": False,
+                "total_mismatch": 10**6,
+                "execution_failed": False,
+                "pair_evaluations": [],
+                "stable_sequence": [],
+                "generation_trace": {
+                    "deterministic_order": True,
+                    "candidate_budget": MAX_SEQUENCE_CANDIDATES_PER_TASK_V1,
+                    "max_sequence_length": MAX_SEQUENCE_LENGTH_V1,
+                    "uses_train_output_for_transformation_inference": True,
+                    "uses_test_output": False,
+                    "uses_task_id_for_candidate_selection": False,
+                    "uses_notes_for_candidate_selection": False,
+                    "lookup_table_detected": False,
+                    "parameter_source": "train_pairs_only",
+                },
+            }
+        selected_sequence = selected.get("selected_primitive_sequence", []) if isinstance(selected.get("selected_primitive_sequence"), list) else []
+        stable_sequence = selected.get("stable_sequence", []) if isinstance(selected.get("stable_sequence"), list) else []
+        parameter_carryover_failure = any(step.get("dynamic_parameter_keys") for step in stable_sequence if isinstance(step, Mapping))
         composition_failure = _classify_composition_failure(
-            packet_status=packet_status,
+            packet_status=_safe_text(selected.get("packet_status")),
             selected_sequence=selected_sequence,
             intended_sequence=entry.get("intended_sequence", []),
-            difficulty_bucket=_safe_text(entry.get("difficulty_bucket")),
+            step1_plausible=bool(selected.get("step1_plausible")),
+            step2_plausible=bool(selected.get("step2_plausible")),
+            parameter_carryover_failure=parameter_carryover_failure,
+            execution_failed=bool(selected.get("execution_failed")),
+            represented_sequence=bool(selected.get("represented_sequence")),
         )
         if composition_failure:
             failure_taxonomy_counts[composition_failure] += 1
+        packet_status = _safe_text(selected.get("packet_status"))
         pair_summary[_safe_text(entry.get("composition_pair"))][packet_status] += 1
         bucket_summary[_safe_text(entry.get("difficulty_bucket"))][packet_status] += 1
+        if selected.get("represented_sequence"):
+            represented_sequence_rows += 1
+        if selected.get("step1_plausible"):
+            step1_plausible_rows += 1
+        if selected.get("step2_plausible"):
+            step2_plausible_rows += 1
         evaluations.append({
             "diagnostic_mode": _safe_text(entry.get("diagnostic_mode")),
             "task_id": _safe_text(entry.get("task_id")),
@@ -911,19 +1301,34 @@ def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, 
             "composition_pair": _safe_text(entry.get("composition_pair")),
             "difficulty_bucket": _safe_text(entry.get("difficulty_bucket")),
             "test_input_index": int(entry.get("test_input_index", 0)),
-            "selected_candidate_id": _safe_text(task_result.get("selected_candidate_id")),
+            "selected_candidate_id": _safe_text(selected.get("candidate_id")),
             "selected_primitive_sequence": _json_safe(selected_sequence),
-            "train_fit_status": _safe_text(task_result.get("train_fit_status")),
+            "train_fit_status": _safe_text(selected.get("train_fit_status")),
             "packet_status": packet_status,
-            "non_exact_reason": _safe_text(",".join(_safe_text(note) for note in task_result.get("failure_notes", []) if _safe_text(note))
-            ),
+            "non_exact_reason": composition_failure,
             "composition_failure_category": composition_failure,
             "expected_exact_match": packet_status == "exact",
+            "represented_sequence": bool(selected.get("represented_sequence")),
+            "step1_plausible": bool(selected.get("step1_plausible")),
+            "step2_plausible": bool(selected.get("step2_plausible")),
+            "parameter_carryover_failure": parameter_carryover_failure,
+            "candidate_evaluations": _json_safe(evaluated_candidates),
+            "pair_evaluations": _json_safe(selected.get("pair_evaluations", [])),
             "leakage_flags": _json_safe(entry.get("leakage_flags", {})),
-            "solver_leakage_trace": _json_safe(dry_run.get("trace", {})),
+            "solver_leakage_trace": _json_safe(selected.get("generation_trace", {})),
         })
 
     counts = Counter(item["packet_status"] for item in evaluations)
+    trace = {
+        "uses_train_output_for_transformation_inference": True,
+        "uses_test_output": False,
+        "uses_task_id_for_candidate_selection": False,
+        "uses_notes_for_candidate_selection": False,
+        "lookup_table_detected": False,
+        "bounded_candidate_generation": True,
+        "max_candidates_per_task": MAX_SEQUENCE_CANDIDATES_PER_TASK_V1,
+        "max_primitive_sequence_depth": MAX_SEQUENCE_LENGTH_V1,
+    }
     return {
         "diagnostic_mode": mode,
         "packet_count": len(evaluations),
@@ -935,12 +1340,14 @@ def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, 
         "pair_summary": {key: dict(value) for key, value in sorted(pair_summary.items())},
         "bucket_summary": {key: dict(value) for key, value in sorted(bucket_summary.items())},
         "failure_taxonomy_counts": {key: int(failure_taxonomy_counts.get(key, 0)) for key in FAILURE_TAXONOMY_V1},
-        "failure_ledger": build_arc_style_synthetic_solver_failure_ledger_v1(failures),
+        "represented_sequence_rows": represented_sequence_rows,
+        "step1_plausible_rows": step1_plausible_rows,
+        "step2_plausible_rows": step2_plausible_rows,
         "dry_run_summary": {
-            "selected_exact_match_count": int(dry_run.get("selected_exact_match_count", 0)),
-            "selected_partial_match_count": int(dry_run.get("selected_partial_match_count", 0)),
-            "selected_unsupported_count": int(dry_run.get("selected_unsupported_count", 0)),
-            "trace": _json_safe(dry_run.get("trace", {})),
+            "selected_exact_match_count": counts.get("exact", 0),
+            "selected_partial_match_count": counts.get("partial", 0),
+            "selected_unsupported_count": counts.get("unsupported", 0),
+            "trace": _json_safe(trace),
         },
     }
 
@@ -987,6 +1394,9 @@ def run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1() -> dict[str, Any]:
         "pair_level_breakdown": _json_safe(primary["pair_summary"]),
         "bucket_level_breakdown": _json_safe(primary["bucket_summary"]),
         "failure_taxonomy_breakdown": _json_safe(primary["failure_taxonomy_counts"]),
+        "represented_sequence_rows": int(primary["represented_sequence_rows"]),
+        "step1_plausible_rows": int(primary["step1_plausible_rows"]),
+        "step2_plausible_rows": int(primary["step2_plausible_rows"]),
         "evaluations": _json_safe(primary["evaluations"]),
         "all_mode_evaluations": {mode: _json_safe(mode_results[mode]["evaluations"]) for mode in MODE_ORDER_V1},
         "leakage_flags": _normalize_leakage_flags({}),

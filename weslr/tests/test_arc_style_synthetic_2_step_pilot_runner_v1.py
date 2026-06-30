@@ -73,6 +73,12 @@ def test_2_step_pilot_runner_exposes_inventory_modes_and_taxonomy() -> None:
     assert pilot_total == PILOT_TASK_COUNT_V1
     assert summary["pair_count"] == PILOT_TASK_COUNT_V1
     assert summary["attribution_modes"] == list(MODE_ORDER_V1)
+    assert result["represented_sequence_rows"] >= 1
+    assert result["step1_plausible_rows"] >= 1
+    assert result["step2_plausible_rows"] >= 1
+    assert result["mode_results"]["full_metadata"]["represented_sequence_rows"] >= 1
+    assert result["mode_results"]["toy_task_type_preserved_guardrail"]["represented_sequence_rows"] >= 1
+    assert result["mode_results"]["fully_stripped_lower_bound"]["represented_sequence_rows"] == 0
     assert result["no_score_claim"] is True
     assert result["official_score_claim"] is False
     assert result["trace_flags"]["uses_test_output"] is False
@@ -99,6 +105,10 @@ def test_2_step_pilot_rows_have_required_fields_and_clean_leakage_posture() -> N
         "non_exact_reason",
         "composition_failure_category",
         "expected_exact_match",
+        "represented_sequence",
+        "step1_plausible",
+        "step2_plausible",
+        "pair_evaluations",
         "leakage_flags",
     }
     for row in rows:
