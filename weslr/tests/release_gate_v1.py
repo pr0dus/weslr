@@ -199,6 +199,17 @@ _arc_stripped_guardrail_definition_allowed_paths = {
     _arc_stripped_guardrail_definition_doc,
 }
 
+# Narrow, exact-path allowance for the ARC reflect guardrail-preserving
+# integration boundary report only. Same narrow intent as the prior allowances:
+# a single exact path, NOT a broad docs/ allowlist, NOT a wildcard, and does
+# NOT weaken any protected-file rule.
+_arc_reflect_guardrail_preserving_integration_boundary_doc = (
+    "docs/WESLR_ARC_REFLECT_GUARDRAIL_PRESERVING_INTEGRATION_BOUNDARY_V1.md"
+)
+_arc_reflect_guardrail_preserving_integration_boundary_allowed_paths = {
+    _arc_reflect_guardrail_preserving_integration_boundary_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE level ladder design
 # doc only. Same narrow intent as the prior allowances: a single exact path,
 # NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken any
@@ -16431,6 +16442,8 @@ def _check_git_scope():
         if path in _arc_synthetic_120_diagnostic_runner_allowed_paths:
             allowed = True
         if path in _arc_stripped_guardrail_definition_allowed_paths:
+            allowed = True
+        if path in _arc_reflect_guardrail_preserving_integration_boundary_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_level_ladder_design_allowed_paths:
             allowed = True
