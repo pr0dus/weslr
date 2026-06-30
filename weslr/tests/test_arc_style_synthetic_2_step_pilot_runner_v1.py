@@ -150,16 +150,16 @@ def test_80_task_expansion_preserves_original_40_and_tracks_residuals() -> None:
     result = run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1()
     assert result["original_40_preserved"] is True
     assert result["original_40_result"] == {"exact": 39, "partial": 1, "unsupported": 0, "failed": 0}
-    assert result["new_40_result"] == {"exact": 37, "partial": 3, "unsupported": 0, "failed": 0}
+    assert result["new_40_result"] == {"exact": 38, "partial": 2, "unsupported": 0, "failed": 0}
     combined = result["combined_80_result"]
-    assert combined == {"exact": 76, "partial": 4, "unsupported": 0, "failed": 0}
+    assert combined == {"exact": 77, "partial": 3, "unsupported": 0, "failed": 0}
     assert sum(combined[key] for key in ("exact", "partial", "unsupported", "failed")) == EXPANDED_PILOT_TASK_COUNT_V1
     assert result["represented_candidate_rows"] == 80
     assert result["accepted_stress_residual_count"] == 1
     assert result["candidate_budget_cutoff_count"] == 0
     assert result["generator_ambiguity_count"] == 0
     assert result["new_unexplained_failures_count"] == 0
-    assert result["accidental_composition_match_count"] == 1
+    assert result["accidental_composition_match_count"] == 0
     assert len(result["new_40_task_ids"]) == 40
 
 
@@ -174,8 +174,7 @@ def test_structural_visibility_and_memory_traces_are_bounded_and_targeted() -> N
     assert line_row["selected_primitive_sequence"][1]["parameters"]["to_value"] == 3
 
     carryover_row = next(row for row in result["evaluations"] if row["source_task_id"] == "pilot_2_step_easy_gen_03_extract_recolor_large_grid_v1")
-    assert carryover_row["packet_status"] == "partial"
-    assert carryover_row["composition_failure_category"] == "parameter_carryover_failure"
+    assert carryover_row["packet_status"] == "exact"
     assert carryover_row["sequence_visibility_reason"] == "standard_generated"
     assert carryover_row["step_1_exports"]
     assert carryover_row["parameter_origin_by_key"]
