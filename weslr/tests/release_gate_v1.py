@@ -188,6 +188,17 @@ _arc_synthetic_120_diagnostic_runner_allowed_paths = {
     _arc_synthetic_120_diagnostic_runner_doc,
 }
 
+# Narrow, exact-path allowance for the ARC stripped guardrail definition report
+# only. Same narrow intent as the prior allowances: a single exact path,
+# NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken any
+# protected-file rule.
+_arc_stripped_guardrail_definition_doc = (
+    "docs/WESLR_ARC_STRIPPED_GUARDRAIL_DEFINITION_V1.md"
+)
+_arc_stripped_guardrail_definition_allowed_paths = {
+    _arc_stripped_guardrail_definition_doc,
+}
+
 # Narrow, exact-path allowance for the ARC UNKNOWN ENGINE level ladder design
 # doc only. Same narrow intent as the prior allowances: a single exact path,
 # NOT a broad docs/ allowlist, NOT a wildcard, and does NOT weaken any
@@ -16418,6 +16429,8 @@ def _check_git_scope():
         if path in _arc_synthetic_freeze_invariants_allowed_paths:
             allowed = True
         if path in _arc_synthetic_120_diagnostic_runner_allowed_paths:
+            allowed = True
+        if path in _arc_stripped_guardrail_definition_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_level_ladder_design_allowed_paths:
             allowed = True
