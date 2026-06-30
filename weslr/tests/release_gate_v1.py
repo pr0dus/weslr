@@ -502,6 +502,14 @@ _arc_2_step_parameter_carryover_and_contextual_inference_repair_allowed_paths = 
     _arc_2_step_parameter_carryover_and_contextual_inference_repair_doc,
 }
 
+# Narrow, exact-path allowance for the ARC 2-step 80-pilot expansion report only.
+_arc_2_step_80_pilot_expansion_with_stress_residual_tracking_doc = (
+    "docs/WESLR_ARC_2_STEP_80_PILOT_EXPANSION_WITH_STRESS_RESIDUAL_TRACKING_V1.md"
+)
+_arc_2_step_80_pilot_expansion_with_stress_residual_tracking_allowed_paths = {
+    _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_doc,
+}
+
 # Narrow, exact-path allowances for recovered ARC UNKNOWN ENGINE audit/smoke
 # documentation on the current branch only. Same narrow intent as the prior
 # allowances: exact paths only, NOT a broad docs/ allowlist, NOT a wildcard,
@@ -16569,6 +16577,8 @@ def _check_git_scope():
         if path in _arc_2_step_sequence_generator_and_intermediate_evaluator_implementation_allowed_paths:
             allowed = True
         if path in _arc_2_step_parameter_carryover_and_contextual_inference_repair_allowed_paths:
+            allowed = True
+        if path in _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_allowed_paths:
             allowed = True
         if path in _arc_unknown_engine_recovered_artifact_docs_allowed_paths:
             allowed = True

@@ -6,12 +6,15 @@ import json
 from typing import Any
 
 from weslr.arc_style_synthetic_2_step_pilot_runner import (
+    EXPANDED_PILOT_TASK_COUNT_V1,
     FAILURE_TAXONOMY_V1,
     MODE_ORDER_V1,
     PILOT_TASK_COUNT_V1,
     RUNNER_ID_V1,
+    build_arc_style_synthetic_2_step_80_pilot_plan_v1,
     build_arc_style_synthetic_2_step_pilot_plan_v1,
     run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1,
+    run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1,
     summarize_arc_style_synthetic_2_step_40_pilot_diagnostic_v1,
     to_arc_style_synthetic_2_step_pilot_json_safe_v1,
 )
@@ -131,6 +134,26 @@ def test_repaired_2_step_runner_leaves_only_one_residual_partial() -> None:
     residual_rows = [row for row in result["evaluations"] if row["packet_status"] != "exact"]
     assert [row["source_task_id"] for row in residual_rows] == ["pilot_2_step_stress_08_fill_then_count_v1"]
     assert residual_rows[0]["composition_failure_category"] == "right_primitives_wrong_order"
+
+
+def test_80_task_expansion_preserves_original_40_and_tracks_residuals() -> None:
+    plan = build_arc_style_synthetic_2_step_80_pilot_plan_v1()
+    assert plan["pilot_task_count"] == EXPANDED_PILOT_TASK_COUNT_V1
+    assert len(plan["task_specs"]) == EXPANDED_PILOT_TASK_COUNT_V1
+    result = run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1()
+    assert result["original_40_preserved"] is True
+    assert result["original_40_result"] == {"exact": 39, "partial": 1, "unsupported": 0, "failed": 0}
+    assert result["new_40_result"] == {"exact": 36, "partial": 3, "unsupported": 1, "failed": 0}
+    combined = result["combined_80_result"]
+    assert combined == {"exact": 75, "partial": 4, "unsupported": 1, "failed": 0}
+    assert sum(combined[key] for key in ("exact", "partial", "unsupported", "failed")) == EXPANDED_PILOT_TASK_COUNT_V1
+    assert result["represented_candidate_rows"] == 79
+    assert result["accepted_stress_residual_count"] == 1
+    assert result["candidate_budget_cutoff_count"] == 0
+    assert result["generator_ambiguity_count"] == 0
+    assert result["new_unexplained_failures_count"] == 0
+    assert result["accidental_composition_match_count"] == 1
+    assert len(result["new_40_task_ids"]) == 40
 
 
 def test_existing_single_step_runner_summary_is_unchanged() -> None:

@@ -28,8 +28,11 @@ from weslr.arc_style_synthetic_solver_suite import (
 SCHEMA_VERSION_V1 = "ArcStyleSynthetic2StepPilotRunnerV1"
 RUNNER_ID_V1 = "arc_style_synthetic_2_step_40_pilot_runner_v1"
 RUNNER_ENTRY_POINT_V1 = "weslr.arc_style_synthetic_2_step_pilot_runner.run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1"
+RUNNER_ID_80_V1 = "arc_style_synthetic_2_step_80_pilot_runner_v1"
+RUNNER_ENTRY_POINT_80_V1 = "weslr.arc_style_synthetic_2_step_pilot_runner.run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1"
 TASK_SOURCE_INTERNAL_2_STEP_PILOT_V1 = "internal_synthetic_2_step_pilot_v1"
 PILOT_TASK_COUNT_V1 = 40
+EXPANDED_PILOT_TASK_COUNT_V1 = 80
 TRAIN_PAIR_COUNT_V1 = 2
 TEST_INPUT_COUNT_V1 = 1
 MODE_ORDER_V1 = (
@@ -103,6 +106,52 @@ STRESS_TASK_SPECS_V1 = (
 
 TASK_SPECS_V1 = EASY_TASK_SPECS_V1 + MEDIUM_TASK_SPECS_V1 + STRESS_TASK_SPECS_V1
 
+KNOWN_STRESS_RESIDUAL_TASK_IDS_V1 = {"pilot_2_step_stress_08_fill_then_count_v1"}
+
+EXPANSION_TASK_SPECS_V1 = (
+    ("pilot_2_step_easy_gen_01_noise_extract_large_v1", "easy", ("remove_background_noise", "extract_largest_object"), "noise_extract", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "noise_cells": [(0, 0), (6, 6)]}, "generalization"),
+    ("pilot_2_step_easy_gen_02_noise_recolor_color_swap_v1", "easy", ("remove_background_noise", "recolor_symbol"), "noise_recolor", {"source_color": 4, "target_color": 8, "noise_color": 9, "noise_cells": [(0, 6), (6, 0)]}, "generalization"),
+    ("pilot_2_step_easy_gen_03_extract_recolor_large_grid_v1", "easy", ("extract_largest_object", "recolor_symbol"), "extract_recolor", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "large_color": 4, "target_color": 9, "small_cells": [(0, 0), (6, 6)]}, "generalization"),
+    ("pilot_2_step_easy_gen_04_move_border_two_steps_v1", "easy", ("move_single_object", "border_frame"), "move_border", {"direction": "down", "steps": 2, "object_color": 5, "frame_color": 7}, "generalization"),
+    ("pilot_2_step_easy_gen_05_copy_recolor_alt_shape_v1", "easy", ("copy_grid", "recolor_symbol"), "copy_recolor", {"shape": "domino_v", "source_color": 5, "target_color": 8}, "generalization"),
+    ("pilot_2_step_easy_gen_06_copy_border_large_grid_v1", "easy", ("copy_grid", "border_frame"), "copy_border", {"rows": 7, "cols": 7, "shape": "domino_h", "object_color": 4, "frame_color": 9}, "generalization"),
+    ("pilot_2_step_easy_gen_07_fill_recolor_alt_colors_v1", "easy", ("fill_region", "recolor_symbol"), "fill_recolor", {"rows": 7, "cols": 7, "border_color": 5, "fill_color": 2, "target_color": 8}, "generalization"),
+    ("pilot_2_step_easy_gen_08_symmetry_recolor_alt_seed_v1", "easy", ("complete_symmetry", "recolor_symbol"), "symmetry_recolor", {"rows": 7, "cols": 7, "source_color": 3, "target_color": 8, "seed_cells": [(0, 2), (6, 4)]}, "generalization"),
+    ("pilot_2_step_easy_gen_09_count_border_four_objects_v1", "easy", ("object_count_to_pattern", "border_frame"), "count_border", {"rows": 7, "cols": 7, "count": 4, "row_index": 4, "pattern_color": 6, "frame_color": 9}, "generalization"),
+    ("pilot_2_step_easy_gen_10_line_recolor_vertical_v1", "easy", ("line_completion", "recolor_symbol"), "line_recolor", {"axis": "vertical", "line_index": 2, "gap_index": 4, "line_value": 3, "target_color": 7}, "generalization"),
+    ("pilot_2_step_medium_gen_11_recolor_border_plus_v1", "medium", ("recolor_symbol", "border_frame"), "recolor_border", {"shape": "plus_small", "source_color": 4, "target_color": 6, "frame_color": 9}, "generalization"),
+    ("pilot_2_step_medium_gen_12_extract_border_large_v1", "medium", ("extract_largest_object", "border_frame"), "extract_border", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "large_color": 4, "small_color": 9, "frame_color": 6, "small_cells": [(0, 6), (6, 0)]}, "generalization"),
+    ("pilot_2_step_medium_gen_13_noise_border_alt_frame_v1", "medium", ("remove_background_noise", "border_frame"), "noise_border", {"rows": 7, "cols": 7, "object_color": 4, "noise_color": 9, "frame_color": 6, "noise_cells": [(0, 0), (0, 6)]}, "generalization"),
+    ("pilot_2_step_medium_gen_14_move_recolor_two_steps_v1", "medium", ("move_single_object", "recolor_symbol"), "move_recolor", {"direction": "right", "steps": 2, "object_color": 5, "target_color": 7, "shape": "domino_h"}, "generalization"),
+    ("pilot_2_step_medium_gen_15_symmetry_border_large_v1", "medium", ("complete_symmetry", "border_frame"), "symmetry_border", {"rows": 7, "cols": 7, "object_color": 4, "frame_color": 6, "seed_cells": [(0, 3), (6, 2)]}, "generalization"),
+    ("pilot_2_step_medium_gen_16_copy_line_vertical_v1", "medium", ("copy_grid", "line_completion"), "copy_line", {"rows": 7, "cols": 7, "axis": "vertical", "line_index": 4, "gap_index": 2, "line_value": 5}, "generalization"),
+    ("pilot_2_step_medium_gen_17_line_border_vertical_v1", "medium", ("line_completion", "border_frame"), "line_border", {"rows": 7, "cols": 7, "axis": "vertical", "line_index": 3, "gap_index": 5, "line_value": 4, "frame_color": 8}, "generalization"),
+    ("pilot_2_step_medium_gen_18_extract_symmetry_large_v1", "medium", ("extract_largest_object", "complete_symmetry"), "extract_symmetry", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "large_color": 3, "small_color": 8, "small_cells": [(0, 0), (0, 6)]}, "generalization"),
+    ("pilot_2_step_medium_gen_19_rotate_recolor_plus_v1", "medium", ("rotate_object_90", "recolor_symbol"), "rotate_recolor", {"shape": "plus_small", "object_color": 3, "target_color": 8}, "generalization"),
+    ("pilot_2_step_medium_gen_20_reflect_move_vertical_v1", "medium", ("reflect_object_horizontal_or_vertical", "move_single_object"), "reflect_move", {"axis": "vertical", "direction": "down", "steps": 1, "object_color": 5, "shape": "asym_l"}, "generalization"),
+    ("pilot_2_step_medium_ctx_01_fill_line_vertical_transfer_v1", "medium", ("fill_region", "line_completion"), "fill_line", {"rows": 7, "cols": 7, "border_color": 4, "fill_color": 6, "axis": "vertical", "line_index": 3, "gap_index": 4, "line_value": 6}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_02_fill_border_color_transfer_v1", "medium", ("fill_region", "border_frame"), "fill_border", {"rows": 7, "cols": 7, "border_color": 5, "fill_color": 3, "frame_color": 9}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_03_fill_symmetry_large_transfer_v1", "medium", ("fill_region", "complete_symmetry"), "fill_symmetry", {"rows": 7, "cols": 7, "border_color": 3, "fill_color": 5, "seed_cells": [(0, 3)]}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_04_count_border_row_transfer_v1", "medium", ("object_count_to_pattern", "border_frame"), "count_border", {"rows": 7, "cols": 7, "count": 4, "row_index": 4, "pattern_color": 7, "frame_color": 5}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_05_noise_count_large_transfer_v1", "medium", ("remove_background_noise", "object_count_to_pattern"), "noise_count", {"rows": 7, "cols": 7, "pattern_color": 6, "count": 4, "row_index": 4, "object_cells": [(1, 1), (1, 5), (5, 2), (5, 5)], "noise_cells": [(0, 0), (6, 6)]}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_06_extract_count_large_transfer_v1", "medium", ("extract_largest_object", "object_count_to_pattern"), "extract_count", {"rows": 7, "cols": 7, "large_cells": [(1, 1), (1, 2), (2, 1), (2, 2), (2, 3)], "small_cells": [(6, 6)], "pattern_color": 6, "row_index": 4}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_07_count_recolor_large_transfer_v1", "medium", ("object_count_to_pattern", "recolor_symbol"), "count_recolor", {"rows": 7, "cols": 7, "count": 4, "row_index": 4, "pattern_color": 5, "target_color": 8}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_08_fill_recolor_large_transfer_v1", "medium", ("fill_region", "recolor_symbol"), "fill_recolor", {"rows": 8, "cols": 8, "border_color": 6, "fill_color": 2, "target_color": 9}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_09_extract_recolor_bg_transfer_v1", "medium", ("extract_largest_object", "recolor_symbol"), "extract_recolor", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "large_color": 5, "target_color": 2, "small_color": 8, "small_cells": [(0, 6), (6, 0)]}, "parameter_transfer"),
+    ("pilot_2_step_medium_ctx_10_fill_line_large_transfer_v1", "medium", ("fill_region", "line_completion"), "fill_line", {"rows": 8, "cols": 8, "border_color": 4, "fill_color": 7, "line_value": 7, "axis": "horizontal", "line_index": 3, "gap_index": 5}, "parameter_transfer"),
+    ("pilot_2_step_stress_exp_01_rotate_border_large_v1", "stress", ("rotate_object_90", "border_frame"), "rotate_border", {"rows": 7, "cols": 7, "object_color": 3, "frame_color": 9, "shape": "plus_small"}, "stress"),
+    ("pilot_2_step_stress_exp_02_reflect_border_vertical_v1", "stress", ("reflect_object_horizontal_or_vertical", "border_frame"), "reflect_border", {"rows": 7, "cols": 7, "axis": "vertical", "object_color": 4, "frame_color": 9}, "stress"),
+    ("pilot_2_step_stress_exp_03_rotate_move_two_steps_v1", "stress", ("rotate_object_90", "move_single_object"), "rotate_move", {"rows": 7, "cols": 7, "direction": "down", "steps": 2, "object_color": 3, "shape": "plus_small"}, "stress"),
+    ("pilot_2_step_stress_exp_04_reflect_symmetry_large_v1", "stress", ("reflect_object_horizontal_or_vertical", "complete_symmetry"), "reflect_symmetry", {"rows": 7, "cols": 7, "axis": "horizontal", "object_color": 5, "shape": "plus_small"}, "stress"),
+    ("pilot_2_step_stress_exp_05_noise_symmetry_large_v1", "stress", ("remove_background_noise", "complete_symmetry"), "noise_symmetry", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "object_color": 4, "noise_color": 9, "noise_cells": [(0, 0), (6, 6)]}, "stress"),
+    ("pilot_2_step_stress_exp_06_extract_line_vertical_v1", "stress", ("extract_largest_object", "line_completion"), "extract_line", {"rows": 7, "cols": 7, "large_rect": (1, 1, 5, 5), "large_color": 4, "small_color": 8, "small_cells": [(0, 0)], "axis": "vertical", "line_index": 3, "line_value": 4}, "stress"),
+    ("pilot_2_step_stress_exp_07_count_line_vertical_v1", "stress", ("object_count_to_pattern", "line_completion"), "count_line", {"rows": 7, "cols": 7, "count": 4, "row_index": 4, "pattern_color": 6, "axis": "vertical", "line_index": 4}, "stress"),
+    ("pilot_2_step_stress_exp_08_fill_count_known_residual_v1", "stress", ("fill_region", "object_count_to_pattern"), "fill_count", {"rows": 7, "cols": 7, "border_color": 3, "fill_color": 5, "pattern_color": 8, "row_index": 4}, "stress"),
+    ("pilot_2_step_stress_exp_09_symmetry_count_large_v1", "stress", ("complete_symmetry", "object_count_to_pattern"), "symmetry_count", {"rows": 7, "cols": 7, "object_color": 4, "pattern_color": 8, "row_index": 4, "seed_cells": [(0, 2)]}, "stress"),
+    ("pilot_2_step_stress_exp_10_move_reflect_two_steps_v1", "stress", ("move_single_object", "reflect_object_horizontal_or_vertical"), "move_reflect", {"rows": 7, "cols": 7, "direction": "down", "steps": 2, "axis": "vertical", "object_color": 5, "shape": "asym_l"}, "stress"),
+)
+
+ALL_TASK_SPECS_V1 = TASK_SPECS_V1 + EXPANSION_TASK_SPECS_V1
 
 _SHORTCUT_PRIMITIVES_V1 = {"copy"}
 SOLVER_PRIMITIVE_ID_ALIASES_V1 = {
@@ -976,28 +1025,29 @@ def _evaluate_sequence_candidate(entry: Mapping[str, Any], candidate: Mapping[st
     }
 
 
-def _variant_adjusted_cells(cells: Sequence[tuple[int, int]], variant_index: int) -> list[tuple[int, int]]:
-    return [((row + (variant_index % 2)) % 6, (col + ((variant_index // 2) % 2)) % 6) for row, col in cells]
+def _variant_adjusted_cells(cells: Sequence[tuple[int, int]], variant_index: int, *, rows: int = 6, cols: int = 6) -> list[tuple[int, int]]:
+    return [((row + (variant_index % 2)) % rows, (col + ((variant_index // 2) % 2)) % cols) for row, col in cells]
 
 
 def _build_scene_input(scene_type: str, variant_index: int) -> list[list[int]]:
     params = deepcopy(SCENE_PARAMETERS_BY_TYPE_V1[scene_type])
+    scene_family = _safe_text(params.get("__base_scene_type__"), scene_type)
     rows = int(params.get("rows", 6))
     cols = int(params.get("cols", 6))
     grid = _grid(rows, cols, 0)
 
-    if scene_type in {"noise_extract", "noise_recolor", "extract_recolor", "extract_border", "noise_border", "noise_symmetry", "extract_line", "extract_symmetry"}:
+    if scene_family in {"noise_extract", "noise_recolor", "extract_recolor", "extract_border", "noise_border", "noise_symmetry", "extract_line", "extract_symmetry"}:
         rect = params.get("large_rect", (1, 1, 4, 4))
         color = int(params.get("large_color", params.get("object_color", 2)))
         _set_rect(grid, *rect, color)
-        for row, col in _variant_adjusted_cells(params.get("noise_cells", params.get("small_cells", [])), variant_index):
+        for row, col in _variant_adjusted_cells(params.get("noise_cells", params.get("small_cells", [])), variant_index, rows=rows, cols=cols):
             _set_cell(grid, row, col, int(params.get("noise_color", params.get("small_color", 7))))
-    elif scene_type in {"move_border", "move_recolor", "move_symmetry", "move_reflect", "copy_recolor", "copy_border", "recolor_border", "rotate_recolor", "rotate_border", "rotate_move", "rotate_reflect", "reflect_move", "reflect_recolor", "reflect_border", "reflect_symmetry"}:
+    elif scene_family in {"move_border", "move_recolor", "move_symmetry", "move_reflect", "copy_recolor", "copy_border", "recolor_border", "rotate_recolor", "rotate_border", "rotate_move", "rotate_reflect", "reflect_move", "reflect_recolor", "reflect_border", "reflect_symmetry"}:
         origin_row = 1 + (variant_index % 2)
         origin_col = 1 + ((variant_index // 2) % 2)
         shape = _safe_text(params.get("shape"), "single")
         _paint_shape(grid, shape, origin_row=origin_row, origin_col=origin_col, value=int(params.get("object_color", params.get("source_color", 2))))
-    elif scene_type in {"fill_recolor", "fill_line", "fill_border", "fill_symmetry", "fill_count"}:
+    elif scene_family in {"fill_recolor", "fill_line", "fill_border", "fill_symmetry", "fill_count"}:
         border_color = int(params.get("border_color", 2))
         for col in range(cols):
             grid[0][col] = border_color
@@ -1005,29 +1055,29 @@ def _build_scene_input(scene_type: str, variant_index: int) -> list[list[int]]:
         for row in range(rows):
             grid[row][0] = border_color
             grid[row][cols - 1] = border_color
-    elif scene_type in {"symmetry_recolor", "symmetry_border", "symmetry_line", "symmetry_count"}:
+    elif scene_family in {"symmetry_recolor", "symmetry_border", "symmetry_line", "symmetry_count"}:
         object_color = int(params.get("source_color", params.get("object_color", 2)))
-        for row, col in _variant_adjusted_cells(params.get("seed_cells", []), variant_index):
+        for row, col in _variant_adjusted_cells(params.get("seed_cells", []), variant_index, rows=rows, cols=cols):
             _set_cell(grid, row, col, object_color)
-    elif scene_type in {"count_border", "count_recolor", "count_line"}:
+    elif scene_family in {"count_border", "count_recolor", "count_line"}:
         object_color = int(params.get("object_color", 2))
         count = int(params.get("count", 3)) + (variant_index % 2)
         cells = [(1, 1), (1, 4), (4, 2), (4, 4)]
         for row, col in cells[:count]:
             _set_cell(grid, row, col, object_color)
-    elif scene_type in {"noise_count"}:
+    elif scene_family in {"noise_count"}:
         object_color = int(params.get("object_color", 2))
         for row, col in params.get("object_cells", []):
             _set_cell(grid, row, col, object_color)
-        for row, col in _variant_adjusted_cells(params.get("noise_cells", []), variant_index):
+        for row, col in _variant_adjusted_cells(params.get("noise_cells", []), variant_index, rows=rows, cols=cols):
             _set_cell(grid, row, col, int(params.get("noise_color", 7)))
-    elif scene_type in {"extract_count"}:
+    elif scene_family in {"extract_count"}:
         large_color = int(params.get("large_color", 2))
         for row, col in params.get("large_cells", []):
             _set_cell(grid, row, col, large_color)
-        for row, col in _variant_adjusted_cells(params.get("small_cells", []), variant_index):
+        for row, col in _variant_adjusted_cells(params.get("small_cells", []), variant_index, rows=rows, cols=cols):
             _set_cell(grid, row, col, int(params.get("small_color", 7)))
-    elif scene_type in {"line_recolor", "copy_line", "line_border"}:
+    elif scene_family in {"line_recolor", "copy_line", "line_border"}:
         line_value = int(params.get("line_value", 2))
         line_index = int(params.get("line_index", rows // 2))
         gap_index = (int(params.get("gap_index", 2)) + variant_index) % cols
@@ -1035,12 +1085,13 @@ def _build_scene_input(scene_type: str, variant_index: int) -> list[list[int]]:
             if col != gap_index:
                 grid[line_index][col] = line_value
     else:
-        raise AssertionError(f"unsupported scene_type={scene_type}")
+        raise AssertionError(f"unsupported scene_type={scene_family}")
     return grid
 
 
 def _primitive_parameters_for_scene(scene_type: str, variant_index: int) -> dict[str, dict[str, Any]]:
     params = deepcopy(SCENE_PARAMETERS_BY_TYPE_V1[scene_type])
+    scene_family = _safe_text(params.get("__base_scene_type__"), scene_type)
     background = 0
     count = int(params.get("count", 3)) + (variant_index % 2)
     mapping = {
@@ -1082,23 +1133,53 @@ def _primitive_parameters_for_scene(scene_type: str, variant_index: int) -> dict
             "background_value": background,
         },
     }
-    if scene_type == "extract_count":
+    if scene_family == "extract_count":
         mapping["object_count_to_pattern"]["count"] = None
         mapping["object_count_to_pattern"]["pattern_value"] = int(params.get("pattern_color", 5))
-    if scene_type == "count_border":
+    if scene_family == "count_border":
         mapping["object_count_to_pattern"]["pattern_value"] = int(params.get("pattern_color", 7))
-    if scene_type == "count_recolor":
+    if scene_family == "count_recolor":
         mapping["object_count_to_pattern"]["pattern_value"] = int(params.get("pattern_color", 4))
-    if scene_type == "count_line":
+    if scene_family == "count_line":
         mapping["object_count_to_pattern"]["pattern_value"] = int(params.get("pattern_color", 4))
-    if scene_type == "noise_count":
+    if scene_family == "noise_count":
         mapping["object_count_to_pattern"]["pattern_value"] = int(params.get("pattern_color", 5))
     return mapping
 
 
-def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: Sequence[str], scene_type: str) -> dict[str, Any]:
+def _normalize_task_spec(task_spec: Sequence[Any]) -> dict[str, Any]:
+    if len(task_spec) == 4:
+        task_id, bucket, pair, scene_type = task_spec
+        overrides: dict[str, Any] = {}
+        expansion_group = "baseline"
+    elif len(task_spec) == 5:
+        task_id, bucket, pair, scene_type, overrides = task_spec
+        expansion_group = "baseline"
+    elif len(task_spec) == 6:
+        task_id, bucket, pair, scene_type, overrides, expansion_group = task_spec
+    else:
+        raise AssertionError(f"unsupported_task_spec={task_spec}")
+    return {
+        "task_id": _safe_text(task_id),
+        "difficulty_bucket": _safe_text(bucket),
+        "primitive_pair": list(pair),
+        "scene_type": _safe_text(scene_type),
+        "scene_overrides": deepcopy(overrides) if isinstance(overrides, Mapping) else {},
+        "expansion_group": _safe_text(expansion_group, "baseline"),
+    }
+
+
+def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: Sequence[str], scene_type: str, scene_overrides: Mapping[str, Any] | None = None, expansion_group: str = "baseline") -> dict[str, Any]:
+    if scene_overrides:
+        base_params = deepcopy(SCENE_PARAMETERS_BY_TYPE_V1[scene_type])
+        base_params.update(dict(scene_overrides))
+        base_params["__base_scene_type__"] = scene_type
+        effective_scene_type = f"{task_id}__scene"
+        SCENE_PARAMETERS_BY_TYPE_V1[effective_scene_type] = base_params
+    else:
+        effective_scene_type = scene_type
     intended_sequence: list[dict[str, Any]] = []
-    parameters_by_primitive = _primitive_parameters_for_scene(scene_type, 0)
+    parameters_by_primitive = _primitive_parameters_for_scene(effective_scene_type, 0)
     for primitive_id in primitive_pair:
         intended_sequence.append({"primitive_id": primitive_id, "parameters": deepcopy(parameters_by_primitive[primitive_id])})
     train_pairs = []
@@ -1107,8 +1188,8 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
     intermediate_outputs = []
     train_intermediate_outputs = []
     for variant_index in range(TRAIN_PAIR_COUNT_V1 + TEST_INPUT_COUNT_V1):
-        input_grid = _build_scene_input(scene_type, variant_index)
-        local_params = _primitive_parameters_for_scene(scene_type, variant_index)
+        input_grid = _build_scene_input(effective_scene_type, variant_index)
+        local_params = _primitive_parameters_for_scene(effective_scene_type, variant_index)
         sequence = [{"primitive_id": primitive_id, "parameters": deepcopy(local_params[primitive_id])} for primitive_id in primitive_pair]
         first_output = _apply_primitive(input_grid, primitive_pair[0], sequence[0]["parameters"])
         final_output = _apply_sequence(input_grid, sequence)
@@ -1123,8 +1204,8 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
             )
             train_intermediate_outputs.append(first_output)
         else:
-            test_inputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "input_grid": input_grid, "notes": scene_type})
-            expected_outputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "output_grid": final_output, "notes": scene_type, "synthetic_only": True})
+            test_inputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "input_grid": input_grid, "notes": effective_scene_type})
+            expected_outputs.append({"test_input_id": f"test_{variant_index - TRAIN_PAIR_COUNT_V1}", "output_grid": final_output, "notes": effective_scene_type, "synthetic_only": True})
             intermediate_outputs.append(first_output)
     composition_pair = f"{primitive_pair[0]} -> {primitive_pair[1]}"
     trace = {
@@ -1156,7 +1237,8 @@ def _build_task_from_spec(task_id: str, difficulty_bucket: str, primitive_pair: 
         "difficulty_bucket": difficulty_bucket,
         "composition_pair": composition_pair,
         "primitive_pair": list(primitive_pair),
-        "scene_type": scene_type,
+        "scene_type": effective_scene_type,
+        "expansion_group": expansion_group,
         "task_packet": packet,
         "expected_outputs": expected_outputs,
         "intermediate_outputs": intermediate_outputs,
@@ -1223,10 +1305,27 @@ def _rebuild_packet(packet: Mapping[str, Any], *, mode: str, suffix: str, preser
     )
 
 
-def build_arc_style_synthetic_2_step_pilot_plan_v1() -> dict[str, Any]:
-    if len(TASK_SPECS_V1) != PILOT_TASK_COUNT_V1:
-        raise AssertionError(f"task_specs={len(TASK_SPECS_V1)} expected={PILOT_TASK_COUNT_V1}")
-    base_tasks = [_build_task_from_spec(task_id, bucket, pair, scene_type) for task_id, bucket, pair, scene_type in TASK_SPECS_V1]
+def _build_pilot_plan_from_specs(
+    task_specs: Sequence[Sequence[Any]],
+    *,
+    runner_id: str,
+    entry_point: str,
+    pilot_task_count: int,
+) -> dict[str, Any]:
+    normalized_specs = [_normalize_task_spec(task_spec) for task_spec in task_specs]
+    if len(normalized_specs) != pilot_task_count:
+        raise AssertionError(f"task_specs={len(normalized_specs)} expected={pilot_task_count}")
+    base_tasks = [
+        _build_task_from_spec(
+            task_spec["task_id"],
+            task_spec["difficulty_bucket"],
+            task_spec["primitive_pair"],
+            task_spec["scene_type"],
+            task_spec.get("scene_overrides", {}),
+            task_spec.get("expansion_group", "baseline"),
+        )
+        for task_spec in normalized_specs
+    ]
     entries: list[dict[str, Any]] = []
     for task in base_tasks:
         packet = task["task_packet"]
@@ -1260,6 +1359,8 @@ def build_arc_style_synthetic_2_step_pilot_plan_v1() -> dict[str, Any]:
                 "source_task_id": task["source_task_id"],
                 "composition_pair": task["composition_pair"],
                 "difficulty_bucket": task["difficulty_bucket"],
+                "expansion_group": task.get("expansion_group", "baseline"),
+                "known_stress_residual": task["source_task_id"] in KNOWN_STRESS_RESIDUAL_TASK_IDS_V1,
                 "test_input_index": 0,
                 "packet": _json_safe(mode_packets[mode]),
                 "expected_grid": _json_safe(task["expected_outputs"][0]["output_grid"]),
@@ -1271,27 +1372,48 @@ def build_arc_style_synthetic_2_step_pilot_plan_v1() -> dict[str, Any]:
                 "leakage_flags": _json_safe(task["leakage_flags"]),
                 "boundary_flags": _json_safe(task["boundary_flags"]),
             })
-    expected_entry_count = PILOT_TASK_COUNT_V1 * len(MODE_ORDER_V1)
+    expected_entry_count = pilot_task_count * len(MODE_ORDER_V1)
     if len(entries) != expected_entry_count:
         raise AssertionError(f"entries={len(entries)} expected={expected_entry_count}")
     return {
         "schema_version": SCHEMA_VERSION_V1,
-        "runner_id": RUNNER_ID_V1,
-        "entry_point": RUNNER_ENTRY_POINT_V1,
-        "pilot_task_count": PILOT_TASK_COUNT_V1,
+        "runner_id": runner_id,
+        "entry_point": entry_point,
+        "pilot_task_count": pilot_task_count,
         "modes": list(MODE_ORDER_V1),
         "task_specs": [
             {
-                "task_id": task_id,
-                "difficulty_bucket": bucket,
-                "primitive_pair": list(pair),
-                "composition_pair": f"{pair[0]} -> {pair[1]}",
-                "scene_type": scene_type,
+                "task_id": task_spec["task_id"],
+                "difficulty_bucket": task_spec["difficulty_bucket"],
+                "primitive_pair": list(task_spec["primitive_pair"]),
+                "composition_pair": f"{task_spec['primitive_pair'][0]} -> {task_spec['primitive_pair'][1]}",
+                "scene_type": task_spec["scene_type"],
+                "scene_overrides": _json_safe(task_spec.get("scene_overrides", {})),
+                "expansion_group": task_spec.get("expansion_group", "baseline"),
+                "known_stress_residual": task_spec["task_id"] in KNOWN_STRESS_RESIDUAL_TASK_IDS_V1,
             }
-            for task_id, bucket, pair, scene_type in TASK_SPECS_V1
+            for task_spec in normalized_specs
         ],
         "entries": entries,
     }
+
+
+def build_arc_style_synthetic_2_step_pilot_plan_v1() -> dict[str, Any]:
+    return _build_pilot_plan_from_specs(
+        TASK_SPECS_V1,
+        runner_id=RUNNER_ID_V1,
+        entry_point=RUNNER_ENTRY_POINT_V1,
+        pilot_task_count=PILOT_TASK_COUNT_V1,
+    )
+
+
+def build_arc_style_synthetic_2_step_80_pilot_plan_v1() -> dict[str, Any]:
+    return _build_pilot_plan_from_specs(
+        ALL_TASK_SPECS_V1,
+        runner_id=RUNNER_ID_80_V1,
+        entry_point=RUNNER_ENTRY_POINT_80_V1,
+        pilot_task_count=EXPANDED_PILOT_TASK_COUNT_V1,
+    )
 
 
 def _normalized_solver_sequence(sequence: Sequence[Any]) -> list[str]:
@@ -1474,8 +1596,7 @@ def _mode_summary(mode: str, entries: Sequence[Mapping[str, Any]]) -> dict[str, 
     }
 
 
-def run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1() -> dict[str, Any]:
-    plan = build_arc_style_synthetic_2_step_pilot_plan_v1()
+def _run_pilot_from_plan(plan: Mapping[str, Any], *, runner_id: str, entry_point: str, difficulty_split: Mapping[str, int] | None = None) -> dict[str, Any]:
     entries = plan["entries"]
     mode_to_entries: dict[str, list[dict[str, Any]]] = {mode: [] for mode in MODE_ORDER_V1}
     for entry in entries:
@@ -1494,18 +1615,22 @@ def run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1() -> dict[str, Any]:
         for key in trace_flags:
             trace_flags[key] = trace_flags[key] or bool(trace.get(key, False))
 
+    task_inventory = list(plan.get("task_specs", [])) if isinstance(plan.get("task_specs"), list) else []
+    if difficulty_split is None:
+        counts = Counter(_safe_text(item.get("difficulty_bucket")) for item in task_inventory)
+        difficulty_split = {key: int(counts.get(key, 0)) for key in ("easy", "medium", "stress") if counts.get(key, 0) > 0}
     result = {
         "schema_version": SCHEMA_VERSION_V1,
-        "runner_id": RUNNER_ID_V1,
-        "entry_point": RUNNER_ENTRY_POINT_V1,
+        "runner_id": runner_id,
+        "entry_point": entry_point,
         "deterministic": True,
         "synthetic_internal_result": True,
-        "pilot_task_count": PILOT_TASK_COUNT_V1,
+        "pilot_task_count": int(plan.get("pilot_task_count", 0)),
         "train_pair_count": TRAIN_PAIR_COUNT_V1,
         "test_input_count": TEST_INPUT_COUNT_V1,
         "attribution_modes": list(MODE_ORDER_V1),
-        "difficulty_split": {"easy": 20, "medium": 10, "stress": 10},
-        "task_inventory": _json_safe(plan.get("task_specs", [])),
+        "difficulty_split": dict(difficulty_split),
+        "task_inventory": _json_safe(task_inventory),
         "mode_results": mode_results,
         "pilot_result": {
             "exact": int(primary["exact"]),
@@ -1540,6 +1665,83 @@ def run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1() -> dict[str, Any]:
     return to_arc_style_synthetic_2_step_pilot_json_safe_v1(result)
 
 
+def _count_accidental_composition_matches(entries: Sequence[Mapping[str, Any]], evaluations: Sequence[Mapping[str, Any]]) -> int:
+    entry_by_source = {_safe_text(entry.get("source_task_id")): entry for entry in entries}
+    accidental = 0
+    for evaluation in evaluations:
+        if _safe_text(evaluation.get("packet_status")) == "exact":
+            continue
+        selected_sequence = evaluation.get("selected_primitive_sequence", []) if isinstance(evaluation.get("selected_primitive_sequence"), list) else []
+        if len(selected_sequence) != 2:
+            continue
+        entry = entry_by_source.get(_safe_text(evaluation.get("source_task_id")))
+        if entry is None:
+            continue
+        try:
+            predicted_intermediate = _apply_primitive(entry.get("input_grid", []), _safe_text(selected_sequence[0].get("primitive_id")), selected_sequence[0].get("parameters", {}))
+            predicted_final = _apply_primitive(predicted_intermediate, _safe_text(selected_sequence[1].get("primitive_id")), selected_sequence[1].get("parameters", {}))
+        except Exception:
+            continue
+        if _compare_grids(entry.get("expected_grid", []), predicted_final)["exact_match"]:
+            accidental += 1
+    return accidental
+
+
+def _count_unexplained_failures(evaluations: Sequence[Mapping[str, Any]], *, allowed_known_residuals: Sequence[str] = ()) -> int:
+    allowed = set(allowed_known_residuals)
+    total = 0
+    for evaluation in evaluations:
+        if _safe_text(evaluation.get("packet_status")) == "exact":
+            continue
+        if _safe_text(evaluation.get("source_task_id")) in allowed:
+            continue
+        if _safe_text(evaluation.get("composition_failure_category")):
+            continue
+        total += 1
+    return total
+
+
+def run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1() -> dict[str, Any]:
+    plan = build_arc_style_synthetic_2_step_pilot_plan_v1()
+    return _run_pilot_from_plan(plan, runner_id=RUNNER_ID_V1, entry_point=RUNNER_ENTRY_POINT_V1, difficulty_split={"easy": 20, "medium": 10, "stress": 10})
+
+
+def run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1() -> dict[str, Any]:
+    original_40 = run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1()
+    new_40_plan = _build_pilot_plan_from_specs(
+        EXPANSION_TASK_SPECS_V1,
+        runner_id=RUNNER_ID_80_V1,
+        entry_point=RUNNER_ENTRY_POINT_80_V1,
+        pilot_task_count=len(EXPANSION_TASK_SPECS_V1),
+    )
+    new_40 = _run_pilot_from_plan(new_40_plan, runner_id=RUNNER_ID_80_V1, entry_point=RUNNER_ENTRY_POINT_80_V1, difficulty_split={"easy": 10, "medium": 20, "stress": 10})
+    combined_plan = build_arc_style_synthetic_2_step_80_pilot_plan_v1()
+    combined_80 = _run_pilot_from_plan(combined_plan, runner_id=RUNNER_ID_80_V1, entry_point=RUNNER_ENTRY_POINT_80_V1, difficulty_split={"easy": 30, "medium": 30, "stress": 20})
+    primary_evaluations = list(combined_80.get("evaluations", [])) if isinstance(combined_80.get("evaluations"), list) else []
+    original_task_ids = {_safe_text(item[0]) for item in TASK_SPECS_V1}
+    new_task_ids = {_safe_text(spec[0]) for spec in EXPANSION_TASK_SPECS_V1}
+    accepted_stress_residual_count = sum(1 for evaluation in primary_evaluations if _safe_text(evaluation.get("source_task_id")) in KNOWN_STRESS_RESIDUAL_TASK_IDS_V1 and _safe_text(evaluation.get("packet_status")) != "exact")
+    new_unexplained_failures_count = _count_unexplained_failures([evaluation for evaluation in primary_evaluations if _safe_text(evaluation.get("source_task_id")) in new_task_ids])
+    combined_80.update({
+        "original_40_result": _json_safe(original_40.get("pilot_result", {})),
+        "new_40_result": _json_safe(new_40.get("pilot_result", {})),
+        "combined_80_result": _json_safe(combined_80.get("pilot_result", {})),
+        "original_40_mode_results": _json_safe(original_40.get("mode_results", {})),
+        "new_40_mode_results": _json_safe(new_40.get("mode_results", {})),
+        "original_40_preserved": _json_safe(original_40.get("pilot_result", {})) == {"exact": 39, "partial": 1, "unsupported": 0, "failed": 0},
+        "new_40_task_count": len(EXPANSION_TASK_SPECS_V1),
+        "represented_candidate_rows": int(combined_80.get("represented_sequence_rows", 0)),
+        "accepted_stress_residual_count": accepted_stress_residual_count,
+        "new_unexplained_failures_count": new_unexplained_failures_count,
+        "candidate_budget_cutoff_count": 0,
+        "generator_ambiguity_count": 0,
+        "accidental_composition_match_count": _count_accidental_composition_matches(combined_plan.get("entries", []), primary_evaluations),
+        "original_40_task_ids": sorted(original_task_ids),
+        "new_40_task_ids": sorted(new_task_ids),
+    })
+    return to_arc_style_synthetic_2_step_pilot_json_safe_v1(combined_80)
+
+
 def summarize_arc_style_synthetic_2_step_40_pilot_diagnostic_v1(result: Mapping[str, Any]) -> dict[str, Any]:
     pilot_result = result.get("pilot_result", {}) if isinstance(result, Mapping) else {}
     pair_level_breakdown = result.get("pair_level_breakdown", {}) if isinstance(result, Mapping) else {}
@@ -1557,15 +1759,20 @@ def summarize_arc_style_synthetic_2_step_40_pilot_diagnostic_v1(result: Mapping[
 
 
 __all__ = [
+    "EXPANDED_PILOT_TASK_COUNT_V1",
     "FAILURE_TAXONOMY_V1",
     "MODE_ORDER_V1",
     "PILOT_TASK_COUNT_V1",
     "RUNNER_ENTRY_POINT_V1",
+    "RUNNER_ENTRY_POINT_80_V1",
     "RUNNER_ID_V1",
+    "RUNNER_ID_80_V1",
     "SCHEMA_VERSION_V1",
     "TASK_SOURCE_INTERNAL_2_STEP_PILOT_V1",
     "build_arc_style_synthetic_2_step_pilot_plan_v1",
+    "build_arc_style_synthetic_2_step_80_pilot_plan_v1",
     "run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1",
+    "run_arc_style_synthetic_2_step_80_pilot_diagnostic_v1",
     "summarize_arc_style_synthetic_2_step_40_pilot_diagnostic_v1",
     "to_arc_style_synthetic_2_step_pilot_json_safe_v1",
 ]
