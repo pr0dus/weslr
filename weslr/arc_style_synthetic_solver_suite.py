@@ -457,8 +457,6 @@ def _candidate_rank_signature(ev: Mapping[str, Any]) -> tuple[Any, ...]:
         int(ev.get("mismatch_count", 10**6)),
         -int(ev.get("partial_match_count", 0)),
         int(ev.get("bounded_depth", 0)),
-        # Prioritize the "copy" primitive when rankings tie.
-        0 if "copy" in ev.get("candidate_id", "") else 1,
         int(ev.get("candidate_rank", 0)),
     )
 
