@@ -73,11 +73,14 @@ def test_2_step_pilot_runner_exposes_inventory_modes_and_taxonomy() -> None:
     assert pilot_total == PILOT_TASK_COUNT_V1
     assert summary["pair_count"] == PILOT_TASK_COUNT_V1
     assert summary["attribution_modes"] == list(MODE_ORDER_V1)
-    assert result["represented_sequence_rows"] >= 1
-    assert result["step1_plausible_rows"] >= 1
-    assert result["step2_plausible_rows"] >= 1
-    assert result["mode_results"]["full_metadata"]["represented_sequence_rows"] >= 1
-    assert result["mode_results"]["toy_task_type_preserved_guardrail"]["represented_sequence_rows"] >= 1
+    assert result["pilot_result"] == {"exact": 39, "partial": 1, "unsupported": 0, "failed": 0}
+    assert result["represented_sequence_rows"] == 40
+    assert result["step1_plausible_rows"] >= 33
+    assert result["step2_plausible_rows"] >= 37
+    assert result["mode_results"]["full_metadata"]["represented_sequence_rows"] == 40
+    assert result["mode_results"]["toy_task_type_preserved_guardrail"]["represented_sequence_rows"] == 40
+    assert result["mode_results"]["full_metadata"]["exact"] == 39
+    assert result["mode_results"]["toy_task_type_preserved_guardrail"]["exact"] == 39
     assert result["mode_results"]["fully_stripped_lower_bound"]["represented_sequence_rows"] == 0
     assert result["no_score_claim"] is True
     assert result["official_score_claim"] is False
@@ -121,6 +124,13 @@ def test_2_step_pilot_rows_have_required_fields_and_clean_leakage_posture() -> N
         assert row["leakage_flags"]["uses_kaggle_data"] is False
         assert row["leakage_flags"]["uses_answer_key"] is False
         assert row["leakage_flags"]["uses_test_output_for_candidate_generation"] is False
+
+
+def test_repaired_2_step_runner_leaves_only_one_residual_partial() -> None:
+    result = run_arc_style_synthetic_2_step_40_pilot_diagnostic_v1()
+    residual_rows = [row for row in result["evaluations"] if row["packet_status"] != "exact"]
+    assert [row["source_task_id"] for row in residual_rows] == ["pilot_2_step_stress_08_fill_then_count_v1"]
+    assert residual_rows[0]["composition_failure_category"] == "right_primitives_wrong_order"
 
 
 def test_existing_single_step_runner_summary_is_unchanged() -> None:

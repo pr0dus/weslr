@@ -555,6 +555,26 @@ def _border_values(grid: Sequence[Sequence[int]]) -> list[int]:
     return values
 
 
+def _uniform_border_value(grid: Sequence[Sequence[int]]) -> int | None:
+    values = _border_values(grid)
+    unique = {int(value) for value in values}
+    return int(next(iter(unique))) if len(unique) == 1 else None
+
+
+def _interior_values(grid: Sequence[Sequence[int]]) -> list[int]:
+    rows = len(grid)
+    cols = len(grid[0]) if rows else 0
+    if rows <= 2 or cols <= 2:
+        return [int(cell) for row in grid for cell in row]
+    return [int(grid[row][col]) for row in range(1, rows - 1) for col in range(1, cols - 1)]
+
+
+def _dominant_value(values: Sequence[int], *, exclude: Sequence[int] | None = None) -> int | None:
+    exclude_set = {int(value) for value in (exclude or [])}
+    counts = Counter(int(value) for value in values if int(value) not in exclude_set)
+    return int(counts.most_common(1)[0][0]) if counts else None
+
+
 def _non_background_values(grid: Sequence[Sequence[int]], background_value: int) -> list[int]:
     return sorted({int(cell) for row in grid for cell in row if int(cell) != background_value})
 
@@ -585,6 +605,75 @@ def _line_candidate_params(grid: Sequence[Sequence[int]], target: Sequence[Seque
     return candidates[:8]
 
 
+def _dedupe_parameter_options(options: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for option in options:
+        normalized = json.dumps(_json_safe(option), sort_keys=True)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        deduped.append(dict(option))
+    return deduped
+
+
+def _fill_region_parameter_options(current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> list[dict[str, Any]]:
+    default_background = _background_value_from_grid(current_grid)
+    border_value = _uniform_border_value(current_grid)
+    interior_current = _interior_values(current_grid)
+    interior_target = _interior_values(target_grid)
+    background_candidates = [default_background]
+    interior_background = _dominant_value(interior_current, exclude=[border_value] if border_value is not None else [])
+    if interior_background is not None:
+        background_candidates.append(interior_background)
+    if border_value is not None:
+        background_candidates.append(border_value)
+    options: list[dict[str, Any]] = []
+    for background_value in background_candidates:
+        fill_candidates: list[int] = []
+        fill_target = _dominant_value(interior_target, exclude=[background_value, border_value] if border_value is not None else [background_value])
+        if fill_target is not None:
+            fill_candidates.append(fill_target)
+        fill_current = _dominant_value(_non_background_values(target_grid, background_value), exclude=[border_value] if border_value is not None else [])
+        if fill_current is not None:
+            fill_candidates.append(fill_current)
+        for fill_value in fill_candidates[:3]:
+            options.append({"fill_value": fill_value, "background_value": background_value})
+    return _dedupe_parameter_options(options)[:8]
+
+
+def _object_count_parameter_options(current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> list[dict[str, Any]]:
+    background_value = _background_value_from_grid(current_grid)
+    rows = len(target_grid)
+    cols = len(target_grid[0]) if rows else 0
+    border_value = _uniform_border_value(target_grid)
+    row_scores: list[tuple[int, int, int, int]] = []
+    row_range = range(rows)
+    if border_value is not None and rows > 2 and cols > 2:
+        row_range = range(1, rows - 1)
+    for row_index in row_range:
+        if border_value is not None and cols > 2:
+            cells = [int(target_grid[row_index][col]) for col in range(1, cols - 1)]
+            non_bg = [value for value in cells if value not in {background_value, border_value}]
+        else:
+            cells = [int(cell) for cell in target_grid[row_index]]
+            non_bg = [value for value in cells if value != background_value]
+        if non_bg:
+            pattern_value, width = Counter(non_bg).most_common(1)[0][0], len(non_bg)
+            row_scores.append((row_index, pattern_value, width, abs(row_index - (rows // 2))))
+    row_scores.sort(key=lambda item: (-item[2], item[3], item[0], item[1]))
+    options: list[dict[str, Any]] = []
+    for row_index, pattern_value, _, _ in row_scores[:4]:
+        options.append({"count": None, "pattern_value": pattern_value, "row_index": row_index, "background_value": background_value})
+    if not options:
+        target_values = _non_background_values(target_grid, background_value)
+        fallback_value = _dominant_value(target_values) if target_values else _dominant_value(_non_background_values(current_grid, background_value))
+        if fallback_value is None:
+            fallback_value = 1
+        options.append({"count": None, "pattern_value": fallback_value, "row_index": max(0, rows // 2), "background_value": background_value})
+    return _dedupe_parameter_options(options)[:8]
+
+
 def _primitive_parameter_options(primitive_id: str, current_grid: Sequence[Sequence[int]], target_grid: Sequence[Sequence[int]]) -> list[dict[str, Any]]:
     background_value = _background_value_from_grid(current_grid)
     current_values = _non_background_values(current_grid, background_value)
@@ -592,7 +681,10 @@ def _primitive_parameter_options(primitive_id: str, current_grid: Sequence[Seque
     if primitive_id == "copy_grid":
         return [{}]
     if primitive_id in {"remove_background_noise", "extract_largest_object", "rotate_object_90"}:
-        return [{"background_value": background_value}]
+        options = [{"background_value": background_value}]
+        for extra_background in (current_values[:2] + target_values[:2]):
+            options.append({"background_value": extra_background})
+        return _dedupe_parameter_options(options)[:4]
     if primitive_id == "complete_symmetry":
         return [{"axes": ["horizontal", "vertical"], "background_value": background_value}]
     if primitive_id == "reflect_object_horizontal_or_vertical":
@@ -615,39 +707,22 @@ def _primitive_parameter_options(primitive_id: str, current_grid: Sequence[Seque
         options = []
         source_values = current_values or target_values
         destination_values = target_values or current_values
-        for from_value in source_values[:3]:
-            for to_value in destination_values[:3]:
+        for from_value in source_values[:4]:
+            for to_value in destination_values[:4]:
                 if from_value == to_value:
                     continue
                 options.append({"from_value": from_value, "to_value": to_value, "background_value": background_value})
-        return options[:8]
+        return _dedupe_parameter_options(options)[:12]
     if primitive_id == "border_frame":
         border_values = [value for value in _border_values(target_grid) if value != background_value]
         values = [value for value, _ in Counter(border_values).most_common(3)] or target_values[:3]
         return [{"frame_value": value} for value in values]
     if primitive_id == "fill_region":
-        rows = len(target_grid)
-        cols = len(target_grid[0]) if rows else 0
-        interior = [int(target_grid[row][col]) for row in range(1, max(1, rows - 1)) for col in range(1, max(1, cols - 1))]
-        values = [value for value, _ in Counter(value for value in interior if value != background_value).most_common(3)]
-        values = values or target_values[:3] or current_values[:3]
-        return [{"fill_value": value, "background_value": background_value} for value in values]
+        return _fill_region_parameter_options(current_grid, target_grid)
     if primitive_id == "line_completion":
         return _line_candidate_params(current_grid, target_grid, background_value)
     if primitive_id == "object_count_to_pattern":
-        rows = len(target_grid)
-        row_scores = []
-        for row_index in range(rows):
-            non_bg = [int(cell) for cell in target_grid[row_index] if int(cell) != background_value]
-            if non_bg:
-                row_scores.append((row_index, Counter(non_bg).most_common(1)[0][0], len(non_bg)))
-        row_scores.sort(key=lambda item: (-item[2], item[0], item[1]))
-        options = []
-        for row_index, pattern_value, _ in row_scores[:3]:
-            options.append({"count": None, "pattern_value": pattern_value, "row_index": row_index, "background_value": background_value})
-        if not options and target_values:
-            options.append({"count": None, "pattern_value": target_values[0], "row_index": max(0, rows // 2), "background_value": background_value})
-        return options
+        return _object_count_parameter_options(current_grid, target_grid)
     return []
 
 
@@ -672,6 +747,57 @@ def _best_single_step_fit(primitive_id: str, current_grid: Sequence[Sequence[int
     return best
 
 
+def _best_sequence_pair_fit(primitive_pair: Sequence[str], input_grid: Sequence[Sequence[int]], final_grid: Sequence[Sequence[int]]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if len(primitive_pair) != 2:
+        return None, None
+    step1_options = _primitive_parameter_options(_safe_text(primitive_pair[0]), input_grid, final_grid)
+    best_pair: tuple[dict[str, Any], dict[str, Any]] | None = None
+    best_rank: tuple[int, int, int, int] | None = None
+    for step1_index, step1_parameters in enumerate(step1_options):
+        try:
+            predicted_intermediate = _apply_primitive(input_grid, _safe_text(primitive_pair[0]), step1_parameters)
+            step1_comparison = _compare_grids(final_grid, predicted_intermediate)
+        except Exception as exc:  # pragma: no cover
+            step1_candidate = {
+                "parameters": dict(step1_parameters),
+                "predicted_grid": _clone_grid(input_grid),
+                "comparison": {"exact_match": False, "value_mismatch_count": 10**6, "mismatch_cells": []},
+                "rank": (10**6, step1_index),
+                "error": _safe_text(exc),
+            }
+            step2_candidate = None
+            pair_rank = (10**6, 10**6, step1_index, 10**6)
+            if best_rank is None or pair_rank < best_rank:
+                best_pair = (step1_candidate, step2_candidate)  # type: ignore[arg-type]
+                best_rank = pair_rank
+            continue
+        step1_candidate = {
+            "parameters": dict(step1_parameters),
+            "predicted_grid": predicted_intermediate,
+            "comparison": step1_comparison,
+            "rank": (step1_comparison["value_mismatch_count"], step1_index),
+        }
+        step2_candidate = _best_single_step_fit(_safe_text(primitive_pair[1]), predicted_intermediate, final_grid)
+        if step2_candidate is None:
+            pair_rank = (10**6, step1_comparison["value_mismatch_count"], step1_index, 10**6)
+            if best_rank is None or pair_rank < best_rank:
+                best_pair = (step1_candidate, step2_candidate)  # type: ignore[arg-type]
+                best_rank = pair_rank
+            continue
+        pair_rank = (
+            int(step2_candidate["comparison"]["value_mismatch_count"]),
+            int(step1_comparison["value_mismatch_count"]),
+            step1_index,
+            int(step2_candidate["rank"][1]),
+        )
+        if best_rank is None or pair_rank < best_rank:
+            best_pair = (step1_candidate, step2_candidate)
+            best_rank = pair_rank
+    if best_pair is None:
+        return None, None
+    return best_pair
+
+
 def _parse_supported_pair_from_packet(packet: Mapping[str, Any]) -> list[str]:
     trace = packet.get("trace", {}) if isinstance(packet.get("trace"), Mapping) else {}
     composition_pair = _safe_text(trace.get("composition_pair") or trace.get("toy_task_type"))
@@ -687,7 +813,7 @@ def _summarize_stable_parameters(per_pair_steps: Sequence[Sequence[Mapping[str, 
     summary: list[dict[str, Any]] = []
     if not per_pair_steps:
         return summary
-    dynamic_keys = {"background_value", "object_value", "count"}
+    dynamic_keys = {"background_value", "object_value", "count", "from_value", "to_value", "fill_value", "row_index", "pattern_value"}
     for step_index in range(len(per_pair_steps[0])):
         primitive_id = _safe_text(per_pair_steps[0][step_index].get("primitive_id"))
         all_keys = sorted({key for pair_steps in per_pair_steps for key in pair_steps[step_index].get("parameters", {}).keys()})
@@ -720,15 +846,11 @@ def _generate_bounded_sequence_candidates(entry: Mapping[str, Any]) -> list[dict
         for train_pair in train_pairs:
             input_grid = _pair_input_grid(train_pair)
             final_grid = _pair_output_grid(train_pair)
-            best_step1 = _best_single_step_fit(primitive_pair[0], input_grid, final_grid)
-            if best_step1 is None:
+            best_step1, best_step2 = _best_sequence_pair_fit(primitive_pair, input_grid, final_grid)
+            if best_step1 is None or best_step2 is None:
                 generation_failed = True
                 break
             intermediate_grid = best_step1["predicted_grid"]
-            best_step2 = _best_single_step_fit(primitive_pair[1], intermediate_grid, final_grid)
-            if best_step2 is None:
-                generation_failed = True
-                break
             try:
                 final_prediction = _apply_primitive(intermediate_grid, primitive_pair[1], best_step2["parameters"])
                 final_comparison = _compare_grids(final_grid, final_prediction)
