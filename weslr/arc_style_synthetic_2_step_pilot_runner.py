@@ -826,6 +826,23 @@ def _build_carryover_trace(
         for key in step2_imports
         if key in {"background_value", "from_value", "object_value", "to_value", "fill_value", "count", "row_index", "pattern_value"}
     )
+    # Diagnostic fields for recolor import resolution (extract→recolor contract)
+    recolor_import_requirements = step2_imports
+    import_resolution = [k for k in step2_imports if k in carried_parameters]
+    unresolved_imports = [k for k in step2_imports if k not in carried_parameters]
+    from_value_resolution = parameter_origin_by_key.get("from_value")
+    # to_value inference not performed in this lane
+    to_value_resolution = None
+    # Placeholder for output delta inference from train‑pair analysis
+    output_delta_inference = None
+    # Determine contract status – required keys present but to_value unavailable
+    required_keys = {"background_value", "from_value", "to_value"}
+    if required_keys.issubset(set(step2_imports)):
+        contract_status = "rejected"
+        rejection_reason = "no_conclusive_to_value_delta"
+    else:
+        contract_status = "rejected"
+        rejection_reason = "missing_required_imports"
     return {
         "step_1_exports": _json_safe(step1_exports),
         "step_2_imports": step2_imports,
@@ -833,6 +850,15 @@ def _build_carryover_trace(
         "dropped_parameters": dropped_parameters,
         "parameter_origin_by_key": _json_safe(parameter_origin_by_key),
         "carryover_success": bool(carryover_success),
+        # New diagnostic fields
+        "recolor_import_requirements": recolor_import_requirements,
+        "import_resolution": import_resolution,
+        "unresolved_imports": unresolved_imports,
+        "output_delta_inference": output_delta_inference,
+        "from_value_resolution": from_value_resolution,
+        "to_value_resolution": to_value_resolution,
+        "contract_status": contract_status,
+        "rejection_reason": rejection_reason,
     }
 
 
