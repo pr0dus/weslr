@@ -512,10 +512,16 @@ _arc_2_step_80_pilot_expansion_with_stress_residual_tracking_allowed_paths = {
 
 # Narrow, exact-path allowance for the ARC 2-step structural visibility/memory
 # repair report only.
+
+# Narrow, exact-path allowance for the stale addendum reconciliation report.
+# This allows the reconciled doc to be added without widening docs/ allowances.
 _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc = (
     "docs/WESLR_ARC_2_STEP_STRUCTURAL_SEQUENCE_VISIBILITY_AND_PARAMETER_MEMORY_REPAIR_V1.md"
 )
 _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_allowed_paths = {
+    _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc,
+    "docs/WESLR_ARC_SYNTHETIC_80_AFTER_COMPLETE_SYMMETRY_VARIANT_2_FIX_V1.md",
+}
     _arc_2_step_structural_sequence_visibility_and_parameter_memory_repair_doc,
 }
 
