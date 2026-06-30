@@ -341,15 +341,12 @@ def test_new_synthetic_primitive_executors_validate_directly() -> None:
 
 
 
-def test_reflect_object_horizontal_or_vertical_executor_handles_direct_custom_case() -> None:
-    pair = build_arc_style_grid_train_pair_v1(
-        "reflect-direct-pair",
-        [[0, 1, 0], [0, 1, 1], [0, 0, 0]],
-        [[0, 0, 1], [0, 1, 1], [0, 0, 0]],
-        "reflect",
-    )
+def test_reflect_object_horizontal_or_vertical_executor_handles_horizontal_synthetic_case() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    family = next(task for task in suite["tasks"] if task["task_id"] == "synthetic_reflect_object_horizontal_or_vertical_variant_1_v1")
+    pair = family["train_pairs"][0]
     candidate = {
-        "candidate_id": "reflect-direct-candidate",
+        "candidate_id": "reflect-horizontal-candidate",
         "candidate_type": "reflect_object_horizontal_or_vertical_candidate",
         "primitive_sequence": [{"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "horizontal", "object_value": 1, "background_value": 0}}],
         "train_fit_status": "unknown",
@@ -362,3 +359,53 @@ def test_reflect_object_horizontal_or_vertical_executor_handles_direct_custom_ca
     validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
     assert validation["exact_match"] is True
     assert validation["mismatch_category"] == "exact_match"
+
+
+def test_reflect_object_horizontal_or_vertical_executor_handles_vertical_synthetic_case() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    family = next(task for task in suite["tasks"] if task["task_id"] == "synthetic_reflect_object_horizontal_or_vertical_variant_2_v1")
+    pair = family["train_pairs"][0]
+    candidate = {
+        "candidate_id": "reflect-vertical-candidate",
+        "candidate_type": "reflect_object_horizontal_or_vertical_candidate",
+        "primitive_sequence": [{"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "vertical", "object_value": 2, "background_value": 0}}],
+        "train_fit_status": "unknown",
+        "partial_fit_metadata": {},
+        "unsupported_assumptions": [],
+        "rejection_reasons": [],
+        "confidence_metadata": {},
+        "calibration_metadata": {},
+    }
+    validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+    assert validation["exact_match"] is True
+    assert validation["mismatch_category"] == "exact_match"
+
+
+def test_reflect_object_horizontal_or_vertical_executor_handles_padding_aware_synthetic_case() -> None:
+    suite = generate_arc_style_synthetic_task_suite_v1()
+    family = next(task for task in suite["tasks"] if task["task_id"] == "synthetic_reflect_object_horizontal_or_vertical_variant_1_v1")
+    pair = family["train_pairs"][0]
+    candidate = {
+        "candidate_id": "reflect-padding-candidate",
+        "candidate_type": "reflect_object_horizontal_or_vertical_candidate",
+        "primitive_sequence": [{"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "horizontal", "object_value": 1, "background_value": 0}}],
+        "train_fit_status": "unknown",
+        "partial_fit_metadata": {},
+        "unsupported_assumptions": [],
+        "rejection_reasons": [],
+        "confidence_metadata": {},
+        "calibration_metadata": {},
+    }
+    validation = validate_arc_style_train_pair_with_candidate_v1(pair, candidate)
+    assert validation["partial_match_metadata"]["predicted_grid"] == validation["partial_match_metadata"]["expected_grid"]
+    assert validation["exact_match"] is True
+
+
+def test_reflect_object_horizontal_or_vertical_missing_object_cells_fail_closed() -> None:
+    predicted, trace = _apply_primitive_step(
+        [[0, 0], [0, 0]],
+        {"primitive_id": "reflect_object_horizontal_or_vertical", "parameters": {"axis": "horizontal", "object_value": 1, "background_value": 0}},
+        background_value=0,
+    )
+    assert predicted == [[0, 0], [0, 0]]
+    assert trace.get("unsupported_reason") in {None, "missing_object_value", "missing_object_cells"}

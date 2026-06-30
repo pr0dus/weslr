@@ -59,6 +59,7 @@ SUPPORTED_SYNTHETIC_FAMILIES_V1 = {
     "line_completion",
     "object_count_to_pattern",
     "rotate_object_90",
+    "reflect_object_horizontal_or_vertical",
 }
 
 FAILURE_CATEGORIES_V1 = (

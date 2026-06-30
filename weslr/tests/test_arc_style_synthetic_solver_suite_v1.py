@@ -36,19 +36,27 @@ def test_solver_suite_handles_multiple_test_inputs_and_builds_submission_packet(
     assert all(len(entry["test_input_packets"]) == len(task_result["packet_results"]) for entry, task_result in zip(result["task_entries"], result["task_results"]))
 
 
-def test_solver_suite_records_unsupported_families_honestly() -> None:
+def test_solver_suite_records_reflect_as_supported_without_non_reflect_regressions() -> None:
     result = run_arc_style_synthetic_solver_suite_v1()
     ledger = result["failure_ledger"]
     category_counts = ledger["category_counts"]
-    assert result["synthetic_exact_count"] > 14
-    assert result["synthetic_partial_count"] < 30
-    assert result["synthetic_unsupported_count"] < 28
-    assert category_counts.get("unsupported_transformation_family", 0) > 0
-    assert category_counts.get("unsupported_transformation_family", 0) < 28
-    assert category_counts.get("missing_primitive_executor", 0) < 28
+    assert result["synthetic_exact_count"] == 45
+    assert result["synthetic_partial_count"] == 3
+    assert result["synthetic_unsupported_count"] == 0
     unsupported_family_ids = [family_id for family_id, summary in result["family_level_summary"].items() if summary["synthetic_unsupported_count"] > 0]
-    assert unsupported_family_ids
-    assert "reflect_object_horizontal_or_vertical" in unsupported_family_ids
+    assert unsupported_family_ids == []
+    reflect_summary = result["family_level_summary"]["reflect_object_horizontal_or_vertical"]
+    assert reflect_summary["synthetic_exact_count"] == 4
+    assert reflect_summary["synthetic_partial_count"] == 0
+    assert reflect_summary["synthetic_unsupported_count"] == 0
+    assert category_counts.get("unsupported_transformation_family", 0) == 0
+    assert category_counts.get("missing_primitive_executor", 0) == 0
+    assert result["family_level_summary"]["copy_grid"]["synthetic_exact_count"] == 2
+    assert result["family_level_summary"]["copy_grid"]["synthetic_partial_count"] == 2
+    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_exact_count"] == 3
+    assert result["family_level_summary"]["object_count_to_pattern"]["synthetic_partial_count"] == 1
+    assert result["family_level_summary"]["rotate_object_90"]["synthetic_exact_count"] == 4
+    assert result["family_level_summary"]["rotate_object_90"]["synthetic_partial_count"] == 0
     assert set(FAILURE_CATEGORIES_V1).issuperset(set(ledger["category_counts"].keys()))
 
 
