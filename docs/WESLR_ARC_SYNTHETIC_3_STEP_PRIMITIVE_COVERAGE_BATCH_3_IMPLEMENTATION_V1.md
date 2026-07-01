@@ -3,7 +3,7 @@
 **Repo:** `weslr-pr47-clean`
 **Branch:** `occ-discovery-doctrine-implementation-20260613`
 **Start HEAD:** `039d024f` (commit `IMPLEMENT_ARC_SYNTHETIC_3_STEP_PRIMITIVE_COVERAGE_BATCH_2_V1`)
-**End HEAD:** `$(git -C /data/data/com.termux/files/home/weslr-pr47-clean rev-parse HEAD)`
+**End HEAD:** `ca9b26e8`
 
 ---
 
