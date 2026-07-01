@@ -47,13 +47,15 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
     Handles custom wrappers for `normalize_position`, `count_objects`, and `place_back`.
     Falls back to the Phase‑2 adapter for other primitives.
     """
-    # Wrapper for normalize_position – compute normalized centroid of the largest component.
+    # Wrapper for normalize_position – translate grid so centroid is centered.
+    # Aligned to oracle semantics: real grid translation.
     if name == "normalize_position":
         if not grid:
             grid = [[1]]
-        components = _connected_components(grid, _background_value_from_grid(grid))
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
         if not components:
-            return True, grid, {"primitive_id": "normalize_position", "norm_x": 0.0, "norm_y": 0.0}
+            return True, [row[:] for row in grid], {"primitive_id": "normalize_position", "empty": True}
         largest = max(components, key=len)
         rows = [r for r, _ in largest]
         cols = [c for _, c in largest]
@@ -61,9 +63,16 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         centroid_c = sum(cols) / len(cols)
         height = len(grid)
         width = len(grid[0]) if height > 0 else 1
-        norm_x = centroid_c / (width - 1) if width > 1 else 0.0
-        norm_y = centroid_r / (height - 1) if height > 1 else 0.0
-        return True, grid, {"primitive_id": "normalize_position", "norm_x": norm_x, "norm_y": norm_y}
+        target_r = height / 2
+        target_c = width / 2
+        dr = int(round(target_r - centroid_r))
+        dc = int(round(target_c - centroid_c))
+        out = [[bg for _ in range(width)] for _ in range(height)]
+        for r, c in largest:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < height and 0 <= nc < width:
+                out[nr][nc] = grid[r][c]
+        return True, out, {"primitive_id": "normalize_position", "shift": [dr, dc]}
     # Wrapper for count_objects – count connected components.
     if name == "count_objects":
         if not grid:
@@ -79,16 +88,24 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         step = {"primitive_id": adapter_id, "parameters": params}
         new_grid, trace = _apply_primitive_step(grid, step, background_value=_background_value_from_grid(grid))
         return True, new_grid, trace
-    # Wrapper for extract_boundary – compute bounding box of largest component.
+    # Wrapper for extract_boundary – highlight boundary cells on grid.
+    # Aligned to oracle semantics: real boundary highlighting.
     if name == "extract_boundary":
         if not grid:
             grid = [[1]]
-        components = _connected_components(grid, _background_value_from_grid(grid))
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
         if not components:
-            return True, grid, {"primitive_id": "extract_boundary", "bounding_box": []}
+            return True, [row[:] for row in grid], {"primitive_id": "extract_boundary", "bounding_box": []}
         largest = max(components, key=len)
-        bbox = _bounding_box_for_cells(largest)
-        return True, grid, {"primitive_id": "extract_boundary", "bounding_box": bbox}
+        min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
+        out = [row[:] for row in grid]
+        for r in range(min_r, max_r + 1):
+            for c in range(min_c, max_c + 1):
+                if r == min_r or r == max_r or c == min_c or c == max_c:
+                    if out[r][c] == bg:
+                        out[r][c] = 1
+        return True, out, {"primitive_id": "extract_boundary", "bounding_box": [min_r, min_c, max_r, max_c]}
     # Wrapper for mirror_object – horizontal reflection of the grid.
     if name == "mirror_object":
         if not grid:
@@ -117,16 +134,19 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
     # Wrapper for count – alias to count_objects.
     if name == "count":
         return run_primitive("count_objects", grid, params)
-    # Wrapper for extract_changed_region – return bounding box of largest component.
+    # Wrapper for extract_changed_region – crop to bounding box of largest component.
+    # Aligned to oracle semantics: real grid crop.
     if name == "extract_changed_region":
         if not grid:
             grid = [[1]]
-        components = _connected_components(grid, _background_value_from_grid(grid))
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
         if not components:
-            return True, grid, {"primitive_id": "extract_changed_region", "bounding_box": []}
+            return True, [row[:] for row in grid], {"primitive_id": "extract_changed_region", "bounding_box": []}
         largest = max(components, key=len)
-        bbox = _bounding_box_for_cells(largest)
-        return True, grid, {"primitive_id": "extract_changed_region", "bounding_box": bbox}
+        min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
+        out = [row[min_c:max_c + 1] for row in grid[min_r:max_r + 1]]
+        return True, out, {"primitive_id": "extract_changed_region", "bounding_box": [min_r, min_c, max_r, max_c]}
     # Wrapper for count_or_pattern – alias to count_objects.
     if name == "count_or_pattern":
         return run_primitive("count_objects", grid, params)
@@ -156,16 +176,36 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
             grid = [[1]]
         out = list(reversed([row[:] for row in grid]))
         return True, out, {"primitive_id": "transform", "transformed": True}
-    # Wrapper for isolate_largest – identify largest component, return unchanged grid with bounding box.
+    # Wrapper for isolate_largest – keep largest component, remove others.
+    # Aligned to oracle semantics: real grid modification.
     if name == "isolate_largest":
         if not grid:
             grid = [[1]]
-        components = _connected_components(grid, _background_value_from_grid(grid))
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
         if not components:
-            return True, grid, {"primitive_id": "isolate_largest", "bounding_box": []}
+            return True, [row[:] for row in grid], {"primitive_id": "isolate_largest", "bounding_box": []}
         largest = max(components, key=len)
-        bbox = _bounding_box_for_cells(largest)
-        return True, grid, {"primitive_id": "isolate_largest", "bounding_box": bbox}
+        out = [[bg for _ in row] for row in grid]
+        for r, c in largest:
+            out[r][c] = grid[r][c]
+        return True, out, {"primitive_id": "isolate_largest"}
+    # Wrapper for extract – crop to bounding box of largest component.
+    # Aligned to oracle semantics: real grid crop, not full-grid return.
+    if name in ("extract", "extract_largest_object", "extract_object"):
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
+        if not components:
+            return True, [[bg]], {"primitive_id": "extract", "empty": True}
+        largest = max(components, key=len)
+        min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
+        out = [[bg for _ in range(min_c, max_c + 1)] for _ in range(min_r, max_r + 1)]
+        for r, c in largest:
+            out[r - min_r][c - min_c] = grid[r][c]
+        return True, out, {"primitive_id": "extract", "bbox": [min_r, min_c, max_r, max_c]}
+
     # Default handling for other primitives.
     adapter_id = NAME_TO_ADAPTER_ID.get(name)
     # If we have a specific adapter implementation, use it.
