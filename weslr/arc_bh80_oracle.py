@@ -159,9 +159,21 @@ def reference_primitive(name: str, grid: List[List[int]], params: dict | None = 
 
     # --- place_back ---
     if name == "place_back":
-        # Place current grid centered on a canvas of original size
-        # Since oracle doesn't know original size, use current size (identity for now)
-        return True, [row[:] for row in grid], {"primitive_id": "place_back"}
+        # Place current grid centered on a canvas matching the original grid size.
+        # The oracle receives the original canvas size via params ("original_h", "original_w").
+        # If not provided, use current grid size (identity for single-step pipelines).
+        orig_h = params.get("original_h", len(grid))
+        orig_w = params.get("original_w", len(grid[0]) if grid else 0)
+        cur_h, cur_w = len(grid), len(grid[0]) if grid else 0
+        out = [[bg for _ in range(orig_w)] for _ in range(orig_h)]
+        offset_r = max(0, (orig_h - cur_h) // 2)
+        offset_c = max(0, (orig_w - cur_w) // 2)
+        for r in range(cur_h):
+            for c in range(cur_w):
+                nr, nc = r + offset_r, c + offset_c
+                if 0 <= nr < orig_h and 0 <= nc < orig_w:
+                    out[nr][nc] = grid[r][c]
+        return True, out, {"primitive_id": "place_back", "canvas": [orig_h, orig_w], "offset": [offset_r, offset_c]}
 
     # --- count_objects / count / count_or_pattern ---
     if name in ("count_objects", "count"):

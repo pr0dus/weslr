@@ -139,16 +139,23 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         width = len(grid[0]) if height > 0 else 0
         filled = [[1 for _ in range(width)] for _ in range(height)]
         return True, filled, {"primitive_id": "fill_region", "filled": True}
-    # Wrapper for pattern_output – identity (no change).
+    # Wrapper for pattern_output – row-index alternating colors (matches oracle semantics).
     if name == "pattern_output":
         if not grid:
             grid = [[1]]
-        return True, grid, {"primitive_id": "pattern_output"}
-    # Wrapper for transform – identity transformation.
+        bg = _background_value_from_grid(grid)
+        out = [row[:] for row in grid]
+        for r in range(len(out)):
+            for c in range(len(out[0]) if out else 0):
+                if out[r][c] != bg:
+                    out[r][c] = 1 if r % 2 == 0 else 2
+        return True, out, {"primitive_id": "pattern_output"}
+    # Wrapper for transform – vertical flip (matches oracle semantics).
     if name == "transform":
         if not grid:
             grid = [[1]]
-        return True, grid, {"primitive_id": "transform", "transformed": False}
+        out = list(reversed([row[:] for row in grid]))
+        return True, out, {"primitive_id": "transform", "transformed": True}
     # Wrapper for isolate_largest – identify largest component, return unchanged grid with bounding box.
     if name == "isolate_largest":
         if not grid:
