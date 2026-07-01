@@ -277,4 +277,141 @@ def validate_task_schema(task: Dict[str, Any]) -> None:
         if task["expected_trace_requirements"].get(req) is not True:
             raise ValueError(f"Trace requirement {req} must be True")
 
+# ---------------------------------------------------------------------------
+# Broad‑Hard‑80 generator (deterministic, no randomness)
+# ---------------------------------------------------------------------------
+
+# Core primitive boundary
+_BH80_ALLOWED_CORE = {
+    "extract", "extract_largest_object", "isolate_largest", "extract_boundary",
+    "crop", "mirror_object", "rotate", "recolor", "normalize_position",
+    "place_back", "count_objects", "pattern_output", "transform",
+}
+
+# Approved aliases that map to dispatch wrappers or adapters
+_BH80_ALLOWED_ALIASES = {
+    "remove_noise", "extract_object", "crop_object", "recolor_boundary",
+    "count", "count_or_pattern", "extract_changed_region", "fill_region",
+}
+
+_BH80_ALL_ALLOWED = _BH80_ALLOWED_CORE | _BH80_ALLOWED_ALIASES
+
+# Deterministic task specifications extracted from the accepted Broad‑Hard‑80 design.
+_BROAD_HARD_80_SPECS: List[Dict[str, Any]] = [
+    {"task_id": "BH80_001", "family_id": "F001", "difficulty": "medium", "primitive_sequence": ["extract", "rotate", "recolor"], "hardness_axes": [1, 5], "shortcut_defeated": "Order‑independence"},
+    {"task_id": "BH80_002", "family_id": "F001", "difficulty": "hard", "primitive_sequence": ["extract", "rotate", "recolor"], "hardness_axes": [1, 3, 5, 7], "shortcut_defeated": "Largest‑object shortcut"},
+    {"task_id": "BH80_003", "family_id": "F002", "difficulty": "medium", "primitive_sequence": ["remove_noise", "extract_object", "recolor"], "hardness_axes": [1, 3], "shortcut_defeated": "Noise‑ignore shortcut"},
+    {"task_id": "BH80_004", "family_id": "F002", "difficulty": "hard", "primitive_sequence": ["remove_noise", "extract_object", "recolor"], "hardness_axes": [1, 2, 3, 7], "shortcut_defeated": "First‑object shortcut"},
+    {"task_id": "BH80_005", "family_id": "F003", "difficulty": "hard", "primitive_sequence": ["fill_region", "count_objects", "pattern_output"], "hardness_axes": [2, 4, 5, 8], "shortcut_defeated": "Count‑only shortcut"},
+    {"task_id": "BH80_006", "family_id": "F003", "difficulty": "hard", "primitive_sequence": ["fill_region", "count_objects", "pattern_output"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Simple‑fill shortcut"},
+    {"task_id": "BH80_007", "family_id": "F004", "difficulty": "medium", "primitive_sequence": ["crop_object", "transform", "place_back"], "hardness_axes": [1, 5], "shortcut_defeated": "Bbox‑invariance shortcut"},
+    {"task_id": "BH80_008", "family_id": "F004", "difficulty": "hard", "primitive_sequence": ["crop_object", "transform", "place_back"], "hardness_axes": [1, 4, 5, 9], "shortcut_defeated": "Identity‑invariance shortcut"},
+    {"task_id": "BH80_009", "family_id": "F005", "difficulty": "medium", "primitive_sequence": ["extract_boundary", "recolor_boundary", "count"], "hardness_axes": [1, 4], "shortcut_defeated": "Interior‑count shortcut"},
+    {"task_id": "BH80_010", "family_id": "F005", "difficulty": "hard", "primitive_sequence": ["extract_boundary", "recolor_boundary", "count"], "hardness_axes": [2, 3, 4, 7], "shortcut_defeated": "Single‑boundary shortcut"},
+    {"task_id": "BH80_011", "family_id": "F006", "difficulty": "medium", "primitive_sequence": ["isolate_largest", "normalize_position", "recolor"], "hardness_axes": [1, 2], "shortcut_defeated": "First‑component shortcut"},
+    {"task_id": "BH80_012", "family_id": "F006", "difficulty": "hard", "primitive_sequence": ["isolate_largest", "normalize_position", "recolor"], "hardness_axes": [1, 2, 3, 5, 8], "shortcut_defeated": "Size‑tie shortcut"},
+    {"task_id": "BH80_013", "family_id": "F007", "difficulty": "medium", "primitive_sequence": ["mirror_object", "extract_changed_region", "recolor"], "hardness_axes": [1, 5], "shortcut_defeated": "Symmetry shortcut"},
+    {"task_id": "BH80_014", "family_id": "F007", "difficulty": "hard", "primitive_sequence": ["mirror_object", "extract_changed_region", "recolor"], "hardness_axes": [1, 3, 5, 7, 9], "shortcut_defeated": "Mirror‑invariance shortcut"},
+    {"task_id": "BH80_015", "family_id": "F008", "difficulty": "medium", "primitive_sequence": ["crop", "rotate", "count_or_pattern"], "hardness_axes": [1, 5], "shortcut_defeated": "Pre‑crop shortcut"},
+    {"task_id": "BH80_016", "family_id": "F008", "difficulty": "hard", "primitive_sequence": ["crop", "rotate", "count_or_pattern"], "hardness_axes": [1, 4, 5, 6, 9], "shortcut_defeated": "Count‑first shortcut"},
+    {"task_id": "BH80_017", "family_id": "F003", "difficulty": "adversarial", "primitive_sequence": ["fill_region", "count_objects", "pattern_output"], "hardness_axes": [2, 3, 4, 5, 6, 8, 9], "shortcut_defeated": "Fill‑all shortcut"},
+    {"task_id": "BH80_018", "family_id": "F006", "difficulty": "adversarial", "primitive_sequence": ["isolate_largest", "normalize_position", "recolor"], "hardness_axes": [1, 2, 3, 4, 5, 6, 8], "shortcut_defeated": "Largest‑first shortcut"},
+    {"task_id": "BH80_019", "family_id": "BH‑A", "difficulty": "medium", "primitive_sequence": ["extract_boundary", "mirror_object", "crop"], "hardness_axes": [1, 5], "shortcut_defeated": "Order‑independence"},
+    {"task_id": "BH80_020", "family_id": "BH‑A", "difficulty": "medium", "primitive_sequence": ["mirror_object", "extract_boundary", "crop"], "hardness_axes": [1, 5, 7], "shortcut_defeated": "Post‑mirror‑boundary shortcut"},
+    {"task_id": "BH80_021", "family_id": "BH‑A", "difficulty": "hard", "primitive_sequence": ["extract_boundary", "crop", "mirror_object"], "hardness_axes": [1, 4, 5, 7], "shortcut_defeated": "Bbox‑stable shortcut"},
+    {"task_id": "BH80_022", "family_id": "BH‑A", "difficulty": "hard", "primitive_sequence": ["crop", "extract_boundary", "mirror_object"], "hardness_axes": [1, 4, 5, 9], "shortcut_defeated": "Boundary‑invariance shortcut"},
+    {"task_id": "BH80_023", "family_id": "BH‑A", "difficulty": "adversarial", "primitive_sequence": ["extract_boundary", "mirror_object", "crop"], "hardness_axes": [1, 2, 3, 5, 6, 7, 8], "shortcut_defeated": "Largest‑object shortcut"},
+    {"task_id": "BH80_024", "family_id": "BH‑A", "difficulty": "hard", "primitive_sequence": ["mirror_object", "crop", "extract_boundary"], "hardness_axes": [1, 4, 5, 7, 8], "shortcut_defeated": "Mirror‑then‑crop shortcut"},
+    {"task_id": "BH80_025", "family_id": "BH‑A", "difficulty": "adversarial", "primitive_sequence": ["crop", "mirror_object", "extract_boundary"], "hardness_axes": [1, 3, 4, 5, 6, 7, 9], "shortcut_defeated": "Crop‑equals‑extract shortcut"},
+    {"task_id": "BH80_026", "family_id": "BH‑A", "difficulty": "adversarial", "primitive_sequence": ["extract_boundary", "crop", "mirror_object"], "hardness_axes": [1, 2, 3, 4, 5, 6, 8], "shortcut_defeated": "Boundary‑equals‑extract shortcut"},
+    {"task_id": "BH80_027", "family_id": "BH‑A", "difficulty": "hard", "primitive_sequence": ["mirror_object", "crop", "extract_boundary"], "hardness_axes": [1, 4, 5, 7, 9], "shortcut_defeated": "Mirror‑invariance shortcut"},
+    {"task_id": "BH80_028", "family_id": "BH‑A", "difficulty": "hard", "primitive_sequence": ["crop", "extract_boundary", "mirror_object"], "hardness_axes": [1, 3, 5, 7, 8], "shortcut_defeated": "First‑crop shortcut"},
+    {"task_id": "BH80_029", "family_id": "BH‑B", "difficulty": "medium", "primitive_sequence": ["isolate_largest", "rotate", "normalize_position"], "hardness_axes": [1, 5], "shortcut_defeated": "Order‑independence"},
+    {"task_id": "BH80_030", "family_id": "BH‑B", "difficulty": "medium", "primitive_sequence": ["rotate", "isolate_largest", "normalize_position"], "hardness_axes": [1, 2, 5], "shortcut_defeated": "Pre‑rotate shortcut"},
+    {"task_id": "BH80_031", "family_id": "BH‑B", "difficulty": "hard", "primitive_sequence": ["isolate_largest", "normalize_position", "rotate"], "hardness_axes": [1, 2, 4, 5], "shortcut_defeated": "First‑object shortcut"},
+    {"task_id": "BH80_032", "family_id": "BH‑B", "difficulty": "hard", "primitive_sequence": ["normalize_position", "isolate_largest", "rotate"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Position‑invariance shortcut"},
+    {"task_id": "BH80_033", "family_id": "BH‑B", "difficulty": "hard", "primitive_sequence": ["rotate", "normalize_position", "isolate_largest"], "hardness_axes": [1, 3, 4, 5, 7], "shortcut_defeated": "Rotation‑invariance shortcut"},
+    {"task_id": "BH80_034", "family_id": "BH‑B", "difficulty": "adversarial", "primitive_sequence": ["isolate_largest", "rotate", "normalize_position"], "hardness_axes": [1, 2, 3, 5, 6, 8, 9], "shortcut_defeated": "Largest‑first shortcut"},
+    {"task_id": "BH80_035", "family_id": "BH‑B", "difficulty": "adversarial", "primitive_sequence": ["normalize_position", "rotate", "isolate_largest"], "hardness_axes": [1, 2, 3, 4, 5, 6, 8], "shortcut_defeated": "Normalize‑noop shortcut"},
+    {"task_id": "BH80_036", "family_id": "BH‑B", "difficulty": "adversarial", "primitive_sequence": ["rotate", "isolate_largest", "normalize_position"], "hardness_axes": [1, 2, 3, 4, 5, 6, 9], "shortcut_defeated": "Rotate‑identity shortcut"},
+    {"task_id": "BH80_037", "family_id": "BH‑B", "difficulty": "hard", "primitive_sequence": ["isolate_largest", "normalize_position", "rotate"], "hardness_axes": [1, 2, 4, 5, 9], "shortcut_defeated": "Size‑only shortcut"},
+    {"task_id": "BH80_038", "family_id": "BH‑B", "difficulty": "hard", "primitive_sequence": ["normalize_position", "isolate_largest", "rotate"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Normalize‑then‑select shortcut"},
+    {"task_id": "BH80_039", "family_id": "BH‑C", "difficulty": "medium", "primitive_sequence": ["extract", "rotate", "recolor"], "hardness_axes": [1, 3], "shortcut_defeated": "Single‑object shortcut"},
+    {"task_id": "BH80_040", "family_id": "BH‑C", "difficulty": "medium", "primitive_sequence": ["isolate_largest", "normalize_position", "recolor"], "hardness_axes": [1, 2], "shortcut_defeated": "Largest‑first shortcut"},
+    {"task_id": "BH80_041", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["extract_boundary", "recolor_boundary", "count"], "hardness_axes": [1, 3, 4, 7], "shortcut_defeated": "Interior‑only shortcut"},
+    {"task_id": "BH80_042", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["crop_object", "transform", "place_back"], "hardness_axes": [1, 4, 5, 9], "shortcut_defeated": "Solid‑shape shortcut"},
+    {"task_id": "BH80_043", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["fill_region", "count_objects", "pattern_output"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Fixed‑canvas shortcut"},
+    {"task_id": "BH80_044", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["extract", "rotate", "recolor"], "hardness_axes": [1, 3, 5, 7, 9], "shortcut_defeated": "Colour‑map shortcut"},
+    {"task_id": "BH80_045", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["remove_noise", "extract_object", "recolor"], "hardness_axes": [1, 2, 3, 5, 8], "shortcut_defeated": "Single‑extract shortcut"},
+    {"task_id": "BH80_046", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["crop", "rotate", "count_or_pattern"], "hardness_axes": [1, 3, 4, 5, 7], "shortcut_defeated": "Count‑first shortcut"},
+    {"task_id": "BH80_047", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["isolate_largest", "normalize_position", "recolor"], "hardness_axes": [1, 2, 3, 5, 8], "shortcut_defeated": "Largest‑only shortcut"},
+    {"task_id": "BH80_048", "family_id": "BH‑C", "difficulty": "adversarial", "primitive_sequence": ["mirror_object", "extract_changed_region", "recolor"], "hardness_axes": [1, 3, 4, 5, 6, 7, 9], "shortcut_defeated": "Connected‑shape shortcut"},
+    {"task_id": "BH80_049", "family_id": "BH‑C", "difficulty": "adversarial", "primitive_sequence": ["extract_boundary", "mirror_object", "crop"], "hardness_axes": [1, 3, 4, 5, 6, 7, 9], "shortcut_defeated": "Boundary‑all shortcut"},
+    {"task_id": "BH80_050", "family_id": "BH‑C", "difficulty": "adversarial", "primitive_sequence": ["fill_region", "count_objects", "pattern_output"], "hardness_axes": [2, 3, 4, 5, 6, 8, 9], "shortcut_defeated": "Fill‑count‑all shortcut"},
+    {"task_id": "BH80_051", "family_id": "BH‑C", "difficulty": "adversarial", "primitive_sequence": ["extract", "rotate", "recolor"], "hardness_axes": [1, 2, 3, 5, 6, 7, 9], "shortcut_defeated": "First‑object shortcut"},
+    {"task_id": "BH80_052", "family_id": "BH‑C", "difficulty": "hard", "primitive_sequence": ["crop_object", "transform", "place_back"], "hardness_axes": [1, 3, 4, 5, 7], "shortcut_defeated": "Position‑invariance shortcut"},
+    {"task_id": "BH80_053", "family_id": "BH‑D", "difficulty": "hard", "primitive_sequence": ["normalize_position", "isolate_largest", "recolor"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Order‑independence shortcut"},
+    {"task_id": "BH80_054", "family_id": "BH‑D", "difficulty": "hard", "primitive_sequence": ["recolor", "extract", "rotate"], "hardness_axes": [1, 3, 5, 7, 9], "shortcut_defeated": "Order‑independence shortcut"},
+    {"task_id": "BH80_055", "family_id": "BH‑D", "difficulty": "medium", "primitive_sequence": ["recolor", "isolate_largest", "normalize_position"], "hardness_axes": [1, 5], "shortcut_defeated": "Order‑independence"},
+    {"task_id": "BH80_056", "family_id": "BH‑D", "difficulty": "medium", "primitive_sequence": ["rotate", "extract", "recolor"], "hardness_axes": [1, 5], "shortcut_defeated": "Extract‑first shortcut"},
+    {"task_id": "BH80_057", "family_id": "BH‑D", "difficulty": "hard", "primitive_sequence": ["count_objects", "pattern_output", "fill_region"], "hardness_axes": [1, 2, 4, 5, 8], "shortcut_defeated": "Fill‑first shortcut"},
+    {"task_id": "BH80_058", "family_id": "BH‑D", "difficulty": "medium", "primitive_sequence": ["place_back", "crop_object", "transform"], "hardness_axes": [1, 4, 5], "shortcut_defeated": "Crop‑first shortcut"},
+    {"task_id": "BH80_059", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["extract", "count_objects", "transform"], "hardness_axes": [1, 4, 5, 8, 10], "shortcut_defeated": "Extract‑only shortcut"},
+    {"task_id": "BH80_060", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["extract", "count_objects", "transform"], "hardness_axes": [1, 2, 3, 5, 8, 10], "shortcut_defeated": "Count‑ignore shortcut"},
+    {"task_id": "BH80_061", "family_id": "BH‑E", "difficulty": "adversarial", "primitive_sequence": ["extract", "count_objects", "transform"], "hardness_axes": [1, 2, 3, 4, 5, 6, 10], "shortcut_defeated": "Extract‑ignore shortcut"},
+    {"task_id": "BH80_062", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["count_objects", "extract", "transform"], "hardness_axes": [1, 4, 5, 8, 9, 10], "shortcut_defeated": "Count‑then‑extract shortcut"},
+    {"task_id": "BH80_063", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["extract", "count_objects", "transform"], "hardness_axes": [1, 3, 4, 5, 7, 10], "shortcut_defeated": "Edge‑free shortcut"},
+    {"task_id": "BH80_064", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["transform", "extract", "count_objects"], "hardness_axes": [1, 2, 4, 5, 8, 10], "shortcut_defeated": "Extract‑first shortcut"},
+    {"task_id": "BH80_065", "family_id": "BH‑E", "difficulty": "hard", "primitive_sequence": ["count_objects", "transform", "extract"], "hardness_axes": [1, 2, 4, 5, 8, 10], "shortcut_defeated": "Count‑final shortcut"},
+    {"task_id": "BH80_066", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["normalize_position", "mirror_object", "place_back"], "hardness_axes": [1, 4, 5, 7, 8, 10], "shortcut_defeated": "Normalize‑noop shortcut"},
+    {"task_id": "BH80_067", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["mirror_object", "normalize_position", "place_back"], "hardness_axes": [1, 2, 4, 5, 8, 10], "shortcut_defeated": "Mirror‑invariance shortcut"},
+    {"task_id": "BH80_068", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["normalize_position", "mirror_object", "place_back"], "hardness_axes": [1, 2, 3, 4, 5, 10], "shortcut_defeated": "Position‑invariance shortcut"},
+    {"task_id": "BH80_069", "family_id": "BH‑F", "difficulty": "adversarial", "primitive_sequence": ["normalize_position", "mirror_object", "place_back"], "hardness_axes": [1, 2, 3, 4, 5, 6, 10], "shortcut_defeated": "Normalize‑identity shortcut"},
+    {"task_id": "BH80_070", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["mirror_object", "place_back", "normalize_position"], "hardness_axes": [1, 4, 5, 8, 9, 10], "shortcut_defeated": "Place‑last shortcut"},
+    {"task_id": "BH80_071", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["place_back", "normalize_position", "mirror_object"], "hardness_axes": [1, 2, 4, 5, 8, 10], "shortcut_defeated": "Place‑first shortcut"},
+    {"task_id": "BH80_072", "family_id": "BH‑F", "difficulty": "hard", "primitive_sequence": ["mirror_object", "normalize_position", "place_back"], "hardness_axes": [1, 2, 4, 5, 9, 10], "shortcut_defeated": "Mirror‑flip‑only shortcut"},
+    {"task_id": "BH80_073", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["crop", "count_objects", "recolor"], "hardness_axes": [1, 4, 5, 8, 10], "shortcut_defeated": "Crop‑noop shortcut"},
+    {"task_id": "BH80_074", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["count_objects", "crop", "recolor"], "hardness_axes": [1, 3, 4, 5, 8, 10], "shortcut_defeated": "Crop‑first shortcut"},
+    {"task_id": "BH80_075", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["crop", "recolor", "count_objects"], "hardness_axes": [1, 2, 4, 5, 9, 10], "shortcut_defeated": "Count‑first shortcut"},
+    {"task_id": "BH80_076", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["recolor", "crop", "count_objects"], "hardness_axes": [1, 3, 4, 5, 7, 10], "shortcut_defeated": "Recolor‑last shortcut"},
+    {"task_id": "BH80_077", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["crop", "count_objects", "recolor"], "hardness_axes": [1, 2, 3, 4, 5, 10], "shortcut_defeated": "Crop‑noop shortcut"},
+    {"task_id": "BH80_078", "family_id": "BH‑G", "difficulty": "adversarial", "primitive_sequence": ["crop", "count_objects", "recolor"], "hardness_axes": [1, 2, 3, 4, 5, 6, 10], "shortcut_defeated": "Crop‑all shortcut"},
+    {"task_id": "BH80_079", "family_id": "BH‑G", "difficulty": "hard", "primitive_sequence": ["count_objects", "recolor", "crop"], "hardness_axes": [1, 2, 4, 5, 8, 10], "shortcut_defeated": "Count‑last shortcut"},
+    {"task_id": "BH80_080", "family_id": "BH‑G", "difficulty": "adversarial", "primitive_sequence": ["crop", "count_objects", "recolor"], "hardness_axes": [1, 2, 3, 4, 5, 6, 9], "shortcut_defeated": "Crop‑extract‑all shortcut"},
+]
+
+
+def generate_broad_hard_80_tasks() -> List[Dict[str, Any]]:
+    """Generate the deterministic 80‑task Broad‑Hard‑80 packet.
+
+    Returns a list of 80 task dictionaries with IDs ``BH80_001`` through
+    ``BH80_080``. No randomness is used. All primitives are from the
+    allowed boundary or approved aliases. All leakage flags are false.
+    """
+    tasks: List[Dict[str, Any]] = []
+    for spec in _BROAD_HARD_80_SPECS:
+        # Validate primitives at construction time
+        for p in spec["primitive_sequence"]:
+            if p not in _BH80_ALL_ALLOWED:
+                raise ValueError(f"{spec['task_id']}: disallowed primitive '{p}'")
+        task = {
+            "task_id": spec["task_id"],
+            "family_id": spec["family_id"],
+            "difficulty": spec["difficulty"],
+            "primitive_sequence": spec["primitive_sequence"].copy(),
+            "scene_spec": _make_scene_spec(spec["task_id"], 1),
+            "train_pair_count": 1,
+            "test_input_count": 1,
+            "hardness_axes": spec["hardness_axes"].copy(),
+            "shortcut_defeated": spec["shortcut_defeated"],
+            "expected_trace_requirements": TRACE_REQUIREMENTS_TEMPLATE.copy(),
+            "allowed_dynamic_parameters": [],
+            "forbidden_shortcuts": FORBIDDEN_SHORTCUTS.copy(),
+            "leakage_flags": LEAKAGE_FLAGS_TEMPLATE.copy(),
+            "expected_failure_categories": EXPECTED_FAILURE_CATEGORIES.copy(),
+        }
+        tasks.append(task)
+    return tasks
+
+
 # End of module
