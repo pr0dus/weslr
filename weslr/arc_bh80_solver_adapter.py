@@ -14,11 +14,15 @@ def solver_run_with_input(input_grid: List[List[int]], primitive_sequence: List[
     """Run the solver dispatch on a materialized input grid.
 
     Returns (supported, output_grid).
+
+    Passes original canvas size through params for place_back context.
     """
     grid = [row[:] for row in input_grid]
-    params = {}
+    orig_h = len(input_grid)
+    orig_w = len(input_grid[0]) if input_grid else 0
 
     for prim_name in primitive_sequence:
+        params = {"original_h": orig_h, "original_w": orig_w}
         supported, grid, _ = run_primitive(prim_name, grid, params)
         if not supported:
             return False, grid

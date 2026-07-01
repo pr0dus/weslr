@@ -257,11 +257,17 @@ def reference_primitive(name: str, grid: List[List[int]], params: dict | None = 
 
 
 def run_oracle_pipeline(primitive_sequence: List[str], input_grid: List[List[int]]) -> Tuple[bool, List[List[int]], List[dict]]:
-    """Run the full 3-step oracle pipeline. Returns (all_supported, final_grid, traces)."""
+    """Run the full 3-step oracle pipeline. Returns (all_supported, final_grid, traces).
+
+    Passes original canvas size through params for place_back context.
+    """
     grid = [row[:] for row in input_grid]
+    orig_h = len(input_grid)
+    orig_w = len(input_grid[0]) if input_grid else 0
     traces = []
     for name in primitive_sequence:
-        supported, grid, trace = reference_primitive(name, grid)
+        params = {"original_h": orig_h, "original_w": orig_w}
+        supported, grid, trace = reference_primitive(name, grid, params)
         traces.append(trace)
         if not supported:
             return False, grid, traces

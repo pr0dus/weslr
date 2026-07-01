@@ -80,14 +80,24 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         components = _connected_components(grid, _background_value_from_grid(grid))
         count = len(components)
         return True, grid, {"primitive_id": "count_objects", "count": count}
-    # Wrapper for place_back – invoke underlying primitive for trace consistency.
+    # Wrapper for place_back – place current grid centered on original canvas.
+    # Aligned to oracle semantics: uses original_h/original_w from params.
     if name == "place_back":
-        adapter_id = NAME_TO_ADAPTER_ID.get(name)
-        if not adapter_id:
-            return False, grid, {"unsupported_reason": f"primitive {name} not mapped"}
-        step = {"primitive_id": adapter_id, "parameters": params}
-        new_grid, trace = _apply_primitive_step(grid, step, background_value=_background_value_from_grid(grid))
-        return True, new_grid, trace
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        orig_h = params.get("original_h", len(grid))
+        orig_w = params.get("original_w", len(grid[0]) if grid else 0)
+        cur_h, cur_w = len(grid), len(grid[0]) if grid else 0
+        out = [[bg for _ in range(orig_w)] for _ in range(orig_h)]
+        offset_r = max(0, (orig_h - cur_h) // 2)
+        offset_c = max(0, (orig_w - cur_w) // 2)
+        for r in range(cur_h):
+            for c in range(cur_w):
+                nr, nc = r + offset_r, c + offset_c
+                if 0 <= nr < orig_h and 0 <= nc < orig_w:
+                    out[nr][nc] = grid[r][c]
+        return True, out, {"primitive_id": "place_back", "canvas": [orig_h, orig_w], "offset": [offset_r, offset_c]}
     # Wrapper for extract_boundary – highlight boundary cells on grid.
     # Aligned to oracle semantics: real boundary highlighting.
     if name == "extract_boundary":
@@ -123,14 +133,24 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
         cropped = [row[min_c:max_c+1] for row in grid[min_r:max_r+1]]
         return True, cropped, {"primitive_id": "crop", "cropped": True, "bounding_box": [min_r, min_c, max_r, max_c]}
-    # Wrapper for recolor_boundary – reuse recolor primitive.
+    # Wrapper for recolor_boundary – recolor boundary cells of largest component bbox to 2.
+    # Aligned to oracle semantics: real boundary recolor, not adapter-dependent.
     if name == "recolor_boundary":
-        adapter_id = NAME_TO_ADAPTER_ID.get("recolor")
-        if not adapter_id:
-            return False, grid, {"unsupported_reason": f"primitive {name} not mapped"}
-        step = {"primitive_id": adapter_id, "parameters": params}
-        new_grid, trace = _apply_primitive_step(grid, step, background_value=_background_value_from_grid(grid))
-        return True, new_grid, {"primitive_id": "recolor_boundary", **trace}
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
+        if not components:
+            return True, [row[:] for row in grid], {"primitive_id": "recolor_boundary", "empty": True}
+        largest = max(components, key=len)
+        min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
+        out = [row[:] for row in grid]
+        for r in range(min_r, max_r + 1):
+            for c in range(min_c, max_c + 1):
+                if r == min_r or r == max_r or c == min_c or c == max_c:
+                    if out[r][c] != bg:
+                        out[r][c] = 2
+        return True, out, {"primitive_id": "recolor_boundary", "bbox": [min_r, min_c, max_r, max_c]}
     # Wrapper for count – alias to count_objects.
     if name == "count":
         return run_primitive("count_objects", grid, params)
@@ -147,9 +167,21 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
         out = [row[min_c:max_c + 1] for row in grid[min_r:max_r + 1]]
         return True, out, {"primitive_id": "extract_changed_region", "bounding_box": [min_r, min_c, max_r, max_c]}
-    # Wrapper for count_or_pattern – alias to count_objects.
+    # Wrapper for count_or_pattern – count mode if 1 component, pattern mode otherwise.
+    # Aligned to oracle semantics.
     if name == "count_or_pattern":
-        return run_primitive("count_objects", grid, params)
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
+        if len(components) == 1:
+            return True, [row[:] for row in grid], {"primitive_id": "count_or_pattern", "mode": "count", "count": 1}
+        out = [row[:] for row in grid]
+        for r in range(len(out)):
+            for c in range(len(out[0]) if out else 0):
+                if out[r][c] != bg:
+                    out[r][c] = 1 if r % 2 == 0 else 2
+        return True, out, {"primitive_id": "count_or_pattern", "mode": "pattern", "count": len(components)}
     # Wrapper for fill_region – fill entire grid with constant value 1.
     if name == "fill_region":
         if not grid:
@@ -190,6 +222,24 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
         for r, c in largest:
             out[r][c] = grid[r][c]
         return True, out, {"primitive_id": "isolate_largest"}
+    # Wrapper for rotate – 90° clockwise rotation.
+    # Aligned to oracle semantics: real rotation, not adapter-dependent.
+    if name == "rotate":
+        if not grid:
+            grid = [[1]]
+        h, w = len(grid), len(grid[0]) if grid else 0
+        out = [[grid[h - 1 - r][c] for r in range(h)] for c in range(w)]
+        return True, out, {"primitive_id": "rotate"}
+
+    # Wrapper for recolor – replace all non-background values with 2.
+    # Aligned to oracle semantics: deterministic recolor, not adapter-dependent.
+    if name == "recolor":
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        out = [[2 if v != bg else bg for v in row] for row in grid]
+        return True, out, {"primitive_id": "recolor"}
+
     # Wrapper for extract – crop to bounding box of largest component.
     # Aligned to oracle semantics: real grid crop, not full-grid return.
     if name in ("extract", "extract_largest_object", "extract_object"):
