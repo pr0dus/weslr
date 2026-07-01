@@ -150,6 +150,104 @@ def generate_3_step_pilot_tasks() -> List[Dict[str, Any]]:
     return tasks
 
 # ---------------------------------------------------------------------------
+# 40‑task Batch‑5 primitive stress expansion generator
+# ---------------------------------------------------------------------------
+
+def generate_40_task_expansion() -> List[Dict[str, Any]]:
+    """Generate the full 40‑task set for the Batch‑5 stress expansion.
+
+    Returns a list containing the 20 baseline tasks (as produced by
+    ``generate_3_step_pilot_tasks``) followed by 20 newly designed tasks (T21‑T40).
+    Each new task stresses the three primitives ``extract_boundary``, ``mirror_object``
+    and ``crop`` in various orders and edge‑case configurations.
+    """
+    # Preserve the baseline tasks
+    tasks: List[Dict[str, Any]] = generate_3_step_pilot_tasks()
+
+    # Specification of the 20 new tasks (mirroring the design report)
+    new_tasks_spec = [
+        {"task_id": "T21", "family_id": "A", "difficulty": "easy",
+         "primitive_sequence": ["extract_boundary", "mirror_object", "crop"],
+         "edge_case": "centered single object, simple shape"},
+        {"task_id": "T22", "family_id": "A", "difficulty": "easy",
+         "primitive_sequence": ["extract_boundary", "crop", "mirror_object"],
+         "edge_case": "centered object, square bbox"},
+        {"task_id": "T23", "family_id": "B", "difficulty": "medium",
+         "primitive_sequence": ["mirror_object", "extract_boundary", "crop"],
+         "edge_case": "asymmetric shape requiring correct mirroring"},
+        {"task_id": "T24", "family_id": "B", "difficulty": "medium",
+         "primitive_sequence": ["mirror_object", "crop", "extract_boundary"],
+         "edge_case": "multi‑object scene, mirror creates overlap"},
+        {"task_id": "T25", "family_id": "A", "difficulty": "medium",
+         "primitive_sequence": ["crop", "extract_boundary", "mirror_object"],
+         "edge_case": "object near image edge, bbox clipping"},
+        {"task_id": "T26", "family_id": "A", "difficulty": "medium",
+         "primitive_sequence": ["crop", "mirror_object", "extract_boundary"],
+         "edge_case": "object touches multiple edges"},
+        {"task_id": "T27", "family_id": "B", "difficulty": "hard",
+         "primitive_sequence": ["extract_boundary", "mirror_object", "crop"],
+         "edge_case": "non‑centered object, off‑center bbox"},
+        {"task_id": "T28", "family_id": "B", "difficulty": "hard",
+         "primitive_sequence": ["extract_boundary", "crop", "mirror_object"],
+         "edge_case": "multi‑object with overlapping bboxes"},
+        {"task_id": "T29", "family_id": "A", "difficulty": "hard",
+         "primitive_sequence": ["mirror_object", "extract_boundary", "crop"],
+         "edge_case": "asymmetric shape with distractor colors"},
+        {"task_id": "T30", "family_id": "A", "difficulty": "hard",
+         "primitive_sequence": ["mirror_object", "crop", "extract_boundary"],
+         "edge_case": "scene with distractor colors and background noise"},
+        {"task_id": "T31", "family_id": "B", "difficulty": "easy",
+         "primitive_sequence": ["crop", "extract_boundary", "mirror_object"],
+         "edge_case": "simple L‑shaped object, clear bbox"},
+        {"task_id": "T32", "family_id": "B", "difficulty": "easy",
+         "primitive_sequence": ["crop", "mirror_object", "extract_boundary"],
+         "edge_case": "single vertical rectangle, mirror test"},
+        {"task_id": "T33", "family_id": "A", "difficulty": "medium",
+         "primitive_sequence": ["extract_boundary", "mirror_object", "crop"],
+         "edge_case": "object with hole (donut) – bbox must ignore hole"},
+        {"task_id": "T34", "family_id": "A", "difficulty": "medium",
+         "primitive_sequence": ["extract_boundary", "crop", "mirror_object"],
+         "edge_case": "object rotated 45°, bbox must be tight"},
+        {"task_id": "T35", "family_id": "B", "difficulty": "medium",
+         "primitive_sequence": ["mirror_object", "extract_boundary", "crop"],
+         "edge_case": "two objects, one mirrored, one not"},
+        {"task_id": "T36", "family_id": "B", "difficulty": "medium",
+         "primitive_sequence": ["mirror_object", "crop", "extract_boundary"],
+         "edge_case": "overlapping objects, mirror changes ordering"},
+        {"task_id": "T37", "family_id": "A", "difficulty": "hard",
+         "primitive_sequence": ["crop", "extract_boundary", "mirror_object"],
+         "edge_case": "object spanning whole canvas, crop must keep size"},
+        {"task_id": "T38", "family_id": "A", "difficulty": "hard",
+         "primitive_sequence": ["crop", "mirror_object", "extract_boundary"],
+         "edge_case": "very small object, precision of bbox critical"},
+        {"task_id": "T39", "family_id": "B", "difficulty": "hard",
+         "primitive_sequence": ["extract_boundary", "mirror_object", "crop"],
+         "edge_case": "asymmetric multi‑color object, mirror must preserve colors"},
+        {"task_id": "T40", "family_id": "B", "difficulty": "hard",
+         "primitive_sequence": ["extract_boundary", "crop", "mirror_object"],
+         "edge_case": "object clipped at canvas boundary, bbox must be clipped correctly"},
+    ]
+
+    for spec in new_tasks_spec:
+        task = {
+            "task_id": spec["task_id"],
+            "family_id": spec["family_id"],
+            "difficulty": spec["difficulty"],
+            "primitive_sequence": spec["primitive_sequence"].copy(),
+            "scene_spec": _make_scene_spec(spec["task_id"], 1),
+            "train_pair_count": 1,
+            "test_input_count": 1,
+            "expected_trace_requirements": TRACE_REQUIREMENTS_TEMPLATE.copy(),
+            "allowed_dynamic_parameters": [],
+            "forbidden_shortcuts": FORBIDDEN_SHORTCUTS.copy(),
+            "leakage_flags": LEAKAGE_FLAGS_TEMPLATE.copy(),
+            "expected_failure_categories": [],
+            "edge_case_flags": {"description": spec["edge_case"]},
+        }
+        tasks.append(task)
+    return tasks
+
+# ---------------------------------------------------------------------------
 # Shallow validator used by the unit test suite
 # ---------------------------------------------------------------------------
 def validate_task_schema(task: Dict[str, Any]) -> None:
