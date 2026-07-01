@@ -46,6 +46,7 @@ class EvidenceItem:
 
 @dataclass(frozen=True)
 class RealEvidencePacket:
+    # Required fields (no defaults)
     packet_id: str
     packet_version: str  # e.g. "v1.0"
     direction_id: str
@@ -54,11 +55,6 @@ class RealEvidencePacket:
     evidence_source_type: Literal["known_science_replay", "owner_provided", "public_safe_copy"]
     source_provenance: str
     authorization_status: Literal["manual", "automated"]
-    static_local_only: bool = field(default=True)
-    external_calls_allowed: bool = field(default=False)
-    persistence_allowed: bool = field(default=False)
-    public_claim_allowed: bool = field(default=False)
-    evidence_items: List[EvidenceItem] = field(default_factory=list)
     known_science_anchor: str
     hypothesis_or_direction_statement: str
     expected_replay_pattern: str
@@ -70,6 +66,12 @@ class RealEvidencePacket:
     expected_output_type: Literal["internal_report", "metadata_summary"]
     no_public_claim_warning: str
     review_status: Literal["pending", "approved", "rejected"]
+    # Optional fields with defaults (static‑local configuration)
+    static_local_only: bool = field(default=True)
+    external_calls_allowed: bool = field(default=False)
+    persistence_allowed: bool = field(default=False)
+    public_claim_allowed: bool = field(default=False)
+    evidence_items: List[EvidenceItem] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         # Boundary enforcement – must be static‑local only
@@ -78,7 +80,7 @@ class RealEvidencePacket:
         _ensure(not self.persistence_allowed, "persistence_allowed must be False")
         _ensure(not self.public_claim_allowed, "public_claim_allowed must be False")
         # Additional sanity checks on provenance strings
-        _ensure("web" not in self.source_provenance.lower(), "source_provenance must not reference live web")
+        _ensure(not (self.source_provenance.lower().startswith("http://") or self.source_provenance.lower().startswith("https://") or "web" in self.source_provenance.lower()), "source_provenance must not reference live web")
         _ensure("github" not in self.source_provenance.lower(), "source_provenance must not reference GitHub")
         _ensure("rss" not in self.source_provenance.lower(), "source_provenance must not reference RSS")
         _ensure("lab" not in self.source_provenance.lower(), "source_provenance must not reference lab notebook")
