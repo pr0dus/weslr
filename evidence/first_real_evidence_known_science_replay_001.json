@@ -1,0 +1,39 @@
+{
+  "packet_id": "first_real_evidence_known_science_replay_001",
+  "packet_version": "v1.0",
+  "direction_id": "direction_known_science_replay_001",
+  "direction_type": "known_science_replay",
+  "domain": "knowledge_replay",
+  "evidence_source_type": "known_science_replay",
+  "source_provenance": "local_static_arc_2step_80_synthetic",
+  "authorization_status": "manual",
+  "static_local_only": true,
+  "external_calls_allowed": false,
+  "persistence_allowed": false,
+  "public_claim_allowed": false,
+  "evidence_items": [
+    {
+      "item_id": "arc_2step_80_report_001",
+      "item_type": "text",
+      "content_summary": "Summary of ARC synthetic 2‑step 80 results (77 exact, 3 partial, 0 unsupported, shuffle audit invariant).",
+      "source_reference": "weslr/arc_synthetic_2step_80_report.txt",
+      "provenance_status": "synthetic_replay",
+      "allowed_use": "internal",
+      "forbidden_use": "public_claim",
+      "injection_risk_notes": "Static owner‑controlled packet; no executable instructions.",
+      "sensitive_data_status": "none",
+      "uncertainty_notes": "No uncertainty beyond synthetic reproducibility."
+    }
+  ],
+  "known_science_anchor": "arc_2step_80_anchor",
+  "hypothesis_or_direction_statement": "Replay the ARC synthetic 2‑step 80 packet to verify static reasoning without external calls.",
+  "expected_replay_pattern": "exact_match",
+  "allowed_reasoning_actions": ["match", "compare", "audit"],
+  "forbidden_reasoning_actions": ["model_call", "web_fetch", "external_tool"],
+  "uncertainty_notes": "Minimal uncertainty; static data.",
+  "failure_modes": ["packet_missing", "schema_mismatch", "unexpected_mutation"],
+  "stop_conditions": ["external_call_requested", "live_source_detected", "public_claim_needed"],
+  "expected_output_type": "internal_report",
+  "no_public_claim_warning": "Do not publish this packet as evidence; internal only.",
+  "review_status": "pending"
+}
