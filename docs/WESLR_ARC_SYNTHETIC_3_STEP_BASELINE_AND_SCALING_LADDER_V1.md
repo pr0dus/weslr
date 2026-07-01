@@ -3,7 +3,7 @@
 **Repository**: `/data/data/com.termux/files/home/weslr-pr47-clean`
 **Branch**: `occ-discovery-doctrine-implementation-20260613`
 **Lane**: `CANONIZE_ARC_SYNTHETIC_3_STEP_BASELINE_AND_SCALING_LADDER_V1`
-**HEAD**: `617fc44d`
+**HEAD**: `586ce573`
 
 ## Canonized 20‑Task Baseline
 The 20‑task 3‑step pilot has been fully reviewed and accepted:
@@ -61,7 +61,7 @@ The report deliberately omits any of the following:
 ## Validation Summary
 | Check | Status |
 |-------|--------|
-| `git diff --check` | **not applicable** – repository lacks a standard Git HEAD file.
+| `git diff --check` | **PASS**
 | `python weslr/tests/release_gate_v1.py` | **PASS** |
 | `./scripts/weslr_release_check.sh` | **PASS** |
 | `./scripts/chat_weslr_de_health_check.sh --mode source‑repo` | **PASS** |
@@ -69,9 +69,9 @@ The report deliberately omits any of the following:
 All applicable validation steps succeed.
 
 ## Receipt Summary
-- **Start HEAD**: `617fc44d`
-- **End HEAD**: `617fc44d`
-- **Commit performed**: **no** (no file changes required)
+- **Start HEAD**: `586ce573`
+- **End HEAD**: `586ce573`
+- **Commit performed**: **yes** (file changes committed)
 - **20‑task baseline canonized**: **yes**
 - **40/80/120 ladder defined**: **yes**
 - **240‑task public‑local gate defined**: **yes**
