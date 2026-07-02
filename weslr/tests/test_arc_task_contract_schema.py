@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from weslr.arc_discovery_140_generator import generate_discovery_140_tasks, get_scoring_summary
@@ -150,46 +152,126 @@ class TestTaskContractSchema:
         assert task_contract_can_be_scored(sentinel) is False
 
     def test_solver_visible_export_strips_internal_fields(self, contracts):
-        visible = export_solver_visible_task(contracts["T3"])
-        for field in [
+        contract = dict(contracts["T3"])
+        contract["solver_visible_view"] = {
+            "task_id": "ARC_T3_diagnostic",
+            "task_family": "family_T3",
+            "scoring_layer": "diagnostic",
+            "visible_examples": [{"input": [1], "output": [2]}],
+            "required_abstraction": "rule matching",
+            "hardness_dimensions": ["shape", "count"],
+            "difficulty_level": "T3",
+            "primitive_name": "select",
+            "primitive_names": ["select", "recolor"],
+            "primitive_chain": ["select", "recolor"],
+            "operation_sequence": ["select", "recolor"],
+            "latent_rule": "hidden latent rule",
+            "rival_grammars": ["grammar_a"],
+            "confidence_policy": "resolve_or_flag",
+            "abstain_policy": "abstain_when_insufficient",
+            "oracle_metadata": {
+                "internal_task_language": {
+                    "latent_rule": "hidden latent rule",
+                    "rival_grammars": ["grammar_a"],
+                    "separating_examples": [{"input": [5], "output": [6]}],
+                    "composition_graph": {"nodes": 3},
+                    "novelty_marker": "novel_scene_form",
+                    "nearest_existing_primitive_set": ["primitive_a"],
+                    "insufficiency_reason": "needs a new primitive",
+                    "transfer_family_anchor": "anchor_a",
+                    "surface_variant_axes": ["color", "size", "shape"],
+                    "confidence_state": "unresolved",
+                    "unresolved_abstain_policy": "abstain_when_insufficient",
+                }
+            },
+            "expected_output": [4],
+            "held_out_test_case": {"input": [3]},
+            "confidence_state": "unresolved",
+            "insufficiency_reason": "needs a new primitive",
+            "nearest_primitive_set": ["primitive_a"],
+            "transfer_anchor": "anchor_a",
+            "separating_examples": [{"input": [5], "output": [6]}],
+            "composition_graph": {"nodes": 3},
+            "novelty_marker": "novel_scene_form",
+            "internal_task_language": {
+                "latent_rule": "hidden latent rule",
+            },
+        }
+        visible = export_solver_visible_task(contract)
+        assert set(visible) == {
+            "task_id",
+            "task_family",
+            "scoring_layer",
+            "visible_examples",
+            "required_abstraction",
+            "hardness_dimensions",
+        }
+        exported = json.dumps(visible, sort_keys=True)
+        for forbidden in [
             "difficulty_level",
-            "latent_rule",
-            "required_primitives",
+            "primitive_name",
+            "primitive_names",
             "primitive_chain",
+            "operation_sequence",
+            "latent_rule",
             "rival_grammars",
-            "separating_examples",
             "confidence_policy",
+            "abstain_policy",
             "oracle_metadata",
             "expected_output",
+            "internal_task_language",
+            "insufficiency_reason",
+            "nearest_primitive_set",
+            "transfer_anchor",
+            "separating_examples",
+            "composition_graph",
+            "novelty_marker",
+            "hidden latent rule",
+            "grammar_a",
+            "needs a new primitive",
+            "anchor_a",
         ]:
-            assert field not in visible
+            assert forbidden not in exported
 
     def test_leakage_detector_catches_internal_leaks(self):
         leaked = {
             "solver_visible_view": {
                 "difficulty_level": "T3",
+                "level_id": "T3",
                 "primitive_name": "select",
+                "primitive_names": ["select", "recolor"],
                 "primitive_chain": ["select", "recolor"],
                 "operation_sequence": ["select", "recolor"],
                 "latent_rule": "hidden",
+                "rival_grammars": ["grammar_a"],
+                "confidence_policy": "resolve_or_flag",
+                "insufficiency_reason": "needs a new primitive",
                 "expected_output": [1, 2, 3],
                 "oracle_metadata": {"secret": True},
             }
         }
         issues = detect_task_contract_leakage(leaked)
-        assert "leakage:difficulty_level" in issues
+        assert "leakage:task_level" in issues
         assert "leakage:primitive_name" in issues
-        assert "leakage:primitive_chain" in issues
         assert "leakage:operation_sequence" in issues
         assert "leakage:latent_rule" in issues
+        assert "leakage:rival_grammars" in issues
+        assert "leakage:confidence_policy" in issues
+        assert "leakage:insufficiency_reason" in issues
         assert "leakage:expected_output" in issues
         assert "leakage:oracle_metadata" in issues
 
-    def test_coverage_summary_reports_counts(self, contracts):
+    def test_coverage_summary_reports_counts_and_enumerations(self, contracts):
         summary = summarize_task_contract_coverage(list(contracts.values()))
         assert summary["schema_version"] == SCHEMA_VERSION_V1
         assert summary["counts_by_level"] == {"T1": 1, "T2": 1, "T3": 1, "T4": 1, "T5": 1, "T6": 1, "T7": 1}
         assert summary["counts_by_scoring_layer"] == {"base": 1, "hard_mode": 2, "probe": 1, "sentinel": 1, "diagnostic": 2}
+        assert summary["can_be_counted_as_solved_false_total"] == 4
+        assert summary["non_counting_task_ids"] == ["ARC_T3_diagnostic", "ARC_T5_probe", "ARC_T6_sentinel", "ARC_T7_diagnostic"]
+        assert summary["probe_task_ids"] == ["ARC_T5_probe"]
+        assert summary["sentinel_task_ids"] == ["ARC_T6_sentinel"]
+        assert summary["t5_primitive_insufficiency_task_ids"] == ["ARC_T5_probe"]
+        assert summary["t7_unresolved_task_ids"] == ["ARC_T7_diagnostic"]
 
     def test_existing_140_base_untouched(self):
         summary = get_scoring_summary(generate_discovery_140_tasks())

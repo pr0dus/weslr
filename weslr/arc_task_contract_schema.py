@@ -24,10 +24,22 @@ SCHEMA_VERSION_V1 = "arc_synthetic_task_contract_schema_v1"
 SCORING_LAYERS_V1 = ("base", "hard_mode", "probe", "sentinel", "diagnostic")
 PROBE_LAYERS_V1 = {"probe", "sentinel", "diagnostic"}
 
+_SOLVER_VISIBLE_ALLOWED_FIELDS_V1 = (
+    "task_id",
+    "task_family",
+    "scoring_layer",
+    "visible_examples",
+    "required_abstraction",
+    "hardness_dimensions",
+)
+
 _INTERNAL_FIELDS_TO_STRIP_V1 = {
     "difficulty_level",
+    "level_id",
     "latent_rule",
     "required_primitives",
+    "primitive_name",
+    "primitive_names",
     "primitive_chain",
     "operation_sequence",
     "confidence_policy",
@@ -42,6 +54,7 @@ _INTERNAL_FIELDS_TO_STRIP_V1 = {
     "abstain_policy",
     "confidence_state",
     "held_out_test_case",
+    "task_level",
 }
 
 _REQUIRED_CORE_FIELDS_V1 = (
@@ -140,6 +153,22 @@ def _compact(values: Iterable[Any]) -> list[Any]:
     return [item for item in values if item is not None]
 
 
+def _strip_for_solver_visible(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _strip_for_solver_visible(val)
+            for key, val in value.items()
+            if key in _SOLVER_VISIBLE_ALLOWED_FIELDS_V1 or key not in _INTERNAL_FIELDS_TO_STRIP_V1
+        }
+    if isinstance(value, list):
+        return [_strip_for_solver_visible(item) for item in value]
+    if isinstance(value, tuple):
+        return [_strip_for_solver_visible(item) for item in value]
+    if isinstance(value, set):
+        return [_strip_for_solver_visible(item) for item in sorted(value, key=repr)]
+    return deepcopy(value)
+
+
 def _task_language_view(contract: Mapping[str, Any]) -> Mapping[str, Any]:
     direct_keys = (
         "latent_rule",
@@ -199,17 +228,38 @@ def task_contract_leakage_issues_v1(task_contract: Any) -> list[str]:
     visible_source = contract.get("solver_visible_view") if isinstance(contract.get("solver_visible_view"), Mapping) else contract
     visible = _as_mapping(visible_source)
 
-    if _nonempty(visible.get("difficulty_level")):
-        issues.append("leakage:difficulty_level")
-    for field in ("primitive_name", "primitive_names", "primitive_chain", "operation_sequence", "latent_rule", "rival_grammars", "confidence_policy", "oracle_metadata", "expected_output", "internal_task_language"):
-        if field in visible and visible.get(field) not in (None, [], {}, ""):
-            issues.append(f"leakage:{field}")
-    for field in ("difficulty_level", "latent_rule", "rival_grammars", "confidence_policy", "oracle_metadata", "expected_output", "required_primitives", "primitive_chain", "operation_sequence", "internal_task_language"):
-        if field in contract and field not in ("solver_visible_view",):
-            if field == "difficulty_level" and _text(contract.get(field)) in LEVEL_IDS_V1:
-                issues.append("leakage:difficulty_level")
-            elif field in {"latent_rule", "confidence_policy", "oracle_metadata", "expected_output", "required_primitives", "primitive_chain", "operation_sequence", "internal_task_language", "rival_grammars"} and contract.get(field) not in (None, [], {}, ()):
-                issues.append(f"leakage:{field}")
+    leakage_fields = {
+        "difficulty_level": "task_level",
+        "level_id": "task_level",
+        "primitive_name": "primitive_name",
+        "primitive_names": "primitive_name",
+        "primitive_chain": "operation_sequence",
+        "operation_sequence": "operation_sequence",
+        "latent_rule": "latent_rule",
+        "rival_grammars": "rival_grammars",
+        "confidence_policy": "confidence_policy",
+        "oracle_metadata": "oracle_metadata",
+        "expected_output": "expected_output",
+        "internal_task_language": "oracle_metadata",
+        "insufficiency_reason": "insufficiency_reason",
+    }
+
+    def _scan(value: Any) -> None:
+        if isinstance(value, Mapping):
+            for key, nested in value.items():
+                issue = leakage_fields.get(key)
+                if issue is not None:
+                    if issue == "task_level" and _text(nested) not in LEVEL_IDS_V1:
+                        pass
+                    elif nested not in (None, [], {}, ()):
+                        issues.append(f"leakage:{issue}")
+                _scan(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                _scan(nested)
+
+    _scan(visible)
+    _scan(contract)
     return issues
 
 
@@ -219,22 +269,11 @@ def detect_task_contract_leakage(task_contract: Any) -> list[str]:
 
 def export_solver_visible_task(task_contract: Any) -> dict[str, Any]:
     contract = _as_mapping(task_contract)
-    visible = deepcopy(contract.get("solver_visible_view") if isinstance(contract.get("solver_visible_view"), Mapping) else contract)
-    for field in _INTERNAL_FIELDS_TO_STRIP_V1:
-        visible.pop(field, None)
-    visible.pop("oracle_metadata", None)
-    visible.pop("expected_output", None)
-    visible.pop("difficulty_level", None)
-    visible.pop("confidence_policy", None)
-    visible.pop("latent_rule", None)
-    visible.pop("rival_grammars", None)
-    visible.pop("separating_examples", None)
-    visible.pop("ambiguity_axes", None)
-    visible.pop("transfer_variants", None)
-    visible.pop("insufficiency_reason", None)
-    visible.pop("abstain_policy", None)
-    visible.pop("confidence_state", None)
-    return visible
+    visible_source = contract.get("solver_visible_view") if isinstance(contract.get("solver_visible_view"), Mapping) else contract
+    visible = _strip_for_solver_visible(visible_source)
+    if not isinstance(visible, dict):
+        return {}
+    return {key: visible[key] for key in _SOLVER_VISIBLE_ALLOWED_FIELDS_V1 if key in visible}
 
 
 def validate_task_contract(task_contract: Any) -> dict[str, Any]:
@@ -322,21 +361,56 @@ def summarize_task_contract_coverage(task_contracts: Any) -> dict[str, Any]:
     level_counts = {level: 0 for level in LEVEL_IDS_V1}
     scoring_counts = {layer: 0 for layer in SCORING_LAYERS_V1}
     scored_total = 0
+    non_counting_false_total = 0
+    non_counting_task_ids: list[str] = []
+    probe_task_ids: list[str] = []
+    sentinel_task_ids: list[str] = []
+    t5_primitive_insufficiency_task_ids: list[str] = []
+    t7_unresolved_task_ids: list[str] = []
+
+    def _append_unique(target: list[str], task_id: str) -> None:
+        if task_id and task_id not in target:
+            target.append(task_id)
+
     for contract in items:
-        level = classify_task_contract_level(contract)
+        mapping = _as_mapping(contract)
+        level = classify_task_contract_level(mapping)
         if level in level_counts:
             level_counts[level] += 1
-        layer = _text(_as_mapping(contract).get("scoring_layer"))
+        layer = _text(mapping.get("scoring_layer"))
         if layer in scoring_counts:
             scoring_counts[layer] += 1
-        if task_contract_can_be_scored(contract):
+        task_id = _text(mapping.get("task_id"))
+        if mapping.get("can_be_counted_as_solved") is False:
+            non_counting_false_total += 1
+        if not task_contract_can_be_scored(mapping):
+            _append_unique(non_counting_task_ids, task_id)
+        if level == "T5":
+            _append_unique(t5_primitive_insufficiency_task_ids, task_id)
+        if layer == "probe":
+            _append_unique(probe_task_ids, task_id)
+        if layer == "sentinel":
+            _append_unique(sentinel_task_ids, task_id)
+        language = _task_language_view(mapping)
+        confidence_state = _text(language.get("confidence_state"))
+        abstain_policy = _text(language.get("abstain_policy")) or _text(language.get("unresolved_abstain_policy"))
+        if level == "T7" and (confidence_state in {"unresolved", "low_confidence", "insufficient_evidence"} or abstain_policy):
+            _append_unique(t7_unresolved_task_ids, task_id)
+        if task_contract_can_be_scored(mapping):
             scored_total += 1
+
     return {
         "schema_version": SCHEMA_VERSION_V1,
         "total_contracts": len(items),
         "counts_by_level": level_counts,
         "counts_by_scoring_layer": scoring_counts,
         "scored_total": scored_total,
+        "can_be_counted_as_solved_false_total": non_counting_false_total,
+        "non_counting_task_ids": non_counting_task_ids,
+        "probe_task_ids": probe_task_ids,
+        "sentinel_task_ids": sentinel_task_ids,
+        "t5_primitive_insufficiency_task_ids": t5_primitive_insufficiency_task_ids,
+        "t7_unresolved_task_ids": t7_unresolved_task_ids,
         "probe_or_sentinel_total": scoring_counts["probe"] + scoring_counts["sentinel"] + scoring_counts["diagnostic"],
     }
 
