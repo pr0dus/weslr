@@ -248,26 +248,81 @@ _LEVEL_SPECIFIC_CONTRACT_RULES_V1 = {
         "forbidden_any": ("rival_grammars", "surface_variants", "candidate_primitive_hint", "resolution_status"),
     },
     "T3": {
-        "required_any": ("rival_grammars",),
-        "required_all": ("separating_examples",),
+        "required_any": ("internal_task_language",),
     },
     "T4": {
-        "required_any": ("known_primitives",),
-        "required_all": ("composition_graph",),
+        "required_any": ("internal_task_language",),
     },
     "T5": {
-        "required_any": ("candidate_primitive_hint", "nearest_primitive_set"),
-        "forbidden_any": ("counted_as_solved", "solved", "semantic_exact"),
+        "required_any": ("internal_task_language",),
     },
     "T6": {
-        "required_any": ("surface_variants",),
-        "minimum_surface_variants": 3,
+        "required_any": ("internal_task_language",),
     },
     "T7": {
-        "required_any": ("resolution_status",),
-        "required_all": ("abstain_policy",),
-        "allowed_resolution_statuses": ("unresolved", "low_confidence", "needs_more_examples"),
+        "required_any": ("internal_task_language",),
     },
+}
+
+_INTERNAL_TASK_LANGUAGE_FIELDS_V1 = (
+    "latent_rule",
+    "rival_grammars",
+    "separating_examples",
+    "ambiguity_axes",
+    "composition_graph",
+    "novelty_marker",
+    "nearest_existing_primitive_set",
+    "insufficiency_reason",
+    "transfer_family_anchor",
+    "surface_variant_axes",
+    "confidence_state",
+    "unresolved_abstain_policy",
+)
+
+_INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1 = {
+    "T3": ("latent_rule", "rival_grammars", "separating_examples", "ambiguity_axes", "confidence_state"),
+    "T4": ("latent_rule", "composition_graph", "novelty_marker", "confidence_state"),
+    "T5": ("latent_rule", "nearest_existing_primitive_set", "insufficiency_reason", "confidence_state"),
+    "T6": ("latent_rule", "transfer_family_anchor", "surface_variant_axes", "confidence_state"),
+    "T7": ("latent_rule", "confidence_state", "unresolved_abstain_policy"),
+}
+
+_SOLVER_VISIBLE_STRIP_KEYS_V1 = {
+    "level_id",
+    "purpose",
+    "task_signature",
+    "confidence_policy",
+    "confidence_state",
+    "confidence_band",
+    "resolution_status",
+    "abstain_policy",
+    "more_examples_needed",
+    "ordered_operations",
+    "primitive_chain_length",
+    "known_primitives",
+    "family_anchor",
+    "surface_variants",
+    "surface_variant_axes",
+    "rival_grammars",
+    "separating_examples",
+    "ambiguity_axes",
+    "composition_graph",
+    "nearest_primitive_set",
+    "nearest_existing_primitive_set",
+    "candidate_primitive_hint",
+    "insufficiency_reason",
+    "transfer_family_anchor",
+    "latent_rule",
+    "novelty_marker",
+    "internal_task_language",
+    "anti_cheat_controls",
+    "scoring_layer_compatibility",
+    "can_be_counted_as_solved",
+    "counted_as_solved",
+    "score_result",
+    "task_id_shortcut",
+    "primitive_name_leakage",
+    "sequence_leakage",
 }
 
 
@@ -297,6 +352,27 @@ def _as_list(value: Any) -> list[Any]:
     if isinstance(value, set):
         return sorted(value, key=repr)
     return [value]
+
+
+def _task_language_view(contract: Mapping[str, Any]) -> Mapping[str, Any]:
+    language = contract.get("internal_task_language")
+    return language if isinstance(language, Mapping) else contract
+
+
+def _strip_solver_visible_key(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            str(key): _strip_solver_visible_key(val)
+            for key, val in value.items()
+            if key not in _SOLVER_VISIBLE_STRIP_KEYS_V1
+        }
+    if isinstance(value, list):
+        return [_strip_solver_visible_key(item) for item in value]
+    if isinstance(value, tuple):
+        return [_strip_solver_visible_key(item) for item in value]
+    if isinstance(value, set):
+        return [_strip_solver_visible_key(item) for item in sorted(value, key=repr)]
+    return deepcopy(value)
 
 
 def allowed_task_difficulty_levels_v1() -> tuple[str, ...]:
@@ -365,19 +441,72 @@ def validate_task_difficulty_level_definition_v1(level_definition: Any) -> dict[
     return deepcopy(_as_mapping(level_definition))
 
 
+def task_language_fields_for_level_v1(level_id: str) -> tuple[str, ...]:
+    level_id = _json_safe_text(level_id)
+    if level_id not in LEVEL_IDS_V1:
+        raise KeyError(f"Unknown task difficulty level: {level_id}")
+    if level_id in _INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1:
+        return _INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1[level_id]
+    return ()
+
+
+def task_language_issues_v1(level_id: str, task_language: Any) -> list[str]:
+    level_id = _json_safe_text(level_id)
+    language = _as_mapping(task_language)
+    issues: list[str] = []
+    if level_id not in LEVEL_IDS_V1:
+        issues.append("invalid_level_id")
+        return issues
+    if level_id in {"T3", "T4", "T5", "T6", "T7"} and not language:
+        issues.append("missing_internal_task_language")
+        return issues
+    required_fields = _INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1.get(level_id, ())
+    for field in required_fields:
+        if field not in language or _json_safe_text(language.get(field)) == "" or language.get(field) in ([], {}, ()):
+            issues.append(f"missing_task_language_field:{field}")
+    if level_id == "T4" and not _json_safe_text(language.get("novelty_marker")):
+        issues.append("missing_task_language_field:novelty_marker")
+    if level_id == "T5" and not _json_safe_text(language.get("insufficiency_reason")):
+        issues.append("missing_task_language_field:insufficiency_reason")
+    if level_id == "T6":
+        variants = _as_list(language.get("surface_variant_axes"))
+        if len(variants) < 3:
+            issues.append("surface_variant_axes_too_small")
+    if level_id == "T7":
+        unresolved_policy = language.get("unresolved_abstain_policy")
+        if unresolved_policy in (None, False, "", {}, []):
+            issues.append("missing_unresolved_abstain_policy")
+    confidence_state = _json_safe_text(language.get("confidence_state"))
+    if level_id in {"T3", "T4", "T5", "T6", "T7"} and confidence_state not in {"confident", "low_confidence", "insufficient_evidence", "unresolved"}:
+        issues.append("invalid_confidence_state")
+    return issues
+
+
+def validate_task_language_v1(level_id: str, task_language: Any) -> dict[str, Any]:
+    issues = task_language_issues_v1(level_id, task_language)
+    if issues:
+        raise ValueError(f"Invalid task language: {issues}")
+    return deepcopy(_as_mapping(task_language))
+
+
+def export_solver_visible_task_contract_v1(task_contract: Any) -> dict[str, Any]:
+    return _strip_solver_visible_key(_as_mapping(task_contract))
+
+
 def _contract_level_from_fields(contract: Mapping[str, Any]) -> str:
-    if contract.get("resolution_status") in {"unresolved", "low_confidence", "needs_more_examples"} or contract.get("abstain_policy"):
+    language = _task_language_view(contract)
+    if language.get("confidence_state") in {"unresolved", "low_confidence", "insufficient_evidence"} or language.get("unresolved_abstain_policy"):
         return "T7"
-    if contract.get("candidate_primitive_hint") is not None or contract.get("nearest_primitive_set") is not None:
+    if language.get("nearest_existing_primitive_set") is not None or contract.get("candidate_primitive_hint") is not None or contract.get("nearest_primitive_set") is not None:
         return "T5"
-    surface_variants = contract.get("surface_variants")
+    surface_variants = language.get("surface_variant_axes")
     if surface_variants is not None:
         if len(_as_list(surface_variants)) >= 3:
             return "T6"
         return "T6"
-    if contract.get("known_primitives") is not None or contract.get("composition_graph") is not None:
+    if language.get("composition_graph") is not None or contract.get("known_primitives") is not None:
         return "T4"
-    if contract.get("rival_grammars") is not None or contract.get("separating_examples") is not None:
+    if language.get("rival_grammars") is not None or language.get("separating_examples") is not None:
         return "T3"
     if contract.get("ordered_operations") is not None or contract.get("primitive_chain_length") is not None:
         return "T2"
@@ -387,12 +516,11 @@ def _contract_level_from_fields(contract: Mapping[str, Any]) -> str:
 def classify_task_contract_to_level_v1(task_contract: Any) -> str:
     contract = _as_mapping(task_contract)
     declared = _json_safe_text(contract.get("level_id"))
-    inferred = _contract_level_from_fields(contract)
-    if declared and declared not in LEVEL_IDS_V1:
-        raise ValueError(f"Unknown task difficulty level: {declared}")
-    if declared and declared != inferred:
-        raise ValueError(f"Task contract level mismatch: declared={declared} inferred={inferred}")
-    return declared or inferred
+    if declared:
+        if declared not in LEVEL_IDS_V1:
+            raise ValueError(f"Unknown task difficulty level: {declared}")
+        return declared
+    return _contract_level_from_fields(contract)
 
 
 def task_difficulty_contract_issues_v1(task_contract: Any) -> list[str]:
@@ -418,6 +546,12 @@ def task_difficulty_contract_issues_v1(task_contract: Any) -> list[str]:
         value = contract.get(field)
         if value not in (None, False, [], (), ""):
             issues.append(f"forbidden_field_present:{field}")
+
+    language = _task_language_view(contract)
+    if level_id in {"T3", "T4", "T5", "T6", "T7"}:
+        language_issues = task_language_issues_v1(level_id, language)
+        issues.extend(f"task_language:{issue}" for issue in language_issues)
+
     if level_id == "T2":
         ops = _as_list(contract.get("ordered_operations"))
         if len(ops) < 2 or len(ops) > 3:
@@ -425,8 +559,8 @@ def task_difficulty_contract_issues_v1(task_contract: Any) -> list[str]:
         if contract.get("intermediate_state_required") is not True:
             issues.append("intermediate_state_required_missing")
     if level_id == "T3":
-        rival_grammars = _as_list(contract.get("rival_grammars"))
-        separating_examples = _as_list(contract.get("separating_examples"))
+        rival_grammars = _as_list(language.get("rival_grammars") if isinstance(language, Mapping) else contract.get("rival_grammars"))
+        separating_examples = _as_list(language.get("separating_examples") if isinstance(language, Mapping) else contract.get("separating_examples"))
         if len(rival_grammars) < 2:
             issues.append("rival_grammars_too_small")
         if len(separating_examples) < 1:
@@ -439,17 +573,18 @@ def task_difficulty_contract_issues_v1(task_contract: Any) -> list[str]:
         if _json_safe_text(contract.get("score_result")) in {"semantic_exact", "exact", "solved"}:
             issues.append("candidate_probe_counted_as_solved")
     if level_id == "T6":
-        surface_variants = _as_list(contract.get("surface_variants"))
+        surface_variants = _as_list(language.get("surface_variant_axes") if isinstance(language, Mapping) else contract.get("surface_variants"))
         if len(surface_variants) < 3:
             issues.append("surface_variants_too_small")
-        if contract.get("variant_axes") in (None, [], ()):
+        if contract.get("variant_axes") in (None, [], ()) and language.get("surface_variant_axes") in (None, [], ()):
             issues.append("variant_axes_missing")
     if level_id == "T7":
-        if _json_safe_text(contract.get("resolution_status")) not in {"unresolved", "low_confidence", "needs_more_examples"}:
+        confidence_state = _json_safe_text(language.get("confidence_state") if isinstance(language, Mapping) else contract.get("confidence_state"))
+        if confidence_state not in {"unresolved", "low_confidence", "needs_more_examples", "insufficient_evidence"}:
             issues.append("resolution_status_invalid")
-        if contract.get("abstain_policy") in (None, False, ""):
+        if language.get("unresolved_abstain_policy") in (None, False, "", {}, []) and contract.get("abstain_policy") in (None, False, ""):
             issues.append("abstain_policy_missing")
-        if contract.get("more_examples_needed") not in (True, False):
+        if contract.get("more_examples_needed") not in (True, False) and language.get("more_examples_needed") not in (True, False):
             issues.append("more_examples_needed_missing")
     return issues
 
@@ -499,6 +634,10 @@ __all__ = [
     "get_task_difficulty_level_definition_v1",
     "task_difficulty_level_definition_issues_v1",
     "validate_task_difficulty_level_definition_v1",
+    "task_language_fields_for_level_v1",
+    "task_language_issues_v1",
+    "validate_task_language_v1",
+    "export_solver_visible_task_contract_v1",
     "classify_task_contract_to_level_v1",
     "task_difficulty_contract_issues_v1",
     "validate_task_difficulty_contract_v1",

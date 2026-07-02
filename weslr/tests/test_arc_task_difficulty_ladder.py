@@ -5,24 +5,24 @@ from __future__ import annotations
 import pytest
 
 from weslr.arc_discovery_140_generator import generate_discovery_140_tasks, get_scoring_summary
-from weslr.arc_discovery_140_hard_mode_calibration import (
-    generate_hard_mode_calibration_tasks,
-    get_hard_mode_summary,
-)
+from weslr.arc_discovery_140_hard_mode_calibration import generate_hard_mode_calibration_tasks, get_hard_mode_summary
 from weslr.arc_task_difficulty_ladder import (
-    LEVEL_DEFINITIONS_V1,
     LEVEL_IDS_V1,
     SCHEMA_VERSION_V1,
     allowed_task_difficulty_levels_v1,
     classify_task_contract_to_level_v1,
+    export_solver_visible_task_contract_v1,
     get_task_difficulty_level_definition_v1,
     get_task_difficulty_level_definitions_v1,
     list_under_covered_task_difficulty_levels_v1,
     task_difficulty_contract_issues_v1,
     task_difficulty_ladder_coverage_snapshot_v1,
     task_difficulty_level_definition_issues_v1,
+    task_language_fields_for_level_v1,
+    task_language_issues_v1,
     validate_task_difficulty_contract_v1,
     validate_task_difficulty_level_definition_v1,
+    validate_task_language_v1,
 )
 
 
@@ -72,9 +72,6 @@ def valid_contracts():
             "level_id": "T3",
             "purpose": "Rival-grammar ambiguity resolved by separating evidence.",
             "task_signature": "multiple grammars fit visible examples",
-            "rival_grammars": ["leftmost", "largest"],
-            "ambiguity_axes": ["size", "position"],
-            "separating_examples": ["train_1", "train_2"],
             "confidence_policy": "resolve_or_flag",
             "anti_cheat_controls": [
                 "require_separating_examples",
@@ -83,15 +80,18 @@ def valid_contracts():
                 "no_overfriendly_distractors",
             ],
             "scoring_layer_compatibility": ["hard_mode", "scored"],
+            "internal_task_language": {
+                "latent_rule": "select the leftmost object unless a border-touching rival grammar fits",
+                "rival_grammars": ["leftmost", "border_touching"],
+                "separating_examples": ["train_1", "train_2"],
+                "ambiguity_axes": ["position", "boundary_contact"],
+                "confidence_state": "confident",
+            },
         },
         "T4": {
             "level_id": "T4",
             "purpose": "Unseen composition with known primitives.",
             "task_signature": "known primitives in a novel order and scene form",
-            "known_primitives": ["select", "recolor", "place"],
-            "novel_order": True,
-            "novel_scene_form": True,
-            "composition_graph": {"nodes": 3, "edges": 2},
             "confidence_policy": "exact_if_generalized",
             "anti_cheat_controls": [
                 "no_exact_training_chain_repetition",
@@ -99,15 +99,17 @@ def valid_contracts():
                 "no_surface_copy_paste",
             ],
             "scoring_layer_compatibility": ["hard_mode", "scored"],
+            "internal_task_language": {
+                "latent_rule": "compose the known steps through a new scene graph",
+                "composition_graph": {"nodes": 3, "edges": 2},
+                "novelty_marker": "novel_scene_form",
+                "confidence_state": "confident",
+            },
         },
         "T5": {
             "level_id": "T5",
             "purpose": "Primitive insufficiency frontier.",
             "task_signature": "nearest known primitives fail in a separable way",
-            "nearest_primitive_set": ["select", "recolor"],
-            "separating_examples": ["probe_1"],
-            "candidate_primitive_hint": "topology_bridge",
-            "duplicate_risk": "high",
             "confidence_policy": "insufficient_language",
             "anti_cheat_controls": [
                 "candidate_probes_never_count_as_solved",
@@ -117,15 +119,17 @@ def valid_contracts():
             ],
             "scoring_layer_compatibility": ["candidate_probe", "hard_mode_unsupported"],
             "can_be_counted_as_solved": False,
+            "internal_task_language": {
+                "latent_rule": "existing primitives cannot cleanly explain the frontier behavior",
+                "nearest_existing_primitive_set": ["select", "recolor"],
+                "insufficiency_reason": "boundary fusion requires a primitive not yet represented",
+                "confidence_state": "insufficient_evidence",
+            },
         },
         "T6": {
             "level_id": "T6",
             "purpose": "Transfer family across changed surfaces.",
             "task_signature": "same latent rule across surface variants",
-            "family_anchor": "family_a",
-            "surface_variants": ["v1", "v2", "v3"],
-            "variant_axes": ["color", "size", "distractor_density"],
-            "invariants": ["topology"],
             "confidence_policy": "exact_across_variants",
             "anti_cheat_controls": [
                 "minimum_three_surface_variants",
@@ -133,16 +137,17 @@ def valid_contracts():
                 "no_same_task_new_color_only_padding",
             ],
             "scoring_layer_compatibility": ["scored", "hard_mode"],
+            "internal_task_language": {
+                "latent_rule": "apply the same rule across shifted surfaces",
+                "transfer_family_anchor": "family_a",
+                "surface_variant_axes": ["color", "size", "distractor_density"],
+                "confidence_state": "confident",
+            },
         },
         "T7": {
             "level_id": "T7",
             "purpose": "Self-calibrating underdetermined task.",
             "task_signature": "evidence may be insufficient by design",
-            "confidence_band": "low",
-            "resolution_status": "unresolved",
-            "rival_grammar_set": ["grammar_a", "grammar_b"],
-            "more_examples_needed": True,
-            "abstain_policy": "abstain_when_insufficient",
             "confidence_policy": "abstain_or_flag",
             "anti_cheat_controls": [
                 "unresolved_must_be_valid",
@@ -150,6 +155,12 @@ def valid_contracts():
                 "no_metadata_only_solve_by_inspection",
             ],
             "scoring_layer_compatibility": ["diagnostic", "hard_mode"],
+            "internal_task_language": {
+                "latent_rule": "the evidence is not sufficient to force a unique solve",
+                "confidence_state": "unresolved",
+                "unresolved_abstain_policy": "abstain_when_insufficient",
+                "more_examples_needed": True,
+            },
         },
     }
 
@@ -163,14 +174,78 @@ class TestDefinitions:
     def test_level_definitions_validate(self, level_defs):
         for definition in level_defs:
             assert task_difficulty_level_definition_issues_v1(definition) == []
-            validated = validate_task_difficulty_level_definition_v1(definition)
-            assert validated["level_id"] in LEVEL_IDS_V1
-            assert validated == definition
+            assert validate_task_difficulty_level_definition_v1(definition) == definition
 
     def test_definition_lookup(self):
         assert get_task_difficulty_level_definition_v1("T7")["confidence_policy"] == "abstain_or_flag"
         with pytest.raises(KeyError):
             get_task_difficulty_level_definition_v1("T8")
+
+
+class TestTaskLanguage:
+    @pytest.mark.parametrize("level_id", ["T3", "T4", "T5", "T6", "T7"])
+    def test_required_task_language_fields_are_declared(self, level_id):
+        fields = task_language_fields_for_level_v1(level_id)
+        assert fields
+        if level_id == "T3":
+            assert fields == ("latent_rule", "rival_grammars", "separating_examples", "ambiguity_axes", "confidence_state")
+        if level_id == "T4":
+            assert fields == ("latent_rule", "composition_graph", "novelty_marker", "confidence_state")
+        if level_id == "T5":
+            assert fields == ("latent_rule", "nearest_existing_primitive_set", "insufficiency_reason", "confidence_state")
+        if level_id == "T6":
+            assert fields == ("latent_rule", "transfer_family_anchor", "surface_variant_axes", "confidence_state")
+        if level_id == "T7":
+            assert fields == ("latent_rule", "confidence_state", "unresolved_abstain_policy")
+
+    def test_valid_task_language_packets_pass(self):
+        packets = {
+            "T3": {
+                "latent_rule": "select leftmost unless border-touching rival grammar wins",
+                "rival_grammars": ["leftmost", "border_touching"],
+                "separating_examples": ["train_1", "train_2"],
+                "ambiguity_axes": ["position", "boundary_contact"],
+                "confidence_state": "confident",
+            },
+            "T4": {
+                "latent_rule": "compose the known steps through a new scene graph",
+                "composition_graph": {"nodes": 3, "edges": 2},
+                "novelty_marker": "novel_scene_form",
+                "confidence_state": "confident",
+            },
+            "T5": {
+                "latent_rule": "existing primitives cannot cleanly explain the frontier behavior",
+                "nearest_existing_primitive_set": ["select", "recolor"],
+                "insufficiency_reason": "boundary fusion requires a primitive not yet represented",
+                "confidence_state": "insufficient_evidence",
+            },
+            "T6": {
+                "latent_rule": "apply the same rule across shifted surfaces",
+                "transfer_family_anchor": "family_a",
+                "surface_variant_axes": ["color", "size", "distractor_density"],
+                "confidence_state": "confident",
+            },
+            "T7": {
+                "latent_rule": "the evidence is not sufficient to force a unique solve",
+                "confidence_state": "unresolved",
+                "unresolved_abstain_policy": "abstain_when_insufficient",
+            },
+        }
+        for level_id, packet in packets.items():
+            assert task_language_issues_v1(level_id, packet) == []
+            assert validate_task_language_v1(level_id, packet) == packet
+
+    def test_missing_task_language_fields_are_rejected(self):
+        with pytest.raises(ValueError):
+            validate_task_language_v1("T3", {"latent_rule": "x", "confidence_state": "confident"})
+        with pytest.raises(ValueError):
+            validate_task_language_v1("T4", {"latent_rule": "x", "confidence_state": "confident"})
+        with pytest.raises(ValueError):
+            validate_task_language_v1("T5", {"latent_rule": "x", "confidence_state": "insufficient_evidence"})
+        with pytest.raises(ValueError):
+            validate_task_language_v1("T6", {"latent_rule": "x", "confidence_state": "confident", "surface_variant_axes": ["c", "s"]})
+        with pytest.raises(ValueError):
+            validate_task_language_v1("T7", {"latent_rule": "x", "confidence_state": "unresolved"})
 
 
 class TestContracts:
@@ -189,9 +264,16 @@ class TestContracts:
             validate_task_difficulty_contract_v1(bad_t2)
 
         bad_t3 = dict(valid_contracts["T3"])
-        bad_t3.pop("separating_examples")
+        bad_t3["internal_task_language"] = dict(bad_t3["internal_task_language"])
+        bad_t3["internal_task_language"].pop("rival_grammars")
         with pytest.raises(ValueError):
             validate_task_difficulty_contract_v1(bad_t3)
+
+        bad_t4 = dict(valid_contracts["T4"])
+        bad_t4["internal_task_language"] = dict(bad_t4["internal_task_language"])
+        bad_t4["internal_task_language"].pop("composition_graph")
+        with pytest.raises(ValueError):
+            validate_task_difficulty_contract_v1(bad_t4)
 
         bad_t5 = dict(valid_contracts["T5"])
         bad_t5["can_be_counted_as_solved"] = True
@@ -199,12 +281,14 @@ class TestContracts:
             validate_task_difficulty_contract_v1(bad_t5)
 
         bad_t6 = dict(valid_contracts["T6"])
-        bad_t6["surface_variants"] = ["v1", "v2"]
+        bad_t6["internal_task_language"] = dict(bad_t6["internal_task_language"])
+        bad_t6["internal_task_language"]["surface_variant_axes"] = ["v1", "v2"]
         with pytest.raises(ValueError):
             validate_task_difficulty_contract_v1(bad_t6)
 
         bad_t7 = dict(valid_contracts["T7"])
-        bad_t7.pop("abstain_policy")
+        bad_t7["internal_task_language"] = dict(bad_t7["internal_task_language"])
+        bad_t7["internal_task_language"].pop("unresolved_abstain_policy")
         with pytest.raises(ValueError):
             validate_task_difficulty_contract_v1(bad_t7)
 
@@ -216,19 +300,21 @@ class TestContracts:
 
     def test_t7_unresolved_state_is_valid(self, valid_contracts):
         contract = dict(valid_contracts["T7"])
-        assert validate_task_difficulty_contract_v1(contract)["resolution_status"] == "unresolved"
+        assert validate_task_difficulty_contract_v1(contract)["internal_task_language"]["confidence_state"] == "unresolved"
 
     def test_t6_requires_three_surface_variants(self, valid_contracts):
         contract = dict(valid_contracts["T6"])
-        contract["surface_variants"] = ["v1", "v2"]
+        contract["internal_task_language"] = dict(contract["internal_task_language"])
+        contract["internal_task_language"]["surface_variant_axes"] = ["color", "size"]
         issues = task_difficulty_contract_issues_v1(contract)
-        assert "surface_variants_too_small" in issues
+        assert "task_language:surface_variant_axes_too_small" in issues
 
     def test_t3_requires_rival_grammars_and_separating_examples(self, valid_contracts):
         contract = dict(valid_contracts["T3"])
-        contract.pop("rival_grammars")
+        contract["internal_task_language"] = dict(contract["internal_task_language"])
+        contract["internal_task_language"].pop("rival_grammars")
         issues = task_difficulty_contract_issues_v1(contract)
-        assert "missing_required_field:rival_grammars" in issues
+        assert "task_language:missing_task_language_field:rival_grammars" in issues
 
     def test_task_id_and_leakage_controls(self, valid_contracts):
         task_id_shortcut = dict(valid_contracts["T1"])
@@ -245,6 +331,17 @@ class TestContracts:
         sequence_leak["sequence_leakage"] = ["select", "recolor"]
         with pytest.raises(ValueError):
             validate_task_difficulty_contract_v1(sequence_leak)
+
+    def test_solver_visible_export_strips_internal_task_language(self, valid_contracts):
+        visible = export_solver_visible_task_contract_v1(valid_contracts["T3"])
+        assert "internal_task_language" not in visible
+        assert "level_id" not in visible
+        assert "confidence_policy" not in visible
+        assert "rival_grammars" not in visible
+        assert "separating_examples" not in visible
+        assert "task_signature" not in visible
+        assert "purpose" not in visible
+        assert "scoring_layer_compatibility" not in visible
 
 
 class TestCoverageAndRegressionSafety:
