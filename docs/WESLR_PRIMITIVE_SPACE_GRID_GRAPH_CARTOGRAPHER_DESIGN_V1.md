@@ -308,3 +308,167 @@ These primitives appear in few chains. New primitives that compose with `fill_re
 | recolor | color_swap_1_2 | 0.5 | aliases_or_duplicates (color remap) |
 | recolor | color_dominant | 0.5 | aliases_or_duplicates (color remap) |
 | pattern_output | pat_row_alternate | 0.6 | aliases_or_duplicates (pattern generation) |
+
+---
+
+## 5. Sudoku-Like Gap Logic
+
+### 5.1 Gap Detection Rules
+
+| Rule | Condition | Action |
+|------|-----------|--------|
+| R1: Empty high-value cell | Cell exists in (family × target) with no primitive or candidate | Flag as missing |
+| R2: Candidate-only cell | Cell has only candidates (no accepted/promoted) | Flag for promotion consideration |
+| R3: Overpopulated cell | Cell has 3+ primitives with high mutual similarity (>0.5) | Flag for dedup |
+| R4: Missing inverse | A primitive has no inverse/dual in the graph | Flag missing dual |
+| R5: Missing composition bridge | Two hub primitives have no connecting primitive between them | Flag bridge gap |
+| R6: Family with no promoted primitive | Entire family has 0 accepted/promoted | Flag family gap |
+| R7: Family with no scored tasks | Family appears in 0 scored tasks | Flag task gap |
+| R8: Isolated primitive | Primitive has < 2 composition edges | Flag for connectivity improvement |
+| R9: Missing negative control | A primitive has no negative/no-op control task | Flag anti-cheat gap |
+
+### 5.2 Detected Gaps
+
+#### Rule R2: Candidate-only families
+
+| Family | Candidates | Accepted | Promoted | Gap |
+|--------|-----------|----------|----------|-----|
+| SEL (selection) | 5 | 0 | 0 | **Full family gap** — no promoted selection primitive |
+| TOP (topology) | 3 | 0 | 0 | **Full family gap** — no promoted topology primitive |
+| CON (construction) | 4 | 0 | 0 | **Full family gap** — no promoted construction primitive |
+| REL (relation) | 3 | 0 | 0 | **Full family gap** — no promoted relation primitive |
+| CND (conditional) | 3 | 0 | 0 | **Full family gap** — no promoted conditional primitive |
+
+#### Rule R1: Empty high-value cells
+
+| Cell (family × target) | Status | Value |
+|------------------------|--------|------|
+| CON × BBOX | 1 candidate (`constr_draw_rect_around`) | High — drawing on bbox is common in ARC |
+| TOP × OBJSET | 1 candidate (`topo_merge_objects`) | Medium — merging is useful but less common |
+| REL × OBJSET | 2 candidates (`rel_align_centroids`, `rel_order_by_size`) | High — multi-object relations are common |
+| CND × COUNT | 1 candidate (`cond_if_multi_count`) | Medium — conditional counting |
+| SEL × OBJSET | 0 (no candidate even exists) | **Missing** — selecting from object sets |
+| CMP × GRID | 0 (no candidate) | **Missing** — comparator/detector role entirely empty |
+| MASK × (any) | 0 (mask as target, not just mask as tool) | **Missing** — no primitive outputs a mask |
+
+#### Rule R4: Missing inverses
+
+| Primitive | Inverse expected | Exists? |
+|-----------|-----------------|---------|
+| rotate (90° CW) | rotate (90° CCW) or rotate 3× | No — only CW rotation exists |
+| mirror_object (horizontal flip) | mirror_object (vertical flip) | No — only horizontal exists |
+| crop_object | expand/place_back | place_back is partial inverse |
+| recolor (to color 2) | recolor (from 2 to original) | No — one-directional |
+| color_invert (c → 10-c) | color_invert (10-c → c) | Yes — self-inverse ✅ |
+| normalize_position | denormalize | No — no restore-original-position |
+| fill_region (fill with 1) | clear_region | No — no inverse fill |
+
+#### Rule R6: Family gap summary
+
+| Family | Accepted | Promoted | Scored tasks using family | Gap severity |
+|--------|----------|----------|--------------------------|-------------|
+| SEL | 0 | 0 | 1 probe (T120_106) | **High** — 5 candidates ready, 0 promoted |
+| TOP | 0 | 0 | 1 probe (T120_103) | **High** — 3 candidates ready, 0 promoted |
+| CON | 0 | 0 | 1 probe (T120_104) | **High** — 4 candidates ready, 0 promoted |
+| REL | 0 | 0 | 1 probe (T120_109) | **High** — 3 candidates ready, 0 promoted |
+| CND | 0 | 0 | 1 probe (T120_108) | **High** — 3 candidates ready, 0 promoted |
+
+---
+
+## 6. Gap Scoring Model
+
+### 6.1 Deterministic Gap Score Formula
+
+Each gap cell receives a score:
+
+```
+gap_score = w1 * cell_empty + w2 * task_space_value + w3 * family_novelty +
+            w4 * oracle_implementability + w5 * solver_implementability +
+            w6 * (1 - duplicate_risk) + w7 * (1 - regression_risk) +
+            w8 * anti_cheat_value + w9 * tasks_unlocked + w10 * probe_exists
+```
+
+### 6.2 Weights
+
+| Weight | Component | Value | Rationale |
+|--------|-----------|-------|-----------|
+| w1 | cell empty (1=empty, 0.5=candidate-only, 0=filled) | 0.15 | Empty cells are highest priority |
+| w2 | task-space expansion value | 0.15 | How much new task variety |
+| w3 | family novelty (1=new family, 0=existing) | 0.10 | New families unlock more |
+| w4 | oracle implementability (1-easy, 0=hard) | 0.10 | Easy oracle = fast promotion |
+| w5 | solver implementability (1-easy, 0=hard) | 0.10 | Easy solver = fast promotion |
+| w6 | non-duplicate (1-no dup, 0=full dup) | 0.10 | Avoid wasting promotion on duplicates |
+| w7 | non-regression (1=safe, 0=risky) | 0.10 | Avoid breaking BH80/120 |
+| w8 | anti-cheat value (1=adds control, 0=no new control) | 0.05 | Strengthens anti-cheat |
+| w9 | tasks unlocked (normalized 0-1) | 0.10 | More unlocked = higher value |
+| w10 | probe exists (1=yes, 0=no) | 0.05 | Probe proves composability |
+
+### 6.3 Top-10 Gap Scores (Design Estimate)
+
+| Rank | Cell | Gap type | Gap score | Rationale |
+|------|------|----------|-----------|-----------|
+| 1 | SEL × OBJ × SLR | Candidate-only family | 0.85 | 5 candidates, new family, simple oracle, probe exists |
+| 2 | CON × BBOX × CST | Candidate-only | 0.82 | 1 candidate, new family, simple oracle, probe exists |
+| 3 | TOP × OBJ × MOD | Candidate-only family | 0.78 | 3 candidates, new family, moderate oracle, probe exists |
+| 4 | MASK × GRID × MOD | Candidate-only | 0.75 | mask_complement candidate, new family, simple oracle |
+| 5 | COL × GRID × MOD | Candidate | 0.72 | color_swap_1_2, simple oracle, but existing recolor overlap |
+| 6 | REL × OBJSET × MOD | Candidate-only family | 0.70 | 3 candidates, new family, harder oracle |
+| 7 | PAT × GRID × EXP | Candidate | 0.68 | pat_row_alternate, existing pattern_output overlap |
+| 8 | GEO × GRID × MOD | Candidate | 0.65 | geom_flip_vertical, existing transform overlap |
+| 9 | CND × GRID × BRH | Candidate-only family | 0.62 | 3 candidates, new family, but high shortcut risk |
+| 10 | CMP × GRID × CMP | Missing (no candidate) | 0.55 | Entirely missing role, but no candidate exists yet |
+
+---
+
+## 7. Integration with Perspicuity
+
+### 7.1 Cartography Evidence for Perspicuity
+
+The perspicuity ranking (`native_arc_perspicuity.py`) should incorporate cartography evidence:
+
+| Evidence feature | From cartography | How used |
+|-----------------|-----------------|----------|
+| Fills missing cell | Gap detection (R1, R2) | Bonus to task_space_value |
+| Reduces duplication | Near-duplicate edges | Penalty to duplicate_risk |
+| Connects graph components | Hub/isolated analysis | Bonus to task_space_value |
+| Unlocks new scored tasks | `unlocks_task` edges | Directly feeds expected_denominator_gain |
+| Strengthens anti-cheat | R9 gap detection | Bonus to anti_cheat_value |
+| Family gap fill | R6 family gap | Major bonus to task_space_value |
+| Composition bridge | R5 bridge gap | Bonus for connecting hubs |
+
+### 7.2 Updated Perspicuity Formula (Design)
+
+```
+evidence_score = static_perspicuity * 0.20 +
+                 probe_availability * 0.10 +
+                 promotion_ease * 0.15 +
+                 task_space_value * 0.20 +
+                 cartography_gap_fill * 0.10 +    # NEW
+                 graph_connectivity * 0.05 +       # NEW
+                 non_duplicate * 0.08 +
+                 non_regression * 0.07 +
+                 non_shortcut * 0.05
+```
+
+The cartography components add 15% total weight, redistributed from existing components. This means:
+- Static perspicuity: 25% → 20%
+- Promotion ease: 20% → 15%
+- Non-duplicate: 10% → 8%
+- Non-regression: 10% → 7%
+- New: cartography_gap_fill (10%) + graph_connectivity (5%)
+
+### 7.3 Gap-Fill Bonus Calculation
+
+For each candidate, `cartography_gap_fill` = max of:
+- 1.0 if candidate's family has 0 accepted/promoted (full family gap fill)
+- 0.8 if candidate fills an empty high-value cell (R1)
+- 0.6 if candidate fills a candidate-only cell (R2)
+- 0.3 if candidate's cell is already partially covered
+- 0.0 if candidate is in an overpopulated cell (R3)
+
+### 7.4 Graph Connectivity Bonus
+
+`graph_connectivity` = measure of how many new composition edges the primitive would create:
+- 1.0 if primitive composes with 2+ major hubs that currently lack a bridge
+- 0.5 if primitive composes with 1 major hub
+- 0.0 if primitive only composes with non-hub primitives
