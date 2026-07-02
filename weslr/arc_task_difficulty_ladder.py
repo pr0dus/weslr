@@ -279,6 +279,14 @@ _INTERNAL_TASK_LANGUAGE_FIELDS_V1 = (
     "unresolved_abstain_policy",
 )
 
+_TASK_LANGUAGE_FIELD_ALIASES_V1 = {
+    "T3": (("latent_rule",), ("rival_grammars",), ("separating_examples",), ("ambiguity_axes",), ("confidence_state",)),
+    "T4": (("latent_rule",), ("composition_graph",), ("novelty_marker",), ("confidence_state",)),
+    "T5": (("latent_rule",), ("nearest_primitive_set", "nearest_existing_primitive_set"), ("insufficiency_reason",), ("confidence_state",)),
+    "T6": (("latent_rule",), ("transfer_anchor", "transfer_family_anchor"), ("transfer_variants", "surface_variant_axes"), ("confidence_state",)),
+    "T7": (("latent_rule",), ("confidence_state",), ("abstain_policy", "unresolved_abstain_policy")),
+}
+
 _INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1 = {
     "T3": ("latent_rule", "rival_grammars", "separating_examples", "ambiguity_axes", "confidence_state"),
     "T4": ("latent_rule", "composition_graph", "novelty_marker", "confidence_state"),
@@ -336,6 +344,18 @@ def _json_safe_text(value: Any) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     return _json_safe_text(str(value))
+
+
+def _has_content(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(_json_safe_text(value))
+    if isinstance(value, Mapping):
+        return len(value) > 0
+    if isinstance(value, (list, tuple, set)):
+        return len(value) > 0
+    return True
 
 
 def _as_mapping(value: Any) -> Mapping[str, Any]:
@@ -460,21 +480,17 @@ def task_language_issues_v1(level_id: str, task_language: Any) -> list[str]:
     if level_id in {"T3", "T4", "T5", "T6", "T7"} and not language:
         issues.append("missing_internal_task_language")
         return issues
-    required_fields = _INTERNAL_TASK_LANGUAGE_REQUIRED_FIELDS_V1.get(level_id, ())
-    for field in required_fields:
-        if field not in language or _json_safe_text(language.get(field)) == "" or language.get(field) in ([], {}, ()):
-            issues.append(f"missing_task_language_field:{field}")
-    if level_id == "T4" and not _json_safe_text(language.get("novelty_marker")):
-        issues.append("missing_task_language_field:novelty_marker")
-    if level_id == "T5" and not _json_safe_text(language.get("insufficiency_reason")):
-        issues.append("missing_task_language_field:insufficiency_reason")
+    aliases = _TASK_LANGUAGE_FIELD_ALIASES_V1.get(level_id, ())
+    for alias_names in aliases:
+        if not any(_has_content(language.get(name)) for name in alias_names):
+            issues.append(f"missing_task_language_field:{alias_names[0]}")
     if level_id == "T6":
-        variants = _as_list(language.get("surface_variant_axes"))
+        variants = _as_list(language.get("transfer_variants") or language.get("surface_variant_axes"))
         if len(variants) < 3:
             issues.append("surface_variant_axes_too_small")
     if level_id == "T7":
-        unresolved_policy = language.get("unresolved_abstain_policy")
-        if unresolved_policy in (None, False, "", {}, []):
+        unresolved_policy = language.get("abstain_policy") or language.get("unresolved_abstain_policy")
+        if not _has_content(unresolved_policy):
             issues.append("missing_unresolved_abstain_policy")
     confidence_state = _json_safe_text(language.get("confidence_state"))
     if level_id in {"T3", "T4", "T5", "T6", "T7"} and confidence_state not in {"confident", "low_confidence", "insufficient_evidence", "unresolved"}:
