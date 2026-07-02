@@ -81,11 +81,11 @@ class TestTotalCounts:
 class TestScoringLayers:
     def test_110_scored(self, tasks120):
         scored = get_scored_tasks(tasks120)
-        assert len(scored) == 114
+        assert len(scored) == 117
 
     def test_10_candidate_probes(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
-        assert len(probes) == 6
+        assert len(probes) == 3
 
     def test_bh80_all_scored(self, tasks120):
         bh80 = [t for t in tasks120 if t["task_id"].startswith("BH80_")]
@@ -95,14 +95,14 @@ class TestScoringLayers:
     def test_candidate_probes_are_remaining_unpromoted(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
         probe_ids = [t["task_id"] for t in probes]
-        expected = ["T120_101", "T120_102", "T120_105", "T120_107", "T120_108", "T120_109"]
+        expected = ["T120_101", "T120_102", "T120_107"]
         assert probe_ids == expected
 
     def test_scoring_summary(self, tasks120):
         summary = get_scoring_summary(tasks120)
         assert summary["total_tasks"] == 120
-        assert summary["scored_total"] == 114
-        assert summary["candidate_probe_total"] == 6
+        assert summary["scored_total"] == 117
+        assert summary["candidate_probe_total"] == 3
         assert summary["bh80_count"] == 80
         assert summary["new_task_count"] == 40
 
@@ -180,7 +180,7 @@ class TestCandidateProbes:
     def test_probe_ids_are_remaining_unpromoted(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
         ids = [t["task_id"] for t in probes]
-        expected = ["T120_101", "T120_102", "T120_105", "T120_107", "T120_108", "T120_109"]
+        expected = ["T120_101", "T120_102", "T120_107"]
         assert ids == expected
 
 
@@ -262,11 +262,11 @@ class TestGateDefinitions:
     def test_scored_gates(self):
         gates = get_gate_definitions()
         scored = gates["scored"]
-        assert scored["clean"] == 114
-        assert scored["preferred"] == 107
-        assert scored["strong"] == 103
-        assert scored["minimal"] == 97
-        assert scored["total"] == 114
+        assert scored["clean"] == 117
+        assert scored["preferred"] == 110
+        assert scored["strong"] == 106
+        assert scored["minimal"] == 100
+        assert scored["total"] == 117
 
     def test_bh80_subgate(self):
         gates = get_gate_definitions()

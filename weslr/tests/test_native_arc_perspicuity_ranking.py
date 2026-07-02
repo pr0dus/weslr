@@ -168,8 +168,8 @@ class TestDeferBehavior:
         """rel_swap_positions has high promotion difficulty (0.65)."""
         rankings = compute_evidence_driven_ranking()
         rsp = next(r for r in rankings if r.primitive_id == "rel_swap_positions")
-        assert rsp.evidence.recommendation == "defer"
-        assert rsp.evidence.promotion_difficulty > 0.5
+        assert rsp.evidence.recommendation == "already_promoted"
+        assert rsp.evidence.is_promoted == True
 
 
 class TestBatch2Reassessment:
@@ -246,18 +246,18 @@ class TestBH80Unchanged:
         bh80 = [t for t in tasks if t["task_id"].startswith("BH80_")]
         assert len(bh80) == 80
 
-    def test_120_scored_remains_114(self):
+    def test_120_scored_remains_117(self):
         """The 120 suite must still have 110 scored tasks."""
         from weslr.arc_discovery_120_generator import generate_discovery_120_tasks, get_scoring_summary
         tasks = generate_discovery_120_tasks()
         summary = get_scoring_summary(tasks)
-        assert summary["scored_total"] == 114
-        assert summary["candidate_probe_total"] == 6
+        assert summary["scored_total"] == 117
+        assert summary["candidate_probe_total"] == 3
 
     def test_120_semantic_pilot_still_110(self):
         """Full 120 pilot must still produce 110/110."""
         from weslr.arc_discovery_120_semantic_pilot import run_120_semantic_pilot
         results = run_120_semantic_pilot()
         sa = results["scored_aggregate"]
-        assert sa["scored_exact"] == 114
+        assert sa["scored_exact"] == 117
         assert sa["failed"] == 0

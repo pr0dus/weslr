@@ -186,6 +186,124 @@ def oracle_sel_leftmost(grid: List[List[int]]) -> Tuple[bool, List[List[int]], d
 
 
 # ---------------------------------------------------------------------------
+# cond_if_holes_fill oracle reference
+# ---------------------------------------------------------------------------
+
+def oracle_cond_if_holes_fill(grid: List[List[int]]) -> Tuple[bool, List[List[int]], dict]:
+    """Oracle reference for cond_if_holes_fill.
+
+    If the largest connected component has holes (enclosed bg cells),
+    fill them with the surrounding color. Otherwise return unchanged.
+    Only affects the largest component — distinct from topo_fill_holes (all components).
+    """
+    if not grid:
+        return True, [], {"primitive_id": "cond_if_holes_fill", "empty": True}
+    bg = 0
+    components = _connected_components(grid, bg)
+    if not components:
+        return True, [row[:] for row in grid], {"primitive_id": "cond_if_holes_fill", "no_object": True}
+    largest = max(components, key=len)
+    min_r, min_c, max_r, max_c = _bbox(largest)
+    h, w = len(grid), len(grid[0])
+    # Flood fill from border bg cells within the bbox region
+    visited = [[False] * w for _ in range(h)]
+    queue = []
+    for r in range(h):
+        for c in range(w):
+            if (r == 0 or r == h - 1 or c == 0 or c == w - 1) and grid[r][c] == bg:
+                queue.append((r, c))
+                visited[r][c] = True
+    while queue:
+        r, c = queue.pop(0)
+        for dr, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < h and 0 <= nc < w and not visited[nr][nc] and grid[nr][nc] == bg:
+                visited[nr][nc] = True
+                queue.append((nr, nc))
+    # Fill enclosed bg cells within the largest component's bbox only
+    out = [row[:] for row in grid]
+    filled = 0
+    for r in range(min_r, max_r + 1):
+        for c in range(min_c, max_c + 1):
+            if grid[r][c] == bg and not visited[r][c]:
+                # Check if this cell is inside the largest component (surrounded by it)
+                for dr, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < h and 0 <= nc < w and (nr, nc) in set(largest):
+                        out[r][c] = grid[nr][nc]
+                        filled += 1
+                        break
+    return True, out, {"primitive_id": "cond_if_holes_fill", "filled": filled}
+
+
+# ---------------------------------------------------------------------------
+# rel_swap_positions oracle reference
+# ---------------------------------------------------------------------------
+
+def oracle_rel_swap_positions(grid: List[List[int]]) -> Tuple[bool, List[List[int]], dict]:
+    """Oracle reference for rel_swap_positions.
+
+    Swap the positions of the two largest connected components.
+    Uses bbox centroid for position calculation.
+    """
+    if not grid:
+        return True, [], {"primitive_id": "rel_swap_positions", "empty": True}
+    bg = 0
+    components = _connected_components(grid, bg)
+    if len(components) < 2:
+        return True, [row[:] for row in grid], {"primitive_id": "rel_swap_positions", "few_objects": True}
+    comps = sorted(components, key=len, reverse=True)
+    obj_a, obj_b = comps[0], comps[1]
+    # Compute bbox centroids
+    a_min_r, a_min_c, a_max_r, a_max_c = _bbox(obj_a)
+    b_min_r, b_min_c, b_max_r, b_max_c = _bbox(obj_b)
+    a_cr = (a_min_r + a_max_r) // 2
+    a_cc = (a_min_c + a_max_c) // 2
+    b_cr = (b_min_r + b_max_r) // 2
+    b_cc = (b_min_c + b_max_c) // 2
+    # Compute swap offsets
+    dr_a = b_cr - a_cr
+    dc_a = b_cc - a_cc
+    dr_b = a_cr - b_cr
+    dc_b = a_cc - b_cc
+    # Build output: remove both objects, place at swapped positions
+    out = [[bg for _ in row] for row in grid]
+    # Copy non-object cells
+    obj_cells = set(obj_a) | set(obj_b)
+    for r in range(len(grid)):
+        for c in range(len(grid[0])):
+            if (r, c) not in obj_cells:
+                out[r][c] = grid[r][c]
+    # Place obj_a at obj_b's position
+    for r, c in obj_a:
+        nr, nc = r + dr_a, c + dc_a
+        if 0 <= nr < len(out) and 0 <= nc < len(out[0]):
+            out[nr][nc] = grid[r][c]
+    # Place obj_b at obj_a's position
+    for r, c in obj_b:
+        nr, nc = r + dr_b, c + dc_b
+        if 0 <= nr < len(out) and 0 <= nc < len(out[0]):
+            out[nr][nc] = grid[r][c]
+    return True, out, {"primitive_id": "rel_swap_positions", "swapped": True}
+
+
+# ---------------------------------------------------------------------------
+# color_swap_1_2 oracle reference
+# ---------------------------------------------------------------------------
+
+def oracle_color_swap_1_2(grid: List[List[int]]) -> Tuple[bool, List[List[int]], dict]:
+    """Oracle reference for color_swap_1_2.
+
+    Swap colors 1 and 2. All other colors unchanged. Background (0) unchanged.
+    """
+    if not grid:
+        return True, [], {"primitive_id": "color_swap_1_2", "empty": True}
+    swap_map = {1: 2, 2: 1}
+    out = [[swap_map.get(v, v) for v in row] for row in grid]
+    return True, out, {"primitive_id": "color_swap_1_2"}
+
+
+# ---------------------------------------------------------------------------
 # Dispatch table for native oracle primitives
 # ---------------------------------------------------------------------------
 
@@ -195,6 +313,9 @@ NATIVE_ORACLE_PRIMITIVES = {
     "mask_complement": oracle_mask_complement,
     "topo_fill_holes": oracle_topo_fill_holes,
     "sel_leftmost": oracle_sel_leftmost,
+    "cond_if_holes_fill": oracle_cond_if_holes_fill,
+    "rel_swap_positions": oracle_rel_swap_positions,
+    "color_swap_1_2": oracle_color_swap_1_2,
 }
 
 

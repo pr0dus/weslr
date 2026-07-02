@@ -167,11 +167,11 @@ class TestBH80Regression:
 
 class Test120ScoredResult:
 
-    def test_120_scored_exact_is_110(self):
+    def test_120_scored_exact_is_117(self):
         """Full 120 semantic pilot must produce 110/110 scored_exact."""
         results = run_120_semantic_pilot()
         sa = results["scored_aggregate"]
-        assert sa["scored_exact"] == 114, f"Expected 110/110, got {sa['scored_exact']}/110"
+        assert sa["scored_exact"] == 117, f"Expected 110/110, got {sa['scored_exact']}/110"
         assert sa["failed"] == 0
         assert sa["unsupported"] == 0
 

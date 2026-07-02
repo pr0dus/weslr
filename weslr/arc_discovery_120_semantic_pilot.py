@@ -445,9 +445,9 @@ def run_120_semantic_pilot() -> dict:
         "gates": gates,
         "gate_results": {
             "scored_clean": scored_exact == scored_total,
-            "scored_preferred": scored_exact >= 103,
-            "scored_strong": scored_exact >= 99,
-            "scored_minimal": scored_exact >= 94,
+            "scored_preferred": scored_exact >= 110,
+            "scored_strong": scored_exact >= 106,
+            "scored_minimal": scored_exact >= 100,
             "bh80_clean": bh80_exact == 80,
             "bh80_preferred": bh80_exact >= 75,
             "bh80_strong": bh80_exact >= 72,
@@ -498,9 +498,9 @@ if __name__ == "__main__":
     print()
     print("GATE RESULTS")
     print(f"  scored clean ({scored_total}/{scored_total}):     {gr['scored_clean']}")
-    print(f"  scored preferred (>=107):   {gr['scored_preferred']}")
-    print(f"  scored strong (>=103):       {gr['scored_strong']}")
-    print(f"  scored minimal (>=97):      {gr['scored_minimal']}")
+    print(f"  scored preferred (>=110):   {gr['scored_preferred']}")
+    print(f"  scored strong (>=106):       {gr['scored_strong']}")
+    print(f"  scored minimal (>=100):      {gr['scored_minimal']}")
     print(f"  BH80 clean (80/80):         {gr['bh80_clean']}")
     print(f"  BH80 preferred (>=75):      {gr['bh80_preferred']}")
     print(f"  BH80 strong (>=72):         {gr['bh80_strong']}")

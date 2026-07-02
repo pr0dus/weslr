@@ -267,7 +267,7 @@ class TestPromotionStatus:
     def test_unpromoted_still_blocked(self):
         from weslr.arc_discovery_120_generator import _can_primitive_be_counted
         unpromoted = ["mask_border_only", "geom_flip_vertical", "cond_if_edge_clip",
-                      "color_swap_1_2", "pat_row_alternate", "cond_if_holes_fill"]
+                      "pat_row_alternate", "rel_order_by_size"]
         for pid in unpromoted:
             assert not _can_primitive_be_counted(pid), f"{pid} should NOT be countable as solved"
 
@@ -278,8 +278,8 @@ class Test120ScoringUpdate:
         from weslr.arc_discovery_120_generator import generate_discovery_120_tasks, get_scoring_summary
         tasks = generate_discovery_120_tasks()
         summary = get_scoring_summary(tasks)
-        assert summary["scored_total"] == 114
-        assert summary["candidate_probe_total"] == 6
+        assert summary["scored_total"] == 117
+        assert summary["candidate_probe_total"] == 3
 
     def test_promoted_probe_tasks_are_scored(self):
         from weslr.arc_discovery_120_generator import generate_discovery_120_tasks
@@ -291,7 +291,7 @@ class Test120ScoringUpdate:
     def test_remaining_probes_are_unscored(self):
         from weslr.arc_discovery_120_generator import generate_discovery_120_tasks
         tasks = generate_discovery_120_tasks()
-        for tid in ["T120_101", "T120_102", "T120_105", "T120_107", "T120_108", "T120_109"]:
+        for tid in ["T120_101", "T120_102", "T120_107"]:
             task = next(t for t in tasks if t["task_id"] == tid)
             assert task["scoring_layer"] == "candidate_probe", f"{tid} should be candidate_probe"
 
@@ -304,11 +304,11 @@ class TestRegression:
         bh = results["bh80_subset"]
         assert bh["semantic_exact"] == 80
 
-    def test_120_scored_exact_is_114(self):
+    def test_120_scored_exact_is_117(self):
         from weslr.arc_discovery_120_semantic_pilot import run_120_semantic_pilot
         results = run_120_semantic_pilot()
         sa = results["scored_aggregate"]
-        assert sa["scored_exact"] == 114
+        assert sa["scored_exact"] == 117
         assert sa["failed"] == 0
         assert sa["unsupported"] == 0
 
