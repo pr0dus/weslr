@@ -8,32 +8,24 @@
 
 ## Problem statement
 
-Several reports have repeated the same mismatch pattern:
-
-- the report file is written before the final commit exists,
-- the report cannot truthfully know its own final commit hash at write time,
-- yet the report is later read as if it were a post-commit receipt.
-
-That creates false expectations around `End HEAD`, `Commit`, and final commit hash fields.
+Repeated report/receipt mismatches happened because a report file was being expected to know its own final commit hash before the commit existed. That is impossible and caused stale or pending commit metadata to appear like an error.
 
 ## Why self-commit hashes are impossible inside the same report
 
-A report file is written before the commit that would record it exists. Therefore:
+A report is written before the final commit exists.
+So the report cannot truthfully know:
 
-- the report cannot know its own final commit hash before the commit is made,
-- the report cannot truthfully assert `End HEAD` if that means the final commit hash,
-- the report cannot truthfully mark itself as already committed while still uncommitted.
+- its own final commit hash,
+- whether it has already been committed,
+- the final `End HEAD` produced by the commit.
 
-The correct pattern is:
-
-- the report states the pre-commit facts it can know,
-- the post-commit receipt states the final commit facts it can know.
+Those facts belong in the post-commit receipt, not in the pre-commit report body.
 
 ## 1) Report-field policy
 
-### Safe and truthful inside a report file before commit
+### Safe in a pre-commit report
 
-These fields are safe in a pre-commit report:
+A report may truthfully include:
 
 - lane
 - repo
@@ -44,22 +36,22 @@ These fields are safe in a pre-commit report:
 - validation results
 - boundaries respected
 - recommended next lane
-- commit status as `pending` or `prepared before commit`
+- commit status as `pending` / `prepared before commit`
 
-### Not required inside the report file
+### Not required inside the report body
 
-These should not be required in the committed report body:
+These are not required in the committed report body:
 
-- final `End HEAD`
+- final End HEAD
 - final commit hash
 - whether the report itself was committed
 - exact files committed
-- final `git status`
-- `push avoided yes/no`
+- final git status
+- push avoided yes/no
 
 ## 2) Receipt-field policy
 
-The post-commit receipt is the authoritative place for final commit facts. It must include:
+The receipt is the authoritative post-commit record. It must include:
 
 - Start HEAD
 - actual preflight HEAD
@@ -76,11 +68,7 @@ The post-commit receipt is the authoritative place for final commit facts. It mu
 
 A report file must **not** be considered invalid merely because it cannot contain its own final commit hash.
 
-A report is valid if it truthfully states:
-
-- what it knew before commit,
-- what it validated,
-- what remains pending until the receipt is written.
+A report is valid if it truthfully records the pre-commit facts and clearly separates them from post-commit receipt facts.
 
 ## 4) Allowed report footer format
 
@@ -88,7 +76,7 @@ Recommended footer text:
 
 `Commit note: this report was prepared before final commit. Final commit hash is recorded in the post-commit receipt.`
 
-If a lane must be committed later, the report may also say:
+Optional status line:
 
 `Commit status: pending`
 
@@ -104,7 +92,7 @@ Standard receipt template:
 - push avoided yes/no
 - recommended next lane
 
-When useful, include:
+Optional additions:
 
 - report committed yes/no
 - exact commit hash
@@ -125,22 +113,20 @@ Require a second provenance review only if:
 
 Observed at write time:
 
-- `git status --short` shows unrelated dirty files and untracked report files.
+- `git status --short` shows an unrelated dirty tracked file and several untracked report files.
 - `git rev-parse --short HEAD` is `d2ba47ea`.
-- `git log --oneline -8` shows the toy adapter and contamination-boundary commits already in history.
+- `git log --oneline -8` shows the recent ARC boundary and toy-adapter commits.
 - `git ls-files docs/WESLR_ARC_OFFICIAL_FORMAT_TOY_FIXTURE_ADAPTER_BEHAVIOR_REVIEW_V1.md` returned no tracked entry.
 
 Conclusion:
 
 - `docs/WESLR_ARC_OFFICIAL_FORMAT_TOY_FIXTURE_ADAPTER_BEHAVIOR_REVIEW_V1.md` is currently **untracked**.
-- It is not a provenance failure; it is a normal pre-commit state.
-- If desired, commit it later in a separate cleanup lane.
+- That is normal and not a provenance failure.
+- If needed, it can be committed later in a separate cleanup lane.
 
 ## 8) Recommended next lane
 
 - **Separate cleanup lane for any untracked review report commit**
-
-That should be done only if the owner explicitly wants the untracked review report committed.
 
 ## Standard report footer
 
