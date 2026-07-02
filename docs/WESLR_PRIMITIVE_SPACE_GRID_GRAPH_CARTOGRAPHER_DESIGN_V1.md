@@ -472,3 +472,137 @@ For each candidate, `cartography_gap_fill` = max of:
 - 1.0 if primitive composes with 2+ major hubs that currently lack a bridge
 - 0.5 if primitive composes with 1 major hub
 - 0.0 if primitive only composes with non-hub primitives
+
+---
+
+## 8. Batch 2 Reassessment (Cartographic)
+
+### 8.1 Original Batch 2 Assessment
+
+| Candidate | Map cell | Cell status | Family gap? | Duplicate risk | Cartographic verdict |
+|-----------|----------|-------------|-------------|---------------|---------------------|
+| mask_border_only | COL/MASK × GRID × MOD | Candidate-only | No (mask_algebra has mask_complement too) | 0.6 (similar to extract_boundary) | **Replace** — high duplicate risk, family partially covered |
+| geom_flip_vertical | GEO × GRID × MOD | Candidate | No (geometry has rotate, transform, mirror_object) | 0.6 (similar to transform) | **Replace** — high duplicate risk, family well-covered |
+| topo_fill_holes | TOP × OBJ × MOD | Candidate-only, full family gap | Yes (TOP has 0 accepted/promoted) | 0.4 (fill_region is distant) | **Retain** — fills family gap, low duplicate risk |
+| constr_draw_rect_around | CON × BBOX × CST | Candidate-only, full family gap | Yes (CON has 0 accepted/promoted) | 0.4 (extract_boundary is related but different role) | **Retain** — fills family gap, construction role gap |
+
+### 8.2 Evidence-Driven Batch 2 (from perspicuity lane)
+
+| Candidate | Rank | Score | Map cell |
+|-----------|------|-------|----------|
+| mask_complement | #1 | 0.8045 | MASK × GRID × MOD — fills mask family |
+| constr_draw_rect_around | #2 | 0.7938 | CON × BBOX × CST — fills construction family |
+| sel_leftmost | #3 | 0.7755 | SEL × OBJ × SLR — fills selection family |
+| topo_fill_holes | #4 | 0.7650 | TOP × OBJ × MOD — fills topology family |
+
+### 8.3 Cartographic Verification
+
+The perspicuity-driven Batch 2 aligns with the cartographic gap analysis:
+
+| Candidate | Fills family gap? | Fills empty cell? | Low duplicate? | Cartographer agrees? |
+|-----------|-------------------|-------------------|----------------|---------------------|
+| mask_complement | Yes (mask_algebra) | Yes (MASK target) | Yes (0.30) | ✅ Yes |
+| constr_draw_rect_around | Yes (construction) | Yes (CON×BBOX×CST) | Yes (0.40) | ✅ Yes |
+| sel_leftmost | Yes (selection) | Yes (SEL×OBJ×SLR) | Medium (0.50) | ✅ Yes — new family outweighs |
+| topo_fill_holes | Yes (topology) | Yes (TOP×OBJ×MOD) | Yes (0.40) | ✅ Yes |
+
+**Cartographer confirms the evidence-driven Batch 2.** Each candidate fills a full family gap (R6) and occupies a candidate-only cell (R2). The two dropped candidates (`mask_border_only`, `geom_flip_vertical`) have high duplicate risk (0.60) and their families are partially covered by existing accepted primitives.
+
+### 8.4 Revised Batch 2 (Final)
+
+| # | Candidate | Family | Map cell | Gap fill | Oracle complexity | Verdict |
+|---|-----------|--------|----------|----------|-------------------|---------|
+| 1 | mask_complement | mask_algebra | MASK×GRID×MOD | Full family gap | 0.20 (trivial) | **Promote now** |
+| 2 | constr_draw_rect_around | construction | CON×BBOX×CST | Full family gap | 0.20 (trivial) | **Promote now** |
+| 3 | sel_leftmost | object_selector | SEL×OBJ×SLR | Full family gap | 0.20 (trivial) | **Promote now** |
+| 4 | topo_fill_holes | topology | TOP×OBJ×MOD | Full family gap | 0.30 (easy) | **Promote now** |
+
+---
+
+## 9. Future Output Artifacts
+
+The implementation lane should produce:
+
+| Artifact | Format | Purpose |
+|----------|--------|---------|
+| Primitive coverage grid | JSON + visual table | Shows all (family × target × role × maturity) cells with occupancy |
+| Primitive graph adjacency list | JSON | All edges with types for graph traversal |
+| Gap report | JSON + markdown | All detected gaps with scores and reasons |
+| Top-N missing cells | JSON | Ranked list of highest-value empty cells |
+| Top-N promotion recommendations | JSON | Ranked candidates with gap-fill evidence |
+| Duplicate-risk report | JSON | All near-duplicate edges with similarity scores |
+| Task-unlock report | JSON | For each candidate: which tasks would become scoreable if promoted |
+| Family coverage summary | JSON | Per-family: accepted count, promoted count, candidate count, gap severity |
+| Hub/centrality report | JSON | Per-primitive: composition degree, hub status, isolation flag |
+
+---
+
+## 10. Design Boundaries
+
+This lane is **design-only**.
+
+- ❌ No code implementation
+- ❌ No primitive promotion
+- ❌ No candidate counted as solved
+- ❌ No 120 scoring changes
+- ❌ No BH80 changes
+- ❌ No oracle/solver implementations
+- ❌ No runtime/chat/UI/provider paths
+- ❌ No `.weslr` IO
+- ❌ No push
+
+---
+
+## 11. Validation
+
+| Check | Result |
+|-------|--------|
+| `git diff --check` | clean ✅ |
+| `python weslr/tests/release_gate_v1.py` | `WESLR_RELEASE_GATE_V1_OK` ✅ |
+| `./scripts/weslr_release_check.sh` | `WESLR_RELEASE_CHECK_OK` ✅ |
+| `./scripts/chat_weslr_de_health_check.sh --mode source-repo` | PASS=6 FAIL=0 WARN=3 ✅ |
+
+---
+
+## 12. Receipt
+
+| Field | Value |
+|-------|-------|
+| Start HEAD | `470f6453` |
+| End HEAD | `957989f4` (batch 3) → final batch HEAD |
+| Actual preflight HEAD | `470f6453` |
+| Metadata mismatch noted | yes — expected `5455610e` is prior lane start, actual `470f6453` is current chain HEAD |
+| Primitive-space grid designed | yes ✅ — 4 axes (family, target, role, maturity), 3 coverage grids |
+| Primitive graph designed | yes ✅ — 8 node types, 13 edge types, adjacency list, hub analysis |
+| Grid axes defined | yes ✅ — Axis A (14 families), B (10 targets), C (9 roles), D (9 maturity stages) |
+| Graph schema defined | yes ✅ — node types, edge types, adjacency list with evidence |
+| Sudoku-like gap logic defined | yes ✅ — 9 detection rules, 5 full family gaps, 3 empty cells, 7 missing inverses |
+| Gap scoring model defined | yes ✅ — 10-component weighted formula with weights |
+| Perspicuity integration defined | yes ✅ — 15% cartography weight, gap-fill bonus, connectivity bonus |
+| Batch 2 reassessed | yes ✅ — cartographer confirms evidence-driven Batch 2 |
+| Output artifacts defined | yes ✅ — 9 artifacts |
+| BH80 unchanged | yes ✅ — design-only, no code changes |
+| Candidates still unscored | yes ✅ — design-only, no promotion |
+| Validation | PASS ✅ |
+| Push avoided | yes ✅ |
+| Recommended next lane | `IMPLEMENT_WESLR_PRIMITIVE_SPACE_GRID_GRAPH_CARTOGRAPHER_V1` |
+
+---
+
+## 13. Next Lane Recommendation
+
+**Recommended next lane**: `IMPLEMENT_WESLR_PRIMITIVE_SPACE_GRID_GRAPH_CARTOGRAPHER_V1`
+
+This lane should implement:
+1. The primitive coverage grid as a deterministic Python module
+2. The primitive graph adjacency list from BH80 + 120 task chains
+3. Gap detection rules (R1–R9) as deterministic functions
+4. Gap scoring formula
+5. All 9 output artifacts as JSON-serializable functions
+6. Integration with `native_arc_perspicuity.py` (add cartography evidence to ranking)
+7. Tests for determinism, gap detection, graph construction, perspicuity integration
+8. Re-run 120 semantic pilot to confirm no regression
+9. Re-run BH80 to confirm 80/80
+
+After implementation, the next productive direction is:
+- `DESIGN_ARC_NATIVE_PROMOTION_BATCH_2_V1` — design the promotion pipeline for the revised Batch 2 (mask_complement, constr_draw_rect_around, sel_leftmost, topo_fill_holes) using cartographic evidence to confirm gap-fill value
