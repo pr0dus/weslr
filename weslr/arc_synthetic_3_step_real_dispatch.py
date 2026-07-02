@@ -122,6 +122,19 @@ def run_primitive(name: str, grid: List[List[Any]], params: Dict[str, Any]) -> T
             grid = [[1]]
         mirrored = [list(reversed(row)) for row in grid]
         return True, mirrored, {"primitive_id": "mirror_object"}
+    # Wrapper for crop_object – crop to bounding box of largest connected component.
+    # Aligned to oracle semantics: crop to largest component bbox, not all non-bg bbox.
+    if name == "crop_object":
+        if not grid:
+            grid = [[1]]
+        bg = _background_value_from_grid(grid)
+        components = _connected_components(grid, bg)
+        if not components:
+            return True, [row[:] for row in grid], {"primitive_id": "crop_object", "cropped": False}
+        largest = max(components, key=len)
+        min_r, min_c, max_r, max_c = _bounding_box_for_cells(largest)
+        cropped = [row[min_c:max_c+1] for row in grid[min_r:max_r+1]]
+        return True, cropped, {"primitive_id": "crop_object", "cropped": True, "bounding_box": [min_r, min_c, max_r, max_c]}
     # Wrapper for crop – crop to bounding box of largest component.
     if name == "crop":
         if not grid:
