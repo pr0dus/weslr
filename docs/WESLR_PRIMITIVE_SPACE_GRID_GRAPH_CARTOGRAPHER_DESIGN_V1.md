@@ -114,3 +114,197 @@ The grid answers:
 | TST | tested | Positive/negative tests pass |
 | PRP | anti-cheat-promoted | All promotion stages complete |
 | MIS | missing | No primitive exists for this cell |
+
+### 3.3 Coverage Grid (Family × Maturity)
+
+| Family | ACC (BH80) | PRM (native) | GEN (candidate) | MIS (missing) |
+|--------|------------|-------------|----------------|---------------|
+| SEL | 0 | 0 | 5 | 0 |
+| EXT | 4 | 0 | 0 | 0 |
+| CRP | 2 | 0 | 0 | 0 |
+| COL | 1 | 1 | 3 | 0 |
+| GEO | 1 | 0 | 3 | 0 |
+| TOP | 0 | 0 | 3 | 2 |
+| CON | 0 | 0 | 4 | 3 |
+| REL | 0 | 0 | 3 | 3 |
+| PAT | 1 | 0 | 3 | 0 |
+| CND | 0 | 0 | 3 | 3 |
+| CNT | 3 | 0 | 0 | 0 |
+| NRM | 1 | 0 | 1 | 0 |
+| PLC | 1 | 0 | 0 | 0 |
+| NSL | 1 | 0 | 0 | 0 |
+
+**Gap summary**: TOP, CON, REL, CND have zero accepted/promoted primitives — these are pure-candidate families. Their cells are candidate-only or missing.
+
+### 3.4 Coverage Grid (Family × Target)
+
+| Family × Target | OBJ | OBJSET | MASK | REGION | GRID | COUNT | CELL | BBOX | PAT | REL |
+|-----------------|-----|--------|------|--------|------|-------|------|------|-----|-----|
+| SEL | 5c | — | — | — | — | — | — | — | — | — |
+| EXT | 2a | — | — | 1a | — | — | — | 1a | — | — |
+| CRP | 1a | — | — | — | — | — | — | 1a | — | — |
+| COL | — | — | — | — | 1a+1p+3c | — | — | — | — | — |
+| GEO | — | — | — | — | 1a+3c | — | — | — | — | — |
+| TOP | — | 1c | — | — | 2c | — | — | — | — | — |
+| CON | 1c | — | — | 1c | — | — | — | 1c | 1c | — |
+| REL | — | 2c | — | — | — | — | — | — | — | 1c |
+| PAT | — | — | — | — | 1a+3c | — | — | — | — | — |
+| CND | — | — | — | — | 1c | 1c | — | — | — | — |
+| CNT | — | 1a | — | — | — | 2a | — | — | — | — |
+| NRM | 1a | — | — | — | 1c | — | — | — | — | — |
+| PLC | — | — | — | — | 1a | — | — | — | — | — |
+| NSL | — | — | — | — | 1a | — | — | — | — | — |
+
+Legend: `a` = accepted BH80, `p` = promoted native, `c` = candidate, number = count
+
+**Key observations**:
+- **OBJ (object target)**: SEL has 5 candidates but 0 accepted — large gap
+- **OBJSET**: TOP and REL have candidates but 0 accepted — gap
+- **MASK**: completely empty — no accepted, promoted, or candidate primitives target masks directly (mask_algebra candidates target GRID, not MASK as output)
+- **BBOX**: EXT and CRP cover it; CON has one candidate — partially covered
+- **REL (relation target)**: only 1 candidate, 0 accepted — gap
+- **CELL**: completely empty — no primitive operates on individual cells (color transforms modify cells but target GRID)
+
+### 3.5 Coverage Grid (Family × Role)
+
+| Family × Role | SLR | RDC | EXP | CST | MOD | CMP | NRM | CPS | BRH |
+|---------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| SEL | 5c | — | — | — | — | — | — | — | — |
+| EXT | 4a | — | — | — | — | — | — | — | — |
+| CRP | — | 2a | — | — | — | — | — | — | — |
+| COL | — | — | — | — | 1a+1p+3c | — | — | — | — |
+| GEO | — | — | — | — | 1a+3c | — | — | — | — |
+| TOP | — | — | — | 1c | 2c | — | — | — | — |
+| CON | — | — | — | 4c | — | — | — | — | — |
+| REL | — | — | — | — | 3c | — | — | — | — |
+| PAT | — | — | 1a+3c | — | — | — | — | — | — |
+| CND | — | — | — | — | — | — | — | — | 3c |
+| CNT | — | 3a | — | — | — | — | — | — | — |
+| NRM | — | — | — | — | — | — | 1a+1c | — | — |
+| PLC | — | — | — | 1a | — | — | — | — | — |
+| NSL | — | — | — | — | 1a | — | — | — | — |
+
+**Key observations**:
+- **SLR (selector)**: only candidates, 0 accepted — entire role is unpromoted
+- **CST (constructor)**: only candidates (CON family) and 1 accepted (PLC/place_back) — large gap
+- **BRH (brancher)**: only candidates, 0 accepted — entire role is unpromoted
+- **CMP (comparator)**: completely empty — no primitive compares or detects properties
+- **RDC (reducer)**: well-covered by CNT family
+- **NRM (normalizer)**: only 1 accepted + 1 candidate — thin
+
+---
+
+## 4. Primitive Graph Design
+
+### 4.1 Graph Nodes
+
+| Node type | Description | Examples |
+|-----------|-------------|---------|
+| `primitive` | An accepted or promoted primitive | `extract`, `color_invert` |
+| `candidate` | An unpromoted candidate | `mask_border_only`, `sel_leftmost` |
+| `task` | A task in BH80 or 120 suite | `BH80_001`, `T120_084` |
+| `family` | A primitive family | `mask_algebra`, `object_selector` |
+| `type_sig` | A type signature | `Grid→Grid`, `Grid→Count` |
+| `invariant` | A preserved/changed invariant | "grid dimensions preserved" |
+| `audit` | An audit artifact | "oracle_defined", "anti_cheat_validated" |
+| `stage` | A promotion stage | `GENERATED`, `PROMOTED` |
+
+### 4.2 Graph Edges
+
+| Edge type | From → To | Meaning |
+|-----------|-----------|---------|
+| `composes_with` | primitive → primitive | These two primitives can appear in the same 3-step chain productively |
+| `aliases_or_duplicates` | primitive → primitive/candidate | These primitives produce semantically similar output |
+| `depends_on` | primitive → primitive | One primitive's semantics assumes the other was run first |
+| `unlocks_task` | primitive → task | Promoting this primitive would make this task scoreable |
+| `appears_in_task` | primitive → task | This primitive is used in a task's 3-step chain |
+| `has_oracle` | primitive → audit | Oracle reference exists for this primitive |
+| `has_solver` | primitive → audit | Solver dispatch target exists |
+| `has_failure` | primitive → task | This primitive caused a failure in this task (oracle/solver mismatch) |
+| `preserves_invariant` | primitive → invariant | This primitive preserves the given invariant |
+| `changes_invariant` | primitive → invariant | This primitive changes the given invariant |
+| `promoted_from_candidate` | primitive → candidate | This promoted primitive was originally this candidate |
+| `family_member` | primitive → family | This primitive belongs to this family |
+| `type_match` | primitive → type_sig | This primitive has this type signature |
+
+### 4.3 Adjacency List (Composition Graph — Known Edges)
+
+Edges derived from BH80 and 120 task chains (which primitives co-occur in 3-step sequences):
+
+| Source | composes_with | Evidence |
+|--------|---------------|---------|
+| extract | rotate | BH80_001, BH80_002, T120_082 |
+| extract | recolor | BH80_003, T120_081 |
+| extract | color_invert | T120_081, T120_086 |
+| extract | count_or_pattern | T120_089 |
+| isolate_largest | normalize_position | BH80_006 |
+| isolate_largest | recolor | BH80_006, T120_085 |
+| isolate_largest | color_invert | T120_083 |
+| crop_object | transform | BH80_007, BH80_008 |
+| crop_object | place_back | BH80_007, T120_084 |
+| crop_object | color_invert | T120_084 |
+| crop_object | mirror_object | T120_093 |
+| extract_boundary | recolor | BH80_005 |
+| extract_boundary | count | BH80_005 |
+| extract_boundary | color_invert | T120_086 |
+| mirror_object | recolor | T120_088 |
+| mirror_object | extract_changed_region | T120_088 |
+| rotate | color_invert | T120_087 |
+| rotate | crop | T120_087 |
+| remove_noise | extract_boundary | T120_091 |
+| fill_region | color_invert | T120_090 |
+| fill_region | transform | T120_090 |
+| recolor | count | T120_092 |
+| recolor_boundary | count_objects | T120_092 |
+| count_objects | pattern_output | T120_094 |
+| pattern_output | crop | T120_095 |
+| normalize_position | count | T120_096 |
+| normalize_position | recolor | T120_097 |
+| count | recolor | T120_098 |
+| count_objects | place_back | T120_099 |
+| place_back | crop | T120_100 |
+| place_back | transform | BH80_058 |
+| crop_object | recolor_boundary | T120_093 |
+| isolate_largest | extract | T120_102 (probe) |
+| extract | recolor | T120_101 (probe) |
+
+### 4.4 Hub Analysis
+
+| Primitive | Out-degree (composes_with) | Hub type |
+|-----------|---------------------------|----------|
+| recolor | 8 | **Major hub** — most composed-with |
+| extract | 6 | **Major hub** — second most composed |
+| crop_object | 5 | **Moderate hub** |
+| color_invert | 5 | **Moderate hub** (promoted native) |
+| isolate_largest | 4 | Moderate hub |
+| rotate | 3 | Minor hub |
+| place_back | 3 | Minor hub |
+| extract_boundary | 3 | Minor hub |
+| normalize_position | 3 | Minor hub |
+| transform | 3 | Minor hub |
+
+**Observation**: `recolor` and `extract` are central hubs. Any new primitive that composes with these hubs has high task-space value. The candidate probes (T120_101–T120_110) all chain with either `extract` or `recolor`, confirming hub connectivity.
+
+### 4.5 Isolated Primitives
+
+| Primitive | Composition edges | Status |
+|-----------|-------------------|--------|
+| fill_region | 2 (T120_090 only) | Low connectivity |
+| remove_noise | 1 (T120_091 only) | Low connectivity |
+| count | 2 | Low-moderate |
+| pattern_output | 2 | Low-moderate |
+
+These primitives appear in few chains. New primitives that compose with `fill_region`, `remove_noise`, or `pattern_output` could increase graph connectivity.
+
+### 4.6 Near-Duplicate Edges
+
+| Primitive A | Primitive B | Similarity | Edge type |
+|------------|------------|-----------|-----------|
+| crop | crop_object | 0.9 | aliases_or_duplicates (same semantics after repair) |
+| extract | extract_object | 0.9 | aliases_or_duplicates (same semantics) |
+| transform | geom_flip_vertical | 0.6 | aliases_or_duplicates (both flip) |
+| extract_boundary | mask_border_only | 0.6 | aliases_or_duplicates (border extraction) |
+| normalize_position | geom_translate_center | 0.7 | aliases_or_duplicates (centroid centering) |
+| recolor | color_swap_1_2 | 0.5 | aliases_or_duplicates (color remap) |
+| recolor | color_dominant | 0.5 | aliases_or_duplicates (color remap) |
+| pattern_output | pat_row_alternate | 0.6 | aliases_or_duplicates (pattern generation) |
