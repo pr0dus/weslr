@@ -46,6 +46,16 @@ def _get_promotion_status() -> dict[str, bool]:
     except Exception:
         pass
 
+    # Batch 2 promoted native primitives
+    batch_2_promoted = {
+        "constr_draw_rect_around",
+        "mask_complement",
+        "topo_fill_holes",
+        "sel_leftmost",
+    }
+    for p in batch_2_promoted:
+        cache[p] = True
+
     # All BH80 accepted primitives are scored
     bh80_primitives = {
         "count", "count_objects", "count_or_pattern", "crop", "crop_object",
@@ -621,11 +631,11 @@ def get_scoring_summary(tasks: list[dict]) -> dict:
 
 GATE_DEFINITIONS = {
     "scored": {
-        "clean": 110,
-        "preferred": 103,
-        "strong": 99,
-        "minimal": 94,
-        "total": 110,
+        "clean": 114,
+        "preferred": 107,
+        "strong": 103,
+        "minimal": 97,
+        "total": 114,
     },
     "bh80_subgate": {
         "clean": 80,

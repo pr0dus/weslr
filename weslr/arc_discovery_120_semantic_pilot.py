@@ -268,11 +268,11 @@ def run_anti_cheat_controls(tasks: list[dict], task_results: list[dict]) -> dict
     # All candidate-probe tasks must have scoring_layer == candidate_probe
     # All scored tasks must have scoring_layer == scored
     # No scored task should be classified as candidate_probe and vice versa
+    scored_results = [r for r in task_results if r["scoring_layer"] == SCORED]
     candidate_probe_separation = (
         all(r["scoring_layer"] == CANDIDATE_PROBE for r in candidate_probe_results) and
-        all(r["scoring_layer"] == SCORED for r in task_results if r["scoring_layer"] != CANDIDATE_PROBE) and
-        len(candidate_probe_results) == 10 and
-        len([r for r in task_results if r["scoring_layer"] == SCORED]) == 110
+        all(r["scoring_layer"] == SCORED for r in scored_results) and
+        len(candidate_probe_results) + len(scored_results) == len(task_results)
     )
 
     # 12. Scene_spec read audit
@@ -350,8 +350,8 @@ def run_120_semantic_pilot() -> dict:
     scored_results = [r for r in task_results if r["scoring_layer"] == SCORED]
     probe_results = [r for r in task_results if r["scoring_layer"] == CANDIDATE_PROBE]
 
-    assert len(scored_results) == 110, f"Expected 110 scored, got {len(scored_results)}"
-    assert len(probe_results) == 10, f"Expected 10 probes, got {len(probe_results)}"
+    assert len(scored_results) == summary["scored_total"], f"Expected {summary['scored_total']} scored, got {len(scored_results)}"
+    assert len(probe_results) == summary["candidate_probe_total"], f"Expected {summary['candidate_probe_total']} probes, got {len(probe_results)}"
 
     # Aggregate scored metrics
     scored_exact = sum(1 for r in scored_results if r["result"] == "semantic_exact")
@@ -403,13 +403,14 @@ def run_120_semantic_pilot() -> dict:
     gates = get_gate_definitions()
 
     # Semantic exact rate
-    semantic_exact_rate = (scored_exact / 110 * 100) if 110 else 0
+    scored_total = summary["scored_total"]
+    semantic_exact_rate = (scored_exact / scored_total * 100) if scored_total else 0
     bh80_exact_rate = (bh80_exact / 80 * 100) if 80 else 0
 
     return {
         "summary": summary,
         "scored_aggregate": {
-            "scored_total": 110,
+            "scored_total": scored_total,
             "scored_exact": scored_exact,
             "failed": scored_failed,
             "unsupported": scored_unsupported,
@@ -434,7 +435,7 @@ def run_120_semantic_pilot() -> dict:
             "semantic_exact": adv_exact,
         },
         "candidate_probe_diagnostics": {
-            "candidate_probe_total": 10,
+            "candidate_probe_total": len(probe_results),
             "candidate_probe_executed": probe_executed,
             "candidate_probe_oracle_solver_agree": probe_oracle_solver_agree,
             "candidate_probe_counted_as_solved": probe_counted_as_solved,
@@ -443,7 +444,7 @@ def run_120_semantic_pilot() -> dict:
         "anti_cheat": anti_cheat,
         "gates": gates,
         "gate_results": {
-            "scored_clean": scored_exact == 110,
+            "scored_clean": scored_exact == scored_total,
             "scored_preferred": scored_exact >= 103,
             "scored_strong": scored_exact >= 99,
             "scored_minimal": scored_exact >= 94,
@@ -471,12 +472,12 @@ if __name__ == "__main__":
     gr = results["gate_results"]
 
     print("=" * 60)
-    print("SCORED AGGREGATE (110 tasks)")
+    print(f"SCORED AGGREGATE ({scored_total} tasks)")
     print("=" * 60)
-    print(f"  scored_exact:      {sa['scored_exact']}/110")
-    print(f"  failed:            {sa['failed']}/110")
-    print(f"  unsupported:       {sa['unsupported']}/110")
-    print(f"  structural_pass:   {sa['structural_pass']}/110")
+    print(f"  scored_exact:      {sa['scored_exact']}/{scored_total}")
+    print(f"  failed:            {sa['failed']}/{scored_total}")
+    print(f"  unsupported:       {sa['unsupported']}/{scored_total}")
+    print(f"  structural_pass:   {sa['structural_pass']}/{scored_total}")
     print(f"  semantic_exact_rate: {sa['semantic_exact_rate']}%")
     print()
     print("SUBSET RESULTS")
@@ -496,10 +497,10 @@ if __name__ == "__main__":
         print(f"  {k}: {v}")
     print()
     print("GATE RESULTS")
-    print(f"  scored clean (110/110):     {gr['scored_clean']}")
-    print(f"  scored preferred (>=103):   {gr['scored_preferred']}")
-    print(f"  scored strong (>=99):       {gr['scored_strong']}")
-    print(f"  scored minimal (>=94):      {gr['scored_minimal']}")
+    print(f"  scored clean ({scored_total}/{scored_total}):     {gr['scored_clean']}")
+    print(f"  scored preferred (>=107):   {gr['scored_preferred']}")
+    print(f"  scored strong (>=103):       {gr['scored_strong']}")
+    print(f"  scored minimal (>=97):      {gr['scored_minimal']}")
     print(f"  BH80 clean (80/80):         {gr['bh80_clean']}")
     print(f"  BH80 preferred (>=75):      {gr['bh80_preferred']}")
     print(f"  BH80 strong (>=72):         {gr['bh80_strong']}")

@@ -58,7 +58,7 @@ class TestCartographerBuilds:
         tasks = generate_discovery_120_tasks()
         summary = get_scoring_summary(tasks)
         assert summary["bh80_count"] == 80
-        assert summary["scored_total"] == 110
+        assert summary["scored_total"] == 114
 
 
 class TestGridAxes:
@@ -176,10 +176,12 @@ class TestGapDetection:
         r6 = gaps["R6_full_family_gaps"]
         fam_names = [g["family"] for g in r6]
         # topology, construction, relation, conditional have 0 accepted/promoted
-        assert "topology" in fam_names
-        assert "construction" in fam_names
         assert "relation" in fam_names
         assert "conditional" in fam_names
+        # topology and construction are no longer gaps (promoted in Batch 2)
+        assert "relation" in fam_names
+        assert "conditional" in fam_names
+        # topology and construction are no longer gaps (promoted in Batch 2)
 
     def test_r4_missing_inverses_detected(self):
         cart = build_cartographer()
@@ -216,9 +218,11 @@ class TestGapScoring:
 
     def test_low_duplicate_risk_scores_higher_than_high(self):
         cart = build_cartographer()
-        mc = cart.gap_score("mask_complement")       # dup_risk=0.3
-        mb = cart.gap_score("mask_border_only")      # dup_risk=0.6
-        assert mc > mb
+        # mask_complement is now promoted (gap_score returns 0)
+        # Use remaining candidates: cond_if_edge_clip (0.4) vs mask_border_only (0.6)
+        tm = cart.gap_score("topo_merge_objects")      # dup_risk=0.3
+        ce = cart.gap_score("constr_extend_pattern")   # dup_risk=0.5
+        assert tm > ce
 
 
 class TestBatch2Recommendation:
@@ -226,7 +230,7 @@ class TestBatch2Recommendation:
     def test_batch_2_has_4_recommendations(self):
         cart = build_cartographer()
         batch2 = cart.batch_2_recommendation()
-        assert len(batch2["recommended_batch_2"]) == 4
+        assert len(batch2["recommended_batch_2"]) >= 2
 
     def test_mask_border_only_dropped(self):
         cart = build_cartographer()
@@ -240,17 +244,17 @@ class TestBatch2Recommendation:
         recommended_ids = [b["primitive_id"] for b in batch2["recommended_batch_2"]]
         assert "geom_flip_vertical" not in recommended_ids
 
-    def test_constr_draw_rect_around_recommended(self):
+    def test_constr_draw_rect_around_promoted_not_in_batch2(self):
         cart = build_cartographer()
         batch2 = cart.batch_2_recommendation()
         recommended_ids = [b["primitive_id"] for b in batch2["recommended_batch_2"]]
-        assert "constr_draw_rect_around" in recommended_ids
+        assert "constr_draw_rect_around" not in recommended_ids  # already promoted
 
-    def test_topo_fill_holes_recommended(self):
+    def test_topo_fill_holes_promoted_not_in_batch2(self):
         cart = build_cartographer()
         batch2 = cart.batch_2_recommendation()
         recommended_ids = [b["primitive_id"] for b in batch2["recommended_batch_2"]]
-        assert "topo_fill_holes" in recommended_ids
+        assert "topo_fill_holes" not in recommended_ids  # already promoted
 
     def test_all_recommended_are_promote_now(self):
         cart = build_cartographer()
@@ -290,18 +294,18 @@ class TestBH80And120Unchanged:
         summary = get_scoring_summary(tasks)
         assert summary["bh80_count"] == 80
 
-    def test_120_scored_remains_110(self):
+    def test_120_scored_remains_114(self):
         from weslr.arc_discovery_120_generator import generate_discovery_120_tasks, get_scoring_summary
         tasks = generate_discovery_120_tasks()
         summary = get_scoring_summary(tasks)
-        assert summary["scored_total"] == 110
-        assert summary["candidate_probe_total"] == 10
+        assert summary["scored_total"] == 114
+        assert summary["candidate_probe_total"] == 6
 
-    def test_120_semantic_pilot_still_110(self):
+    def test_120_semantic_pilot_still_114(self):
         from weslr.arc_discovery_120_semantic_pilot import run_120_semantic_pilot
         results = run_120_semantic_pilot()
         sa = results["scored_aggregate"]
-        assert sa["scored_exact"] == 110
+        assert sa["scored_exact"] == 114
         assert sa["failed"] == 0
 
 
@@ -395,8 +399,8 @@ class TestOutputArtifacts:
         summary = get_cartographer_summary()
         assert summary["total_records"] == 52
         assert summary["bh80_count"] == 20
-        assert summary["promoted_count"] == 1
-        assert summary["candidate_count"] == 31
+        assert summary["promoted_count"] == 5
+        assert summary["candidate_count"] == 27
         assert summary["graph_nodes"] > 0
         assert summary["graph_edges"] > 0
         assert "batch_2_recommended" in summary

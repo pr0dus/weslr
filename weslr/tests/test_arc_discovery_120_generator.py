@@ -81,28 +81,28 @@ class TestTotalCounts:
 class TestScoringLayers:
     def test_110_scored(self, tasks120):
         scored = get_scored_tasks(tasks120)
-        assert len(scored) == 110
+        assert len(scored) == 114
 
     def test_10_candidate_probes(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
-        assert len(probes) == 10
+        assert len(probes) == 6
 
     def test_bh80_all_scored(self, tasks120):
         bh80 = [t for t in tasks120 if t["task_id"].startswith("BH80_")]
         for t in bh80:
             assert t["scoring_layer"] == SCORED
 
-    def test_candidate_probes_are_t120_101_to_110(self, tasks120):
+    def test_candidate_probes_are_remaining_unpromoted(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
         probe_ids = [t["task_id"] for t in probes]
-        expected = [f"T120_{i:03d}" for i in range(101, 111)]
+        expected = ["T120_101", "T120_102", "T120_105", "T120_107", "T120_108", "T120_109"]
         assert probe_ids == expected
 
     def test_scoring_summary(self, tasks120):
         summary = get_scoring_summary(tasks120)
         assert summary["total_tasks"] == 120
-        assert summary["scored_total"] == 110
-        assert summary["candidate_probe_total"] == 10
+        assert summary["scored_total"] == 114
+        assert summary["candidate_probe_total"] == 6
         assert summary["bh80_count"] == 80
         assert summary["new_task_count"] == 40
 
@@ -177,10 +177,11 @@ class TestCandidateProbes:
             meta = t.get("candidate_probe", {})
             assert meta.get("promotion_stage") == "GENERATED"
 
-    def test_probe_ids_101_to_110(self, tasks120):
+    def test_probe_ids_are_remaining_unpromoted(self, tasks120):
         probes = get_candidate_probe_tasks(tasks120)
         ids = [t["task_id"] for t in probes]
-        assert ids == [f"T120_{i:03d}" for i in range(101, 111)]
+        expected = ["T120_101", "T120_102", "T120_105", "T120_107", "T120_108", "T120_109"]
+        assert ids == expected
 
 
 # ---------------------------------------------------------------------------
@@ -261,11 +262,11 @@ class TestGateDefinitions:
     def test_scored_gates(self):
         gates = get_gate_definitions()
         scored = gates["scored"]
-        assert scored["clean"] == 110
-        assert scored["preferred"] == 103
-        assert scored["strong"] == 99
-        assert scored["minimal"] == 94
-        assert scored["total"] == 110
+        assert scored["clean"] == 114
+        assert scored["preferred"] == 107
+        assert scored["strong"] == 103
+        assert scored["minimal"] == 97
+        assert scored["total"] == 114
 
     def test_bh80_subgate(self):
         gates = get_gate_definitions()

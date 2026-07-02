@@ -39,7 +39,7 @@ BH80_ACCEPTED_PRIMITIVES: Set[str] = {
     "remove_noise", "rotate", "transform",
 }
 
-PROMOTED_PRIMITIVES: Set[str] = {"color_invert"}
+PROMOTED_PRIMITIVES: Set[str] = {"color_invert", "constr_draw_rect_around", "mask_complement", "topo_fill_holes", "sel_leftmost"}
 
 # ---------------------------------------------------------------------------
 # Candidate probe mapping (from T120_101–T120_110)
