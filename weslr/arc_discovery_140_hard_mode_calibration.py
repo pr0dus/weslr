@@ -163,7 +163,7 @@ HARD_MODE_TASK_SPECS = [
     (
         "T140H_002",
         ["isolate_largest", "mask_complement", "normalize_position"],
-        _scene([10, 10], [_donut("o1", 3, [1, 1], [6, 6]), _rect("o2", 5, [7, 1], [2, 2])], [_rect("d1", 8, [0, 8], [1, 2])]),
+        _scene([10, 10], [_donut("o1", 3, [1, 1], [6, 6]), _rect("o2", 5, [7, 7], [2, 2])], [_rect("d1", 8, [0, 8], [1, 2])]),
         "largest_object_trap",
         ["largest_object_trap", "hole_topology_trap"],
         "largest-object with hollow topology pressure",
@@ -190,7 +190,7 @@ HARD_MODE_TASK_SPECS = [
     (
         "T140H_005",
         ["topo_fill_holes", "recolor_boundary", "extract"],
-        _scene([10, 10], [_donut("o1", 2, [1, 1], [6, 6]), _rect("o2", 5, [7, 2], [2, 2])], [_rect("d1", 8, [0, 0], [1, 1])]),
+        _scene([10, 10], [_donut("o1", 2, [1, 1], [6, 6]), _rect("o2", 5, [7, 7], [2, 2])], [_rect("d1", 8, [0, 0], [1, 1])]),
         "hole_topology_trap",
         ["hole_topology_trap", "object_ambiguity"],
         "hollow-object hole fill pressure",
@@ -280,7 +280,7 @@ HARD_MODE_TASK_SPECS = [
     (
         "T140H_015",
         ["remove_noise", "topo_fill_holes", "mask_complement"],
-        _scene([12, 12], [_donut("o1", 3, [2, 2], [6, 6]), _rect("o2", 6, [8, 2], [2, 2])], [_rect("d1", 8, [0, 0], [1, 1]), _rect("d2", 7, [11, 11], [1, 1])], noise_pixels=2),
+        _scene([12, 12], [_donut("o1", 3, [2, 2], [6, 6])], [_rect("d1", 8, [0, 0], [1, 1]), _rect("d2", 7, [11, 11], [1, 1])], noise_pixels=2),
         "distractor_density",
         ["distractor_density", "hole_topology_trap"],
         "noise plus topology pressure",
