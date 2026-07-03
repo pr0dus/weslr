@@ -1,0 +1,58 @@
+{
+  "schema_version": "arc_official_public_dummy_no_data_v1",
+  "dummy_no_data": true,
+  "source_kind": "dummy_no_data_fixture_v1",
+  "fixture_note": "Synthetic/no-data only. Not official. Not score-claimable.",
+  "tasks": [
+    {
+      "task_id": "dummy_alpha_copy_v1",
+      "train_pairs": [
+        {
+          "input_grid": [[1, 0, 1], [0, 1, 0]],
+          "output_grid": [[1, 0, 1], [0, 1, 0]]
+        },
+        {
+          "input_grid": [[2, 2, 0], [0, 2, 2]],
+          "output_grid": [[2, 2, 0], [0, 2, 2]]
+        }
+      ],
+      "test_inputs": [
+        {
+          "input_grid": [[1, 1, 0], [0, 0, 1]]
+        }
+      ],
+      "reference_outputs": [
+        {
+          "output_grid": [[1, 1, 0], [0, 0, 1]]
+        }
+      ],
+      "dummy_rule_hint": "copy_input",
+      "dummy_public_label": "synthetic_no_data"
+    },
+    {
+      "task_id": "dummy_beta_invert_v1",
+      "train_pairs": [
+        {
+          "input_grid": [[0, 1, 0], [1, 0, 1]],
+          "output_grid": [[1, 0, 1], [0, 1, 0]]
+        },
+        {
+          "input_grid": [[1, 1, 0], [0, 0, 1]],
+          "output_grid": [[0, 0, 1], [1, 1, 0]]
+        }
+      ],
+      "test_inputs": [
+        {
+          "input_grid": [[0, 0, 1], [1, 1, 0]]
+        }
+      ],
+      "reference_outputs": [
+        {
+          "output_grid": [[1, 1, 0], [0, 0, 1]]
+        }
+      ],
+      "dummy_rule_hint": "invert_binary",
+      "dummy_public_label": "synthetic_no_data"
+    }
+  ]
+}
