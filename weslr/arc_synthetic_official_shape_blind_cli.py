@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -10,6 +11,13 @@ from typing import Any, Mapping
 from weslr.arc_synthetic_official_shape_blind_runner import (
     run_arc_synthetic_official_shape_blind_readiness_v1,
     summarize_arc_synthetic_official_shape_blind_readiness_v1,
+)
+from weslr.arc_synthetic_official_shape_frozen_solver_challenge import (
+    CHALLENGE_TASK_COUNT_DEFAULT_V1,
+    OWNER_CHALLENGE_COMMAND_V1,
+    REPORT_RELATIVE_PATH_V1 as CHALLENGE_REPORT_RELATIVE_PATH_V1,
+    derive_challenge_batch_seeds_v1,
+    run_arc_synthetic_official_shape_frozen_solver_owner_seed_challenge_v1,
 )
 
 SCHEMA_VERSION_V1 = "ArcSyntheticOfficialShapeBlindCliV1"
@@ -172,10 +180,27 @@ def run_arc_synthetic_official_shape_blind_cli_v1() -> dict[str, Any]:
     }
 
 
+def run_arc_synthetic_official_shape_frozen_solver_owner_seed_challenge_cli_v1(*, owner_seed: int, task_count: int = CHALLENGE_TASK_COUNT_DEFAULT_V1) -> dict[str, Any]:
+    return run_arc_synthetic_official_shape_frozen_solver_owner_seed_challenge_v1(owner_seed=owner_seed, task_count=task_count)
+
+
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--challenge", action="store_true", help="Run the frozen-solver owner-seed challenge mode")
+    parser.add_argument("--tasks", type=int, default=CHALLENGE_TASK_COUNT_DEFAULT_V1, help="Challenge task count (default: 240)")
+    parser.add_argument("--seed", type=int, help="Owner seed for challenge mode")
+    return parser.parse_args(argv or [])
+
+
 def main(argv: list[str] | None = None) -> int:
-    _ = argv
-    payload = run_arc_synthetic_official_shape_blind_cli_v1()
-    return 0 if payload["final_verdict"] == "blind_mock_ready_for_public_parse_scorer_design" else 1
+    args = _parse_args(argv)
+    if not args.challenge:
+        payload = run_arc_synthetic_official_shape_blind_cli_v1()
+        return 0 if payload["final_verdict"] == "blind_mock_ready_for_public_parse_scorer_design" else 1
+    if args.seed is None:
+        raise SystemExit("--seed is required with --challenge")
+    payload = run_arc_synthetic_official_shape_frozen_solver_owner_seed_challenge_cli_v1(owner_seed=int(args.seed), task_count=int(args.tasks))
+    return 0 if payload["final_verdict"] == "frozen_solver_owner_seed_challenge_ready" else 1
 
 
 if __name__ == "__main__":
