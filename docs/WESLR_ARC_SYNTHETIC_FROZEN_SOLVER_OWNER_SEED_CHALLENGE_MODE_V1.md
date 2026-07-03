@@ -2,12 +2,12 @@
 
 - Repository: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `occ-discovery-doctrine-implementation-20260613`
-- Start HEAD: `5414a9079f06fad540d5108f32d456f4ddf8b68a`
-- End HEAD: `5414a9079f06fad540d5108f32d456f4ddf8b68a`
+- Start HEAD: `ed128dbd579310f8809149dcf2df260a1ca12445`
+- End HEAD: `ed128dbd579310f8809149dcf2df260a1ca12445`
 - Commit status: committed in this lane
-- Actual preflight HEAD: `5414a9079f06fad540d5108f32d456f4ddf8b68a`
+- Actual preflight HEAD: `ed128dbd579310f8809149dcf2df260a1ca12445`
 - Owner challenge command: `./run arc-mock --blind --challenge --tasks 240 --seed <OWNER_SEED>`
-- Owner seed used for implementation test: `123456789`
+- Owner seed used for implementation test: `2435`
 - Challenge task count: `240`
 - Synthetic-only statement: yes; no official/public ARC data was touched
 - Official percentage: none/0

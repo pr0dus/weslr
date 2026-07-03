@@ -2,8 +2,8 @@
 
 - Repository: `/data/data/com.termux/files/home/weslr-pr47-clean`
 - Branch: `occ-discovery-doctrine-implementation-20260613`
-- Start HEAD: `346b31ab78428a5f39046fb15ec5d13bcc590116`
-- End HEAD: `346b31ab78428a5f39046fb15ec5d13bcc590116`
+- Start HEAD: `a120b50b062d38cfd6cb7b3f113199d2e82c267a`
+- End HEAD: `a120b50b062d38cfd6cb7b3f113199d2e82c267a`
 - Owner command: `./run arc-mock`
 - Synthetic-only statement: yes; no official/public ARC data was touched
 - Official percentage: none/0
