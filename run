@@ -3,10 +3,19 @@ set -euo pipefail
 case "${1:-}" in
   arc-mock)
     shift
+    if [[ "${1:-}" == "--blind" ]]; then
+      shift
+      exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/run_arc_mock_blind.sh" "$@"
+    fi
     exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/run_arc_mock.sh" "$@"
     ;;
+  arc-mock-blind)
+    shift
+    exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/run_arc_mock_blind.sh" "$@"
+    ;;
   *)
-    echo "Usage: ./run arc-mock" >&2
+    echo "Usage: ./run arc-mock [--blind]" >&2
+    echo "   or: ./run arc-mock-blind" >&2
     exit 2
     ;;
 esac
