@@ -21,8 +21,8 @@ def test_mock_readiness_run_beats_trivial_baseline_and_stays_clean() -> None:
     assert summary["malformed_count"] == 0
     assert summary["timeout_count"] == 0
     assert summary["error_count"] == 0
-    assert summary["batch_count"] == 3
-    assert summary["task_count"] == 24
+    assert summary["batch_count"] == 10
+    assert summary["task_count"] == 120
     assert summary["batch_score_variance"] >= 0.0
     assert result["audit"]["expected_output_leakage"] is False
     assert result["audit"]["internet_used"] is False
@@ -33,8 +33,14 @@ def test_mock_readiness_run_beats_trivial_baseline_and_stays_clean() -> None:
     assert all(batch["malformed_count"] == 0 for batch in result["batch_results"])
     assert all(batch["timeout_count"] == 0 for batch in result["batch_results"])
     assert all(batch["error_count"] == 0 for batch in result["batch_results"])
-    assert len({batch["seed"] for batch in result["batch_results"]}) == 3
-    assert len({tuple(batch["family_ids"]) for batch in result["batch_results"]}) == 3
+    assert len({batch["seed"] for batch in result["batch_results"]}) == 10
+    assert len({tuple(batch["family_ids"]) for batch in result["batch_results"]}) == 10
+    reflect = summary["family_scores"]["reflect_object_horizontal_or_vertical"]
+    rotate = summary["family_scores"]["rotate_object_90"]
+    assert reflect["solver_exact"] == 10
+    assert rotate["solver_exact"] == 10
+    assert reflect["baseline_exact"] == 0
+    assert rotate["baseline_exact"] == 0
 
 
 def test_mock_readiness_run_is_deterministic_across_invocations() -> None:

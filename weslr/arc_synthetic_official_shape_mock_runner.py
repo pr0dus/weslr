@@ -318,6 +318,7 @@ def summarize_arc_synthetic_official_shape_mock_readiness_v1(result: Any) -> dic
         "batch_score_variance": float(result.get("batch_score_variance", 0.0)),
         "seed_list": _safe(result.get("seeds", [])),
         "family_manifest": _safe(result.get("bundle_summary", {}).get("family_manifest", [])),
+        "family_scores": _safe(overall.get("family_scores", {})),
         "readiness_verdict": str(result.get("readiness_verdict", "mock_not_ready")),
         "blocked_reason_labels": [] if result.get("readiness_signal", False) else ["readiness_signal_false"],
     }
