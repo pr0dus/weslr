@@ -1,0 +1,59 @@
+{
+  "schema_version": "arc_agi2_public_data_approval_manifest_v1",
+  "approval_id": "",
+  "approved_by_owner": false,
+  "approval_timestamp": "",
+  "competition_name": "ARC-AGI-2",
+  "competition_track": "public_kaggle_source_approval",
+  "source_type": "",
+  "source_location_local_path": "",
+  "source_origin": "",
+  "source_download_method": "",
+  "source_version_or_snapshot": "",
+  "checksum_algorithm": "sha256",
+  "checksum_value": "",
+  "read_only_required": true,
+  "offline_required": true,
+  "no_network_required": true,
+  "hidden_private_data_included": false,
+  "approved_phase": "public_parse_only",
+  "allowed_operations": [
+    "inspect_metadata_only",
+    "manifest_validation"
+  ],
+  "forbidden_operations": [
+    "download_source",
+    "open_official_task_json",
+    "parse_official_task_json",
+    "run_solver_on_official_data",
+    "score_official_data",
+    "submit_to_kaggle",
+    "publish_score_claim",
+    "use_network",
+    "use_provider_api"
+  ],
+  "official_score_claim_allowed": false,
+  "kaggle_submission_allowed": false,
+  "source_descriptor": {
+    "read_only_bundle_required": true,
+    "metadata_only": true,
+    "no_official_data_commit": true,
+    "no_public_score_claim": true,
+    "no_submission_until_owner_approval": true
+  },
+  "policy_notes": {
+    "local_source_directory_policy": "source files must remain in a read-only local directory and must not be committed",
+    "read_only_bundle_policy": "the approved source bundle is metadata-only, checksum-verified, offline-only, and read-only",
+    "checksum_and_provenance_checklist": [
+      "capture source_location_local_path",
+      "capture source_origin",
+      "capture source_download_method",
+      "capture source_version_or_snapshot",
+      "capture checksum_algorithm",
+      "capture checksum_value",
+      "verify read_only_required",
+      "verify offline_required",
+      "verify no_network_required"
+    ]
+  }
+}
