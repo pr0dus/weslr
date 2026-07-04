@@ -18,19 +18,20 @@
   "hidden_private_data_included": false,
   "approved_phase": "public_parse_only",
   "allowed_operations": [
-    "inspect_metadata_only",
+    "path_existence_check",
+    "checksum_check",
+    "git_tracking_exclusion_check",
+    "read_only_check",
     "manifest_validation"
   ],
   "forbidden_operations": [
-    "download_source",
-    "open_official_task_json",
-    "parse_official_task_json",
-    "run_solver_on_official_data",
-    "score_official_data",
-    "submit_to_kaggle",
-    "publish_score_claim",
-    "use_network",
-    "use_provider_api"
+    "unzip",
+    "parse",
+    "score",
+    "solver_run",
+    "submission",
+    "public_claim",
+    "data_commit"
   ],
   "official_score_claim_allowed": false,
   "kaggle_submission_allowed": false,
@@ -42,7 +43,7 @@
     "no_submission_until_owner_approval": true
   },
   "policy_notes": {
-    "local_source_directory_policy": "source files must remain in a read-only local directory and must not be committed",
+    "local_source_directory_policy": "source files must remain outside git repos, read-only, checksum-verified, and must not be committed",
     "read_only_bundle_policy": "the approved source bundle is metadata-only, checksum-verified, offline-only, and read-only",
     "checksum_and_provenance_checklist": [
       "capture source_location_local_path",
@@ -53,7 +54,9 @@
       "capture checksum_value",
       "verify read_only_required",
       "verify offline_required",
-      "verify no_network_required"
+      "verify no_network_required",
+      "verify source outside repo",
+      "verify source not git-tracked"
     ]
   }
 }

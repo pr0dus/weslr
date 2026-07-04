@@ -11,6 +11,10 @@ It does not touch `.weslr`, call tools/providers/models, or require network.
 from __future__ import annotations
 
 from copy import deepcopy
+import os
+import stat
+import subprocess
+from pathlib import Path
 from typing import Any, Mapping
 
 SCHEMA_VERSION_V1 = "arc_agi2_public_data_approval_manifest_v1"
@@ -56,6 +60,10 @@ _ALLOWED_OPERATIONS_V1 = {
     "manifest_validation",
     "read_only_bundle_check",
     "local_path_policy_check",
+    "path_existence_check",
+    "checksum_check",
+    "git_tracking_exclusion_check",
+    "read_only_check",
 }
 
 _FORBIDDEN_OPERATIONS_V1 = {
@@ -68,6 +76,13 @@ _FORBIDDEN_OPERATIONS_V1 = {
     "publish_score_claim",
     "use_network",
     "use_provider_api",
+    "unzip",
+    "parse",
+    "score",
+    "solver_run",
+    "submission",
+    "public_claim",
+    "data_commit",
 }
 
 
@@ -107,17 +122,15 @@ def build_arc_agi2_public_data_approval_manifest_template_v1() -> dict[str, Any]
         "no_network_required": True,
         "hidden_private_data_included": False,
         "approved_phase": "public_parse_only",
-        "allowed_operations": ["inspect_metadata_only", "manifest_validation"],
+        "allowed_operations": ["path_existence_check", "checksum_check", "git_tracking_exclusion_check", "read_only_check", "manifest_validation"],
         "forbidden_operations": [
-            "download_source",
-            "open_official_task_json",
-            "parse_official_task_json",
-            "run_solver_on_official_data",
-            "score_official_data",
-            "submit_to_kaggle",
-            "publish_score_claim",
-            "use_network",
-            "use_provider_api",
+            "unzip",
+            "parse",
+            "score",
+            "solver_run",
+            "submission",
+            "public_claim",
+            "data_commit",
         ],
         "official_score_claim_allowed": False,
         "kaggle_submission_allowed": False,
@@ -266,10 +279,103 @@ def validate_arc_agi2_public_data_approval_manifest_v1(manifest: Any) -> dict[st
     }
 
 
+def _resolve_path(path_value: Any) -> Path:
+    return Path(_text(path_value)).expanduser().resolve()
+
+
+def _path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
+def _path_is_read_only(path: Path) -> bool:
+    mode = path.stat().st_mode
+    return not any(mode & bit for bit in (stat.S_IWUSR, stat.S_IWGRP, stat.S_IWOTH))
+
+
+def _git_tracked(path: Path, repo_root: Path) -> bool:
+    if not _path_is_within(path, repo_root):
+        return False
+    rel = path.resolve().relative_to(repo_root.resolve())
+    completed = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", "--", rel.as_posix()],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed.returncode == 0
+
+
+def validate_arc_agi2_public_data_source_instance_metadata_v1(
+    manifest: Any,
+    *,
+    repo_root: str | os.PathLike[str],
+    staging_root: str | os.PathLike[str] | None = None,
+) -> dict[str, Any]:
+    base_result = validate_arc_agi2_public_data_approval_manifest_v1(manifest)
+    source_path = _resolve_path(base_result["source_location_local_path"])
+    repo_root_path = Path(repo_root).resolve()
+    staging_root_path = Path(staging_root).resolve() if staging_root is not None else None
+
+    issues: list[str] = []
+    source_outside_repo = not _path_is_within(source_path, repo_root_path)
+    source_outside_staging = True if staging_root_path is None else not _path_is_within(source_path, staging_root_path)
+    source_git_tracked = _git_tracked(source_path, repo_root_path)
+
+    if not source_path.exists():
+        issues.append("source_missing")
+    if _path_is_within(source_path, repo_root_path):
+        issues.append("source_inside_weslr_repo")
+    if staging_root_path is not None and _path_is_within(source_path, staging_root_path):
+        issues.append("source_inside_staging_repo")
+    if source_git_tracked:
+        issues.append("source_git_tracked")
+    if source_path.exists() and not _path_is_read_only(source_path):
+        issues.append("source_not_read_only")
+    if _text(base_result.get("approved_phase")) != "public_metadata_check_only":
+        issues.append("approved_phase_not_metadata_check_only")
+
+    checksum_algorithm = _text(base_result.get("checksum_algorithm")).lower()
+    checksum_value = _text(base_result.get("checksum_value")).lower()
+    checksum_match = False
+    if source_path.exists():
+        if checksum_algorithm != "sha256":
+            issues.append("checksum_algorithm_must_be_sha256")
+        else:
+            import hashlib
+
+            actual = hashlib.sha256(source_path.read_bytes()).hexdigest().lower()
+            checksum_match = actual == checksum_value
+            if not checksum_match:
+                issues.append("checksum_mismatch")
+
+    if issues:
+        raise ValueError(f"Invalid public data source metadata: {sorted(set(issues))}")
+
+    return {
+        "valid": True,
+        "manifest": deepcopy(base_result),
+        "source_path": str(source_path),
+        "source_outside_repo": source_outside_repo,
+        "source_outside_staging": source_outside_staging,
+        "source_git_tracked": source_git_tracked,
+        "source_read_only": _path_is_read_only(source_path),
+        "checksum_algorithm": checksum_algorithm,
+        "checksum_match": checksum_match,
+        "approved_phase": _text(base_result.get("approved_phase")),
+        "allowed_operations": deepcopy(base_result.get("allowed_operations", [])),
+        "forbidden_operations": deepcopy(base_result.get("forbidden_operations", [])),
+    }
+
+
 __all__ = [
     "ALLOWED_APPROVED_PHASES_V1",
     "DEFAULT_REQUIRED_FIELDS_V1",
     "SCHEMA_VERSION_V1",
     "build_arc_agi2_public_data_approval_manifest_template_v1",
     "validate_arc_agi2_public_data_approval_manifest_v1",
+    "validate_arc_agi2_public_data_source_instance_metadata_v1",
 ]
