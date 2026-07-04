@@ -7,8 +7,8 @@
 ## Heads
 - Actual preflight HEAD: `f2d490224845f18f9b9e54c562a45f18bdbb011a`
 - Start HEAD: `f2d490224845f18f9b9e54c562a45f18bdbb011a`
-- End HEAD: pending commit
-- Commit status: validation passed; report pending commit
+- End HEAD: `1f7f5ec5d52b2e9daeabe90fbbeba7818a3c1a17`
+- Commit status: committed
 
 ## Files added / changed
 - `weslr/arc_agi2_capability_candidate_aggregator_v1.py`
