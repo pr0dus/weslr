@@ -64,6 +64,11 @@ _ALLOWED_OPERATIONS_V1 = {
     "checksum_check",
     "git_tracking_exclusion_check",
     "read_only_check",
+    "zip_member_listing",
+    "json_structure_parse",
+    "schema_validation",
+    "redaction_audit",
+    "leakage_audit",
 }
 
 _FORBIDDEN_OPERATIONS_V1 = {
@@ -80,6 +85,7 @@ _FORBIDDEN_OPERATIONS_V1 = {
     "parse",
     "score",
     "solver_run",
+    "candidate_generation",
     "submission",
     "public_claim",
     "data_commit",
@@ -314,6 +320,7 @@ def validate_arc_agi2_public_data_source_instance_metadata_v1(
     *,
     repo_root: str | os.PathLike[str],
     staging_root: str | os.PathLike[str] | None = None,
+    required_phase: str = "public_metadata_check_only",
 ) -> dict[str, Any]:
     base_result = validate_arc_agi2_public_data_approval_manifest_v1(manifest)
     source_path = _resolve_path(base_result["source_location_local_path"])
@@ -335,8 +342,8 @@ def validate_arc_agi2_public_data_source_instance_metadata_v1(
         issues.append("source_git_tracked")
     if source_path.exists() and not _path_is_read_only(source_path):
         issues.append("source_not_read_only")
-    if _text(base_result.get("approved_phase")) != "public_metadata_check_only":
-        issues.append("approved_phase_not_metadata_check_only")
+    if _text(base_result.get("approved_phase")) != required_phase:
+        issues.append("approved_phase_not_required")
 
     checksum_algorithm = _text(base_result.get("checksum_algorithm")).lower()
     checksum_value = _text(base_result.get("checksum_value")).lower()
@@ -366,6 +373,7 @@ def validate_arc_agi2_public_data_source_instance_metadata_v1(
         "checksum_algorithm": checksum_algorithm,
         "checksum_match": checksum_match,
         "approved_phase": _text(base_result.get("approved_phase")),
+        "required_phase": required_phase,
         "allowed_operations": deepcopy(base_result.get("allowed_operations", [])),
         "forbidden_operations": deepcopy(base_result.get("forbidden_operations", [])),
     }
