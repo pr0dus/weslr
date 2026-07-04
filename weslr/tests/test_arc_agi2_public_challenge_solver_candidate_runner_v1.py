@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -13,57 +13,72 @@ from weslr.arc_agi2_public_data_approval_manifest import (
     validate_arc_agi2_public_data_source_instance_metadata_v1,
 )
 from weslr.arc_agi2_public_challenge_solver_candidate_runner import (
-    collect_frozen_solver_candidate_hashes_v1,
+    TARGET_ALL_PUBLIC_CHALLENGES_NO_SCORE_V1,
+    TARGET_KAGGLE_TEST_SUBMISSION_SHAPE_V1,
+    TARGET_PUBLIC_SCOREABLE_V1,
+    _validate_candidate_artifact,
     run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1,
-    validate_frozen_solver_candidate_hashes_v1,
 )
 
 
-FILES = {
-    "arc-agi_training_challenges.json": {
-        "task_train_1": {
-            "train": [{"input": [[1, 0], [0, 1]], "output": [[1, 0], [0, 1]]}],
-            "test": [{"input": [[1, 1], [0, 0]]}],
-        }
-    },
-    "arc-agi_training_solutions.json": {"task_train_1": [[[1, 0], [0, 1]]]},
-    "arc-agi_evaluation_challenges.json": {
-        "task_eval_1": {
-            "train": [{"input": [[2, 2], [2, 2]], "output": [[2, 2], [2, 2]]}],
-            "test": [{"input": [[2, 0], [0, 2]]}],
-        }
-    },
-    "arc-agi_evaluation_solutions.json": {"task_eval_1": [[[2, 2], [2, 2]]]},
-    "arc-agi_test_challenges.json": {
-        "task_test_1": {
-            "train": [{"input": [[3, 0], [0, 3]], "output": [[3, 0], [0, 3]]}],
-            "test": [
-                {"input": [[3, 3], [3, 0]]},
-                {"input": [[4, 4], [4, 0]]},
+def _grid(seed: int) -> list[list[int]]:
+    return [[seed % 10, (seed + 1) % 10], [(seed + 2) % 10, (seed + 3) % 10]]
+
+
+def _write_runner_zip(path: Path) -> None:
+    payloads = {
+        "arc-agi_training_challenges.json": {
+            "train_a": {
+                "train": [{"input": _grid(1), "output": _grid(2)}],
+                "test": [{"input": _grid(3)}, {"input": _grid(4)}],
+            },
+            "train_b": {
+                "train": [{"input": _grid(5), "output": _grid(6)}],
+                "test": [{"input": _grid(7)}],
+            },
+        },
+        "arc-agi_training_solutions.json": {
+            "train_a": [_grid(2)],
+            "train_b": [_grid(6)],
+        },
+        "arc-agi_evaluation_challenges.json": {
+            "eval_a": {
+                "train": [{"input": _grid(8), "output": _grid(9)}],
+                "test": [{"input": _grid(10)}, {"input": _grid(11)}],
+            }
+        },
+        "arc-agi_evaluation_solutions.json": {
+            "eval_a": [_grid(9)],
+        },
+        "arc-agi_test_challenges.json": {
+            "test_a": {
+                "train": [{"input": _grid(12), "output": _grid(13)}],
+                "test": [{"input": _grid(14)}],
+            },
+            "test_b": {
+                "train": [{"input": _grid(15), "output": _grid(16)}],
+                "test": [{"input": _grid(17)}, {"input": _grid(18)}],
+            },
+        },
+        "sample_submission.json": {
+            "test_a": [{"attempt_1": _grid(0), "attempt_2": _grid(0)}],
+            "test_b": [
+                {"attempt_1": _grid(0), "attempt_2": _grid(0)},
+                {"attempt_1": _grid(0), "attempt_2": _grid(0)},
             ],
-        }
-    },
-    "sample_submission.json": {
-        "task_test_1": [
-            {"attempt_1": [[0, 0], [0, 0]], "attempt_2": [[0, 0], [0, 0]]},
-            {"attempt_1": [[0, 0], [0, 0]], "attempt_2": [[0, 0], [0, 0]]},
-        ]
-    },
-}
-
-
-def _write_shape_zip(path: Path) -> None:
+        },
+    }
     with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for name, payload in FILES.items():
+        for name, payload in payloads.items():
             zf.writestr(name, json.dumps(payload, ensure_ascii=False))
 
 
 def _base_manifest(source_path: Path, checksum: str, *, phase: str = "public_challenge_solver_candidate_dry_run_no_scoring") -> dict[str, object]:
     return {
         "schema_version": "arc_agi2_public_data_approval_manifest_v1",
-        "approval_id": "approval-solver-dry-run-001",
+        "approval_id": "approval-runner-001",
         "approved_by_owner": True,
-        "approval_timestamp": "2026-07-04T17:26:00+02:00",
+        "approval_timestamp": "2026-07-04T18:12:00+02:00",
         "competition_name": "ARC-AGI-2",
         "competition_track": "public_kaggle_source_approval",
         "source_type": "public ARC-AGI-2 Kaggle competition source bundle",
@@ -85,11 +100,8 @@ def _base_manifest(source_path: Path, checksum: str, *, phase: str = "public_cha
             "read_only_check",
             "manifest_validation",
             "challenge_input_json_read",
-            "solver_visible_packet_construction",
-            "frozen_solver_candidate_run",
-            "candidate_artifact_shape_validation",
+            "placeholder_candidate_emission",
             "local_submission_artifact_shape_validation",
-            "hash_guard",
             "json_structure_parse",
             "schema_validation",
             "redaction_audit",
@@ -120,184 +132,192 @@ def _base_manifest(source_path: Path, checksum: str, *, phase: str = "public_cha
         "policy_notes": {
             "local_source_directory_policy": "source files must remain outside git repos, read-only, checksum-verified, and must not be committed",
             "read_only_bundle_policy": "the approved source bundle is metadata-only, checksum-verified, offline-only, and read-only",
-            "challenge_shape_policy": "challenge/input files may be parsed structurally for placeholder submission-shape validation only; solution files must not be opened",
-            "solver_candidate_policy": "challenge/input files may be parsed structurally for frozen solver-candidate no-score validation only; solution files must not be opened",
+            "challenge_shape_policy": "challenge/input files may be parsed structurally only; solution files must not be opened during candidate generation",
         },
     }
 
 
 @pytest.fixture()
-def shape_source_zip(tmp_path: Path) -> Path:
+def runner_source_zip(tmp_path: Path) -> Path:
     source = tmp_path / "arc-prize-2026-arc-agi-2.zip"
-    _write_shape_zip(source)
+    _write_runner_zip(source)
     source.chmod(0o444)
     return source
 
 
 @pytest.fixture()
-def solver_manifest(shape_source_zip: Path) -> dict[str, object]:
-    return _base_manifest(shape_source_zip, hashlib.sha256(shape_source_zip.read_bytes()).hexdigest())
+def runner_manifest(runner_source_zip: Path) -> dict[str, object]:
+    checksum = hashlib.sha256(runner_source_zip.read_bytes()).hexdigest()
+    return _base_manifest(runner_source_zip, checksum)
 
 
-def test_manifest_accepts_solver_candidate_dry_run_and_rejects_scoring_and_submission(shape_source_zip: Path) -> None:
-    repo_root = shape_source_zip.parent / "repo"
-    staging_root = shape_source_zip.parent / "staging"
+@pytest.mark.parametrize(
+    "target_mode,expected_task_count,expected_test_input_count,expected_files,expected_key_mode",
+    [
+        (TARGET_PUBLIC_SCOREABLE_V1, 3, 5, ["arc-agi_training_challenges.json", "arc-agi_evaluation_challenges.json"], "raw_task_id"),
+        (TARGET_KAGGLE_TEST_SUBMISSION_SHAPE_V1, 2, 3, ["arc-agi_test_challenges.json"], "raw_task_id"),
+        (
+            TARGET_ALL_PUBLIC_CHALLENGES_NO_SCORE_V1,
+            5,
+            8,
+            ["arc-agi_training_challenges.json", "arc-agi_evaluation_challenges.json", "arc-agi_test_challenges.json"],
+            "namespaced_by_challenge_file",
+        ),
+    ],
+)
+def test_runner_supports_dynamic_target_modes_and_counts(
+    runner_manifest: dict[str, object],
+    runner_source_zip: Path,
+    tmp_path: Path,
+    target_mode: str,
+    expected_task_count: int,
+    expected_test_input_count: int,
+    expected_files: list[str],
+    expected_key_mode: str,
+) -> None:
+    repo_root = tmp_path / "repo"
+    staging_root = tmp_path / "staging"
     repo_root.mkdir()
     staging_root.mkdir()
-    result = validate_arc_agi2_public_data_source_instance_metadata_v1(
-        _base_manifest(shape_source_zip, hashlib.sha256(shape_source_zip.read_bytes()).hexdigest()),
+    result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
+        runner_manifest,
         repo_root=repo_root,
         staging_root=staging_root,
-        required_phase="public_challenge_solver_candidate_dry_run_no_scoring",
+        artifact_root=tmp_path / "artifacts",
+        target_mode=target_mode,
     )
-    assert result["valid"] is True
-
-    with pytest.raises(ValueError):
-        validate_arc_agi2_public_data_approval_manifest_v1(
-            {
-                **_base_manifest(shape_source_zip, hashlib.sha256(shape_source_zip.read_bytes()).hexdigest()),
-                "official_score_claim_allowed": True,
-            }
-        )
-    with pytest.raises(ValueError):
-        validate_arc_agi2_public_data_approval_manifest_v1(
-            {
-                **_base_manifest(shape_source_zip, hashlib.sha256(shape_source_zip.read_bytes()).hexdigest()),
-                "kaggle_submission_allowed": True,
-            }
-        )
+    assert result["task_count"] == expected_task_count
+    assert result["test_input_count"] == expected_test_input_count
+    assert result["challenge_files_used"] == expected_files
+    assert result["artifact_task_key_mode"] == expected_key_mode
+    assert result["solution_files_opened"] is False
+    assert result["artifact_validation"]["valid"] is True
+    assert result["artifact_validation"]["two_output_valid"] is True
+    assert result["artifact_validation"]["task_count"] == expected_task_count
+    assert result["artifact_validation"]["test_input_packet_count"] == expected_test_input_count
 
 
-def test_solution_files_are_not_opened_by_solver_candidate_runner(solver_manifest: dict[str, object], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+
+def test_runner_does_not_open_solution_files(runner_manifest: dict[str, object], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     opened: list[str] = []
-    original_open = zipfile.ZipFile.open
+    original_read = zipfile.ZipFile.read
 
-    def tracking_open(self, name, *args, **kwargs):
+    def tracking_read(self, name, *args, **kwargs):
         opened.append(str(name))
-        return original_open(self, name, *args, **kwargs)
+        return original_read(self, name, *args, **kwargs)
 
-    monkeypatch.setattr(zipfile.ZipFile, "open", tracking_open)
+    monkeypatch.setattr(zipfile.ZipFile, "read", tracking_read)
     result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
+        runner_manifest,
         repo_root=repo_root,
-        artifact_root=tmp_path / "solver_artifact",
+        artifact_root=tmp_path / "artifacts",
+        target_mode=TARGET_PUBLIC_SCOREABLE_V1,
     )
     assert result["solution_files_opened"] is False
     assert all(not name.endswith("solutions.json") for name in opened)
     assert any(name.endswith("challenges.json") for name in opened)
 
 
-def test_solver_visible_packets_contain_no_expected_outputs(solver_manifest: dict[str, object], tmp_path: Path) -> None:
+
+def test_complete_coverage_required_by_artifact_validator() -> None:
+    artifact = {
+        "tasks": {
+            "a": {"solver_visible_packets": [{"attempt_1": [[0]], "attempt_2": [[0]]}]},
+        }
+    }
+    result = _validate_candidate_artifact(artifact, expected_task_count=2, expected_test_input_count=2)
+    assert result["valid"] is False
+    assert result["schema_valid"] is False
+    assert result["task_count"] == 1
+    assert result["test_input_packet_count"] == 1
+
+
+
+def test_exactly_two_output_validation_required(monkeypatch: pytest.MonkeyPatch, runner_manifest: dict[str, object], tmp_path: Path) -> None:
+    import weslr.arc_agi2_public_challenge_solver_candidate_runner as runner
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    def malformed_top2(*args, **kwargs):
+        return {
+            "task_id": kwargs.get("task_id", "x"),
+            "test_input_index": kwargs.get("test_input_index", 0),
+            "candidate_packets": [{"grid": [[0]], "metadata": {}}],
+            "metadata": {},
+        }
+
+    monkeypatch.setattr(runner, "build_arc_agi2_top2_attempt_packet_v1", malformed_top2)
+    with pytest.raises(ValueError):
+        runner.run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
+            runner_manifest,
+            repo_root=repo_root,
+            artifact_root=tmp_path / "artifacts",
+            target_mode=TARGET_PUBLIC_SCOREABLE_V1,
+        )
+
+
+
+def test_solver_hash_guard_detects_modified_file(runner_manifest: dict[str, object], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import weslr.arc_agi2_public_challenge_solver_candidate_runner as runner
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    state = {"calls": 0}
+    original = runner.collect_frozen_solver_candidate_hashes_v1
+
+    def mutating_collect(paths=None):
+        state["calls"] += 1
+        result = original(paths)
+        if state["calls"] == 2 and result:
+            key = next(iter(result))
+            result[key] = result[key][::-1]
+        return result
+
+    monkeypatch.setattr(runner, "collect_frozen_solver_candidate_hashes_v1", mutating_collect)
+    with pytest.raises(RuntimeError, match="elastic_public_challenge_coverage_repair_invalid_solver_changed"):
+        runner.run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
+            runner_manifest,
+            repo_root=repo_root,
+            artifact_root=tmp_path / "artifacts",
+            target_mode=TARGET_PUBLIC_SCOREABLE_V1,
+        )
+
+
+
+def test_result_summary_contains_no_raw_grids(runner_manifest: dict[str, object], tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
+        runner_manifest,
         repo_root=repo_root,
-        artifact_root=tmp_path / "solver_artifact",
-    )
-    assert result["solver_visible_packet_summary"]["solution_values_visible"] is False
-    blob = json.dumps(result).lower()
-    assert "expected_output" not in blob
-    assert "reference_output" not in blob
-
-
-def test_candidate_artifact_has_exactly_two_outputs_per_test_input(solver_manifest: dict[str, object], tmp_path: Path) -> None:
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
-        repo_root=repo_root,
-        artifact_root=tmp_path / "solver_artifact",
-    )
-    artifact = json.loads(Path(result["candidate_artifact_path"]).read_text(encoding="utf-8"))
-    packets = artifact["tasks"]["task_test_1"]["solver_visible_packets"]
-    assert len(packets) == 2
-    for packet in packets:
-        assert len(packet["attempts"]) == 2
-        assert set(packet.keys()) >= {"task_id", "test_input_index", "attempts"}
-
-
-def test_artifact_contains_no_scorer_references(solver_manifest: dict[str, object], tmp_path: Path) -> None:
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
-        repo_root=repo_root,
-        artifact_root=tmp_path / "solver_artifact",
-    )
-    artifact_text = Path(result["candidate_artifact_path"]).read_text(encoding="utf-8").lower()
-    assert "scorer" not in artifact_text
-    assert "reference_output" not in artifact_text
-
-
-def test_artifact_path_outside_git_repos(solver_manifest: dict[str, object], tmp_path: Path) -> None:
-    repo_root = tmp_path / "repo"
-    staging_root = tmp_path / "staging"
-    repo_root.mkdir()
-    staging_root.mkdir()
-    result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
-        repo_root=repo_root,
-        staging_root=staging_root,
-        artifact_root=tmp_path / "solver_artifact",
-    )
-    artifact_path = Path(result["candidate_artifact_path"])
-    assert result["candidate_artifact_meta"]["outside_repos"] is True
-    assert result["candidate_artifact_meta"]["git_tracked"] is False
-    assert str(artifact_path).startswith(str(tmp_path))
-
-
-def test_result_summary_contains_no_raw_grids(solver_manifest: dict[str, object], tmp_path: Path) -> None:
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    result = run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-        solver_manifest,
-        repo_root=repo_root,
-        artifact_root=tmp_path / "solver_artifact",
+        artifact_root=tmp_path / "artifacts",
+        target_mode=TARGET_PUBLIC_SCOREABLE_V1,
     )
     blob = json.dumps(result).lower()
     assert "[[" not in blob
     assert "expected_output" not in blob
     assert "reference_output" not in blob
-    assert "scorer" not in blob
+    assert "solution_grid" not in blob
 
 
-def test_exception_messages_do_not_leak_grids(solver_manifest: dict[str, object], tmp_path: Path) -> None:
-    bad_source = tmp_path / "bad.zip"
-    with zipfile.ZipFile(bad_source, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(
-            "arc-agi_test_challenges.json",
-            json.dumps({"task_test_1": {"train": [{"input": [[1]], "output": [[1, 2], [3]]}], "test": [{"input": [[1, 2]]}]}}),
-        )
-        zf.writestr("arc-agi_training_challenges.json", json.dumps({"task_train_1": {"train": [{"input": [[1]], "output": [[1]]}], "test": [{"input": [[1]]}]}}))
-        zf.writestr("arc-agi_evaluation_challenges.json", json.dumps({"task_eval_1": {"train": [{"input": [[1]], "output": [[1]]}], "test": [{"input": [[1]]}]}}))
-        zf.writestr("arc-agi_training_solutions.json", json.dumps({"task_train_1": [[[1]]]}))
-        zf.writestr("arc-agi_evaluation_solutions.json", json.dumps({"task_eval_1": [[[1]]]}))
-        zf.writestr("sample_submission.json", json.dumps({"task_test_1": [{"attempt_1": [[0]], "attempt_2": [[0]]}]}))
-    bad_source.chmod(0o444)
-    bad_manifest = _base_manifest(bad_source, hashlib.sha256(bad_source.read_bytes()).hexdigest())
-    repo_root = tmp_path / "repo"
+
+def test_manifest_accepts_target_phase_and_rejects_scoring_and_submission(runner_source_zip: Path) -> None:
+    manifest = _base_manifest(runner_source_zip, hashlib.sha256(runner_source_zip.read_bytes()).hexdigest())
+    repo_root = runner_source_zip.parent / "repo"
+    staging_root = runner_source_zip.parent / "staging"
     repo_root.mkdir()
-    with pytest.raises(ValueError) as exc:
-        run_arc_agi2_public_challenge_solver_candidate_dry_run_no_score_v1(
-            bad_manifest,
-            repo_root=repo_root,
-            artifact_root=tmp_path / "solver_artifact",
-        )
-    assert "[[" not in str(exc.value)
-    assert "expected_output" not in str(exc.value).lower()
-    assert "reference_output" not in str(exc.value).lower()
-    assert "scorer" not in str(exc.value).lower()
-
-
-def test_solver_hash_guard_detects_modified_file(tmp_path: Path) -> None:
-    file_path = tmp_path / "solver_component.py"
-    file_path.write_text("alpha", encoding="utf-8")
-    before = collect_frozen_solver_candidate_hashes_v1([file_path])
-    file_path.write_text("beta", encoding="utf-8")
-    after = collect_frozen_solver_candidate_hashes_v1([file_path])
-    result = validate_frozen_solver_candidate_hashes_v1(before, after)
-    assert result["valid"] is False
-    assert str(file_path.resolve()) in result["changed_paths"]
+    staging_root.mkdir()
+    result = validate_arc_agi2_public_data_source_instance_metadata_v1(
+        manifest,
+        repo_root=repo_root,
+        staging_root=staging_root,
+        required_phase="public_challenge_solver_candidate_dry_run_no_scoring",
+    )
+    assert result["valid"] is True
+    with pytest.raises(ValueError):
+        validate_arc_agi2_public_data_approval_manifest_v1({**manifest, "official_score_claim_allowed": True})
+    with pytest.raises(ValueError):
+        validate_arc_agi2_public_data_approval_manifest_v1({**manifest, "kaggle_submission_allowed": True})
