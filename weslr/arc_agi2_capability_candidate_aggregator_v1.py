@@ -1,9 +1,9 @@
 """ARC-AGI-2 capability candidate aggregator V1.
 
-Coordinates the object/bbox and shape-geometry synthetic adapters into one
-stable top-2 attempt path. It deduplicates identical outputs, applies a fixed
-family priority, and falls back deterministically when no capability candidate
-is available.
+Coordinates the object/bbox, shape-geometry, color-role, resize/tile, and
+count/quantity synthetic adapters into one stable top-2 attempt path. It
+deduplicates identical outputs, applies a fixed family priority, and falls
+back deterministically when no capability candidate is available.
 
 Synthetic-only. No public ARC ingestion. No scoring claims. No Kaggle writes.
 """
@@ -25,6 +25,10 @@ from weslr.arc_agi2_resize_tile_candidate_adapter_v1 import (
     ADAPTER_NAME_V1 as RESIZE_TILE_ADAPTER_NAME_V1,
     build_arc_agi2_resize_tile_top2_attempt_packet_v1,
 )
+from weslr.arc_agi2_count_quantity_candidate_adapter_v1 import (
+    ADAPTER_NAME_V1 as COUNT_QUANTITY_ADAPTER_NAME_V1,
+    build_arc_agi2_count_quantity_top2_attempt_packet_v1,
+)
 from weslr.arc_agi2_shape_geometry_candidate_adapter_v1 import (
     ADAPTER_NAME_V1 as SHAPE_GEOMETRY_ADAPTER_NAME_V1,
     build_arc_agi2_shape_geometry_top2_attempt_packet_v1,
@@ -44,7 +48,8 @@ FAMILY_PRIORITY_V1 = {
     "shape_geometry": 1,
     "color_role": 2,
     "resize_tile": 3,
-    "fallback": 4,
+    "count_quantity": 4,
+    "fallback": 5,
 }
 
 SOURCE_ADAPTER_PRIORITY_V1 = {
@@ -52,7 +57,8 @@ SOURCE_ADAPTER_PRIORITY_V1 = {
     SHAPE_GEOMETRY_ADAPTER_NAME_V1: 1,
     COLOR_ROLE_ADAPTER_NAME_V1: 2,
     RESIZE_TILE_ADAPTER_NAME_V1: 3,
-    AGGREGATOR_NAME_V1: 4,
+    COUNT_QUANTITY_ADAPTER_NAME_V1: 4,
+    AGGREGATOR_NAME_V1: 5,
 }
 
 SOURCE_KIND_TO_FAMILY_V1 = {
@@ -60,6 +66,7 @@ SOURCE_KIND_TO_FAMILY_V1 = {
     "shape_geometry_solver": "shape_geometry",
     "color_role_solver": "color_role",
     "resize_tile_solver": "resize_tile",
+    "count_quantity_solver": "count_quantity",
     "safe_deterministic_fallback": "fallback",
 }
 
@@ -86,6 +93,8 @@ TRIMMED_METADATA_KEYS_V1 = {
     "color_family_rank",
     "resize_family",
     "resize_family_rank",
+    "count_family",
+    "count_family_rank",
     "rule",
     "rule_family",
     "output_mode",
@@ -147,6 +156,8 @@ def _family_for_attempt(attempt: Mapping[str, Any]) -> tuple[str, str]:
         label = _safe_text(metadata.get("color_family") or attempt.get("source_candidate_id"), "color_role")
     elif family == "resize_tile":
         label = _safe_text(metadata.get("resize_family") or attempt.get("source_candidate_id"), "resize_tile")
+    elif family == "count_quantity":
+        label = _safe_text(metadata.get("count_family") or attempt.get("source_candidate_id"), "count_quantity")
     elif family == "fallback":
         label = _safe_text(metadata.get("fallback_kind") or attempt.get("source_candidate_id"), "fallback")
     return family, label
@@ -416,6 +427,14 @@ def _build_source_packets(
             test_input_index=test_input_index,
         )
         source_packets.append({"family": "resize_tile", "adapter": RESIZE_TILE_ADAPTER_NAME_V1, "packet": packet})
+    if "count_quantity" in enabled_families:
+        packet = build_arc_agi2_count_quantity_top2_attempt_packet_v1(
+            train_pairs,
+            test_input,
+            task_id=task_id,
+            test_input_index=test_input_index,
+        )
+        source_packets.append({"family": "count_quantity", "adapter": COUNT_QUANTITY_ADAPTER_NAME_V1, "packet": packet})
     return source_packets
 
 
@@ -431,7 +450,7 @@ def build_arc_agi2_capability_candidate_top2_attempt_packet_v1(
 ) -> dict[str, Any]:
     task_id_text = _task_id(task_id)
     test_input_index_int = _test_input_index(test_input_index)
-    enabled = {"object_bbox", "shape_geometry", "color_role", "resize_tile", "fallback"}
+    enabled = {"object_bbox", "shape_geometry", "color_role", "resize_tile", "count_quantity", "fallback"}
     if enabled_families is not None:
         enabled = { _safe_text(item) for item in enabled_families if _safe_text(item) }
         if not enabled:
@@ -542,6 +561,7 @@ def run_arc_agi2_capability_candidate_aggregator_mini_suite_v1(
     geometry_solved_count = 0
     color_role_solved_count = 0
     resize_tile_solved_count = 0
+    count_quantity_solved_count = 0
     fallback_count = 0
     dedupe_count = 0
     malformed_count = 0
@@ -576,6 +596,8 @@ def run_arc_agi2_capability_candidate_aggregator_mini_suite_v1(
                 color_role_solved_count += 1
             if any(_safe_text(attempt.get("metadata", {}).get("source_family")) == "resize_tile" for attempt in attempts if isinstance(attempt, Mapping)):
                 resize_tile_solved_count += 1
+            if any(_safe_text(attempt.get("metadata", {}).get("source_family")) == "count_quantity" for attempt in attempts if isinstance(attempt, Mapping)):
+                count_quantity_solved_count += 1
         results.append({"task_id": task_id, "packet": packet, "validation": validation})
     return {
         "case_count": len(cases),
@@ -583,6 +605,7 @@ def run_arc_agi2_capability_candidate_aggregator_mini_suite_v1(
         "geometry_solved_count": geometry_solved_count,
         "color_role_solved_count": color_role_solved_count,
         "resize_tile_solved_count": resize_tile_solved_count,
+        "count_quantity_solved_count": count_quantity_solved_count,
         "fallback_count": fallback_count,
         "dedupe_count": dedupe_count,
         "malformed_count": malformed_count,
