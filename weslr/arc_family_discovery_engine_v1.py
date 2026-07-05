@@ -737,19 +737,33 @@ def _family_from_single_step_solver(
     if best is not None:
         solver_family = _safe_text(best.get("family"))
         primitive_name = _map_family_name(solver_family)
+        best_confidence = float(best.get("confidence", 0.0) or 0.0)
         if primitive_name in accepted_hints or primitive_name in uncertain_hints:
             hint = accepted_hints.get(primitive_name) or uncertain_hints.get(primitive_name)
             return _build_family_hypothesis(
                 family_name=family_name,
                 primitive_chain=(primitive_name,),
                 status="accepted" if hint and hint.status == "accepted" else "uncertain",
-                confidence=float(best.get("confidence", 0.0) or 0.0),
+                confidence=best_confidence,
                 reason=_safe_text(best.get("trace", {}).get("rule") or solver_family or "solver_fit"),
                 parameters=dict(best.get("trace", {})).get("role_summary", {}) if isinstance(best.get("trace", {}), Mapping) else {},
                 train_fit=bool(best.get("family")),
                 rejection_reason=None,
                 source_primitive_hints=primitive_hint_names,
                 trace={"solver_family": solver_family, "train_fit": True, "candidate_count": len(solver_candidates)},
+            )
+        if bool(best.get("family")) and best_confidence >= 0.9 and primitive_name in primitive_hint_names:
+            return _build_family_hypothesis(
+                family_name=family_name,
+                primitive_chain=(primitive_name,),
+                status="accepted",
+                confidence=best_confidence,
+                reason=f"solver_fit_without_primitive_hint:{_safe_text(best.get('trace', {}).get('rule') or solver_family or 'solver_fit')}",
+                parameters=dict(best.get("trace", {})).get("role_summary", {}) if isinstance(best.get("trace", {}), Mapping) else {},
+                train_fit=True,
+                rejection_reason=None,
+                source_primitive_hints=primitive_hint_names,
+                trace={"solver_family": solver_family, "train_fit": True, "candidate_count": len(solver_candidates), "relaxed_primitive_gate": True},
             )
     best_hint = None
     for name in primitive_hint_names:

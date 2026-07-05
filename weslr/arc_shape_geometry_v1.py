@@ -137,7 +137,11 @@ def _family_prediction_from_input(
     background_value: int | None = None,
     delta_row: int = 0,
     delta_col: int = 0,
-    output_mode: str = "canvas",
+    target_height: int | None = None,
+    target_width: int | None = None,
+    target_anchor_row: int = 0,
+    target_anchor_col: int = 0,
+    color_delta: int = 0,
 ) -> list[list[int]]:
     extracted = _extract_single_object_or_none(grid, background_value=background_value)
     if extracted is None:
@@ -151,15 +155,19 @@ def _family_prediction_from_input(
     anchor_row, anchor_col = int(bbox[0]), int(bbox[1])
 
     if family == "translate_single_object":
-        return rebuild_object_into_background_grid_v1(
-            cells,
-            color=color,
+        translated = translate_object_v1(
+            normalized,
+            delta_row=delta_row,
+            delta_col=delta_col,
             background_value=background,
-            height=len(normalized),
-            width=len(normalized[0]),
-            anchor_row=anchor_row + delta_row,
-            anchor_col=anchor_col + delta_col,
         )
+        if color_delta:
+            target_color = color + int(color_delta)
+            translated = [
+                [int(target_color) if cell != background else background for cell in row]
+                for row in translated
+            ]
+        return translated
 
     if family.startswith("rotate_") or family.startswith("reflect_"):
         if family == "rotate_90_single_object":
@@ -174,20 +182,14 @@ def _family_prediction_from_input(
             transformed = reflect_object_mask_v1(cells, "vertical")
         else:
             raise ValueError("unsupported_family")
-        if output_mode == "crop":
-            return rebuild_object_into_background_grid_v1(
-                transformed,
-                color=color,
-                background_value=background,
-            )
         return rebuild_object_into_background_grid_v1(
             transformed,
             color=color,
             background_value=background,
-            height=len(normalized),
-            width=len(normalized[0]),
-            anchor_row=anchor_row,
-            anchor_col=anchor_col,
+            height=int(target_height) if target_height is not None else len(normalized),
+            width=int(target_width) if target_width is not None else len(normalized[0]),
+            anchor_row=int(target_anchor_row),
+            anchor_col=int(target_anchor_col),
         )
 
     raise ValueError("unsupported_family")
@@ -195,9 +197,11 @@ def _family_prediction_from_input(
 
 def _infer_family_parameters(train_pairs: Sequence[Mapping[str, Any]], family: str) -> dict[str, Any] | None:
     params: dict[str, Any] = {}
-    inferred_output_mode: str | None = None
     inferred_color: int | None = None
     inferred_delta: tuple[int, int] | None = None
+    inferred_color_delta: int | None = None
+    inferred_target_size: tuple[int, int] | None = None
+    inferred_target_anchor: tuple[int, int] | None = None
     for pair in train_pairs:
         input_info = _extract_single_object_or_none(_pair_input(pair), background_value=_pair_background(pair))
         output_info = _extract_single_object_or_none(_pair_output(pair), background_value=_pair_background(pair))
@@ -205,11 +209,32 @@ def _infer_family_parameters(train_pairs: Sequence[Mapping[str, Any]], family: s
             return None
         input_object = input_info["object"]
         output_object = output_info["object"]
-        if int(input_object["color"]) != int(output_object["color"]):
+        input_color = int(input_object["color"])
+        output_color = int(output_object["color"])
+        if family == "translate_single_object":
+            pair_color_delta = output_color - input_color
+            if inferred_color_delta is None:
+                inferred_color_delta = pair_color_delta
+            elif inferred_color_delta != pair_color_delta:
+                return None
+        else:
+            if input_color != output_color:
+                return None
+            if inferred_color is None:
+                inferred_color = input_color
+            elif inferred_color != input_color:
+                return None
+
+        output_height = len(output_info["grid"])
+        output_width = len(output_info["grid"][0])
+        output_anchor = (int(output_object["bbox"][0]), int(output_object["bbox"][1]))
+        if inferred_target_size is None:
+            inferred_target_size = (output_height, output_width)
+        elif inferred_target_size != (output_height, output_width):
             return None
-        if inferred_color is None:
-            inferred_color = int(input_object["color"])
-        elif inferred_color != int(input_object["color"]):
+        if inferred_target_anchor is None:
+            inferred_target_anchor = output_anchor
+        elif inferred_target_anchor != output_anchor:
             return None
 
         input_cells = _as_cells(input_object["cells"])
@@ -246,26 +271,21 @@ def _infer_family_parameters(train_pairs: Sequence[Mapping[str, Any]], family: s
         else:
             return None
 
-        input_mode = (len(input_info["grid"]), len(input_info["grid"][0]))
-        output_mode = (len(output_info["grid"]), len(output_info["grid"][0]))
-        if inferred_output_mode is None:
-            inferred_output_mode = "canvas" if input_mode == output_mode else "crop"
-        elif inferred_output_mode == "canvas" and input_mode != output_mode:
-            return None
-        elif inferred_output_mode == "crop" and input_mode == output_mode:
-            # Allow crop only when the output is the tight object grid.
-            pass
-
     if family == "translate_single_object":
         if inferred_delta is None:
             return None
         params["delta_row"] = inferred_delta[0]
         params["delta_col"] = inferred_delta[1]
-        params["output_mode"] = "canvas"
+        params["color_delta"] = inferred_color_delta or 0
     else:
-        params["output_mode"] = inferred_output_mode or "canvas"
+        params["color"] = inferred_color
+    if inferred_target_size is not None:
+        params["target_height"] = inferred_target_size[0]
+        params["target_width"] = inferred_target_size[1]
+    if inferred_target_anchor is not None:
+        params["target_anchor_row"] = inferred_target_anchor[0]
+        params["target_anchor_col"] = inferred_target_anchor[1]
     params["background_value"] = _pair_background(train_pairs[0]) if train_pairs else None
-    params["color"] = inferred_color
     return params
 
 
@@ -294,7 +314,11 @@ def infer_shape_geometry_hypotheses_v1(
                 background_value=_params.get("background_value"),
                 delta_row=int(_params.get("delta_row", 0) or 0),
                 delta_col=int(_params.get("delta_col", 0) or 0),
-                output_mode=_params.get("output_mode", "canvas"),
+                target_height=_params.get("target_height"),
+                target_width=_params.get("target_width"),
+                target_anchor_row=int(_params.get("target_anchor_row", 0) or 0),
+                target_anchor_col=int(_params.get("target_anchor_col", 0) or 0),
+                color_delta=int(_params.get("color_delta", 0) or 0),
             )
 
         score = score_train_consistency(
@@ -306,7 +330,8 @@ def infer_shape_geometry_hypotheses_v1(
             trace={
                 "rule_family": family,
                 "shape_signature_count": len({canonical_shape_signature_v1(_as_cells(_extract_single_object_or_none(_pair_input(pair), background_value=_pair_background(pair))["object"]["cells"])) for pair in train_pairs}),
-                "output_mode": params.get("output_mode"),
+                "target_height": params.get("target_height"),
+                "target_width": params.get("target_width"),
             },
         )
         if not score.train_fit:
@@ -317,13 +342,17 @@ def infer_shape_geometry_hypotheses_v1(
             background_value=params.get("background_value"),
             delta_row=int(params.get("delta_row", 0) or 0),
             delta_col=int(params.get("delta_col", 0) or 0),
-            output_mode=params.get("output_mode", "canvas"),
+            target_height=params.get("target_height"),
+            target_width=params.get("target_width"),
+            target_anchor_row=int(params.get("target_anchor_row", 0) or 0),
+            target_anchor_col=int(params.get("target_anchor_col", 0) or 0),
+            color_delta=int(params.get("color_delta", 0) or 0),
         )
         candidate_trace = dict(score.trace)
         candidate_trace.update(
             {
                 "family": family,
-                "transform_parameters": {k: v for k, v in params.items() if k in {"delta_row", "delta_col", "output_mode"}},
+                "transform_parameters": {k: v for k, v in params.items() if k in {"delta_row", "delta_col", "target_height", "target_width", "target_anchor_row", "target_anchor_col", "color_delta"}},
                 "synthetic_only": True,
             }
         )

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import weslr.arc_heldout_synthetic_discovery_benchmark_v1 as benchmark_module
 from weslr.arc_synthetic_discovery_eval_v1 import evaluate_arc_synthetic_discovery_tasks_v1
 from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_corpus_v1
+from weslr.arc_universal_family_runner_v1 import run_universal_family_solver
 
 
 def _fake_report(**overrides):
@@ -97,3 +98,25 @@ def test_crop_largest_and_select_largest_do_not_raise_and_fail_cleanly() -> None
         assert result.report["failure_categories"].get("exception", 0) == 0
         assert result.report["total_tasks"] == len(family_tasks)
         assert result.report["unsolved"] >= 0
+
+
+def test_primary_fallback_cluster_tasks_solve_without_fallback_when_valid() -> None:
+    tasks = build_arc_synthetic_discovery_task_corpus_v1(seed=82435, tasks_per_family=5, include_adversarial=True, include_compositions=True)
+    for family in (
+        "translate_single_object",
+        "swap_two_colors",
+        "rotate_object_180",
+        "reflect_object_horizontal",
+        "reflect_object_vertical",
+    ):
+        family_tasks = [task for task in tasks if task["family_label"] == family]
+        assert family_tasks
+        result = evaluate_arc_synthetic_discovery_tasks_v1(family_tasks)
+        assert result.report["failure_categories"].get("exception", 0) == 0
+        assert result.report["fallback_only"] == 0
+        assert result.report["exact_two_output_pass"] is True
+        assert result.report["per_family_solved"].get(family, 0) >= 1
+        runner_result = run_universal_family_solver(family_tasks[0]["train_pairs"], family_tasks[0]["test_input"])
+        assert runner_result.fallback_used is False
+        assert runner_result.exact_two_output is True
+        assert runner_result.selected_family_names
