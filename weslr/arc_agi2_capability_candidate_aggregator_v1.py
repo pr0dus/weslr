@@ -41,6 +41,10 @@ from weslr.arc_agi2_hole_row_column_candidate_adapter_v1 import (
     ADAPTER_NAME_V1 as HOLE_ROW_COLUMN_ADAPTER_NAME_V1,
     build_arc_agi2_hole_row_column_top2_attempt_packet_v1,
 )
+from weslr.arc_agi2_marker_copy_candidate_adapter_v1 import (
+    ADAPTER_NAME_V1 as MARKER_COPY_ADAPTER_NAME_V1,
+    build_arc_agi2_marker_copy_top2_attempt_packet_v1,
+)
 from weslr.arc_agi2_submission_contract import (
     build_arc_agi2_submission_packet_v1,
     build_arc_agi2_submission_task_entry_v1,
@@ -55,7 +59,8 @@ FAMILY_PRIORITY_V1 = {
     "object_bbox": 0,
     "shape_geometry": 1,
     "hole_row_column": 2,
-    "color_role": 3,
+    "marker_copy": 3,
+    "color_role": 4,
     "resize_tile": 4,
     "count_quantity": 5,
     "symmetry_line": 6,
@@ -70,7 +75,8 @@ SOURCE_ADAPTER_PRIORITY_V1 = {
     COUNT_QUANTITY_ADAPTER_NAME_V1: 4,
     SYMMETRY_LINE_ADAPTER_NAME_V1: 5,
     HOLE_ROW_COLUMN_ADAPTER_NAME_V1: 6,
-    AGGREGATOR_NAME_V1: 7,
+    MARKER_COPY_ADAPTER_NAME_V1: 7,
+    AGGREGATOR_NAME_V1: 8,
 }
 
 SOURCE_KIND_TO_FAMILY_V1 = {
@@ -81,6 +87,7 @@ SOURCE_KIND_TO_FAMILY_V1 = {
     "count_quantity_solver": "count_quantity",
     "symmetry_line_solver": "symmetry_line",
     "hole_row_column_solver": "hole_row_column",
+    "marker_copy_solver": "marker_copy",
     "safe_deterministic_fallback": "fallback",
 }
 
@@ -176,6 +183,8 @@ def _family_for_attempt(attempt: Mapping[str, Any]) -> tuple[str, str]:
         label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "symmetry_line")
     elif family == "hole_row_column":
         label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "hole_row_column")
+    elif family == "marker_copy":
+        label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "marker_copy")
     elif family == "fallback":
         label = _safe_text(metadata.get("fallback_kind") or attempt.get("source_candidate_id"), "fallback")
     return family, label
@@ -469,6 +478,14 @@ def _build_source_packets(
             test_input_index=test_input_index,
         )
         source_packets.append({"family": "hole_row_column", "adapter": HOLE_ROW_COLUMN_ADAPTER_NAME_V1, "packet": packet})
+    if "marker_copy" in enabled_families:
+        packet = build_arc_agi2_marker_copy_top2_attempt_packet_v1(
+            train_pairs,
+            test_input,
+            task_id=task_id,
+            test_input_index=test_input_index,
+        )
+        source_packets.append({"family": "marker_copy", "adapter": MARKER_COPY_ADAPTER_NAME_V1, "packet": packet})
     return source_packets
 
 

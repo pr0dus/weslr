@@ -35,6 +35,7 @@ from weslr.arc_shape_geometry_v1 import canonical_shape_signature_v1, infer_shap
 from weslr.arc_task_feature_signature_v1 import build_arc_task_feature_signature_v1
 from weslr.arc_agi2_symmetry_line_candidate_adapter_v1 import solve_symmetry_line_task
 from weslr.arc_hole_row_column_v1 import solve_hole_row_column_task
+from weslr.arc_marker_copy_v1 import solve_marker_copy_task
 
 SCHEMA_VERSION_V1 = "ArcFamilyDiscoveryEngineV1"
 MAX_PRIMITIVE_CHAIN_LENGTH_V1 = 2
@@ -44,15 +45,16 @@ FAMILY_PRIORITY_V1 = {
     "object_bbox": 0,
     "shape_geometry": 1,
     "hole_row_column": 2,
-    "color_role": 3,
-    "resize_tile": 4,
-    "count_quantity": 5,
-    "symmetry_line": 6,
-    "crop_then_recolor": 7,
-    "crop_then_rotate_or_reflect": 8,
-    "crop_then_tile": 9,
-    "recolor_then_border": 10,
-    "select_then_recolor": 11,
+    "marker_copy": 3,
+    "color_role": 4,
+    "resize_tile": 5,
+    "count_quantity": 6,
+    "symmetry_line": 7,
+    "crop_then_recolor": 8,
+    "crop_then_rotate_or_reflect": 9,
+    "crop_then_tile": 10,
+    "recolor_then_border": 11,
+    "select_then_recolor": 12,
 }
 
 ALLOWED_COMPOSITION_TEMPLATES_V1 = (
@@ -873,6 +875,7 @@ def _select_solver_candidates(train_pairs: Sequence[Mapping[str, Any]], test_inp
         "count_quantity": [candidate.to_dict() for candidate in infer_count_quantity_hypotheses_v1(train_pairs, test_input)],
         "symmetry_line": solve_symmetry_line_task(train_pairs, test_input),
         "hole_row_column": solve_hole_row_column_task(train_pairs, test_input),
+        "marker_copy": solve_marker_copy_task(train_pairs, test_input),
     }
 
 
@@ -1000,6 +1003,16 @@ def discover_families_for_task(
             "hole_row_column",
             solver_candidates["hole_row_column"],
             primitive_hint_names=("fill_enclosed_hole", "extract_row_or_column_by_marker"),
+            accepted_hints=accepted_hints,
+            uncertain_hints=uncertain_hints,
+            rejected_hints=rejected_hints,
+        )
+    )
+    family_hypotheses.append(
+        _family_from_single_step_solver(
+            "marker_copy",
+            solver_candidates["marker_copy"],
+            primitive_hint_names=("copy_object_to_marker",),
             accepted_hints=accepted_hints,
             uncertain_hints=uncertain_hints,
             rejected_hints=rejected_hints,
