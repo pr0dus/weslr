@@ -111,3 +111,56 @@ def test_runner_smoke_tasks_solve_for_supported_families(monkeypatch) -> None:
     result = runner_module.run_universal_family_solver(composition_task["train_pairs"], composition_task["test_input"])
     assert result.exact_two_output is True
     assert result.attempt_1.output == composition_task["expected_output"] or result.attempt_2.output == composition_task["expected_output"]
+
+
+def test_adversarial_ambiguous_multiple_rules_has_non_identity_expected_output() -> None:
+    for vi in range(5):
+        variant = f"v{vi}"
+        task = build_arc_synthetic_discovery_task_v1("ambiguous_multiple_rules", seed=82435, variant=variant)
+        assert task["expected_output"] != task["test_input"], (
+            f"ambiguous_multiple_rules {variant} has identity expected output"
+        )
+        assert task["metadata"]["expected_behavior"] == "reject"
+        assert task["metadata"]["kind"] == "adversarial"
+
+
+def test_adversarial_unsupported_primitive_chain_has_non_identity_expected_output() -> None:
+    for vi in range(5):
+        variant = f"v{vi}"
+        task = build_arc_synthetic_discovery_task_v1("unsupported_primitive_chain", seed=82435, variant=variant)
+        assert task["expected_output"] != task["test_input"], (
+            f"unsupported_primitive_chain {variant} has identity expected output"
+        )
+        assert task["metadata"]["expected_behavior"] == "reject"
+        assert task["metadata"]["kind"] == "adversarial"
+
+
+def test_adversarial_ambiguous_multiple_rules_not_solved_by_runner() -> None:
+    for vi in range(5):
+        variant = f"v{vi}"
+        task = build_arc_synthetic_discovery_task_v1("ambiguous_multiple_rules", seed=82435, variant=variant)
+        result = runner_module.run_universal_family_solver(task["train_pairs"], task["test_input"])
+        a1 = getattr(result.attempt_1, "output", None)
+        a2 = getattr(result.attempt_2, "output", None)
+        assert a1 != task["expected_output"], f"ambiguous_multiple_rules {variant} solved by attempt_1"
+        assert a2 != task["expected_output"], f"ambiguous_multiple_rules {variant} solved by attempt_2"
+
+
+def test_adversarial_unsupported_primitive_chain_not_solved_by_runner() -> None:
+    for vi in range(5):
+        variant = f"v{vi}"
+        task = build_arc_synthetic_discovery_task_v1("unsupported_primitive_chain", seed=82435, variant=variant)
+        result = runner_module.run_universal_family_solver(task["train_pairs"], task["test_input"])
+        a1 = getattr(result.attempt_1, "output", None)
+        a2 = getattr(result.attempt_2, "output", None)
+        assert a1 != task["expected_output"], f"unsupported_primitive_chain {variant} solved by attempt_1"
+        assert a2 != task["expected_output"], f"unsupported_primitive_chain {variant} solved by attempt_2"
+
+
+def test_adversarial_repaired_families_remain_deterministic() -> None:
+    for family in ("ambiguous_multiple_rules", "unsupported_primitive_chain"):
+        t1 = build_arc_synthetic_discovery_task_v1(family, seed=42, variant="v0")
+        t2 = build_arc_synthetic_discovery_task_v1(family, seed=42, variant="v0")
+        assert t1 == t2, f"{family} not deterministic for seed=42"
+        t3 = build_arc_synthetic_discovery_task_v1(family, seed=43, variant="v0")
+        assert t3 != t1, f"{family} same for different seeds"

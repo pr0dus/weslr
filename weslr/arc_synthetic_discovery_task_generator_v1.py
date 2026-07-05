@@ -538,14 +538,23 @@ def _adversarial_inconsistent(seed: int, variant: str) -> dict[str, Any]:
 
 
 def _adversarial_ambiguous(seed: int, variant: str) -> dict[str, Any]:
-    base = _grid([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    # Non-identity expected output: train maps cross to corners-only (ambiguous:
+    # could be "invert cross", "fill corners", or "remove non-corner foreground").
+    # Test uses a different color so color_role cannot trivially match.
+    # Variant determines the test color (2..6), ensuring train (color 1) != test color.
+    variant_idx = int(variant[1:]) if variant.startswith("v") and variant[1:].isdigit() else 0
+    test_color = 2 + (variant_idx % 5)  # 2..6
+    train_in = _grid([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    train_out = _grid([[1, 0, 1], [0, 0, 0], [1, 0, 1]])  # corners only
+    test_in = _grid([[0, test_color, 0], [test_color, test_color, test_color], [0, test_color, 0]])
+    expected = _grid([[test_color, 0, test_color], [0, 0, 0], [test_color, 0, test_color]])
     return _task(
         f"{seed}:ambiguous_multiple_rules:{variant}",
         family_label="ambiguous_multiple_rules",
         primitive_chain=("rotate_object_90", "reflect_object_horizontal"),
-        train_pairs=(({"input": base, "output": base}),),
-        test_input=base,
-        expected_output=base,
+        train_pairs=(({"input": train_in, "output": train_out}),),
+        test_input=test_in,
+        expected_output=expected,
         difficulty="hard",
         variant=variant,
         seed=seed,
@@ -554,14 +563,22 @@ def _adversarial_ambiguous(seed: int, variant: str) -> dict[str, Any]:
 
 
 def _adversarial_unsupported(seed: int, variant: str) -> dict[str, Any]:
-    base = _grid([[0, 1], [1, 0]])
+    # Non-identity expected output: train maps 2x2 to 3x3 expansion (unsupported:
+    # no existing solver primitive does arbitrary size expansion).
+    # Test uses a different color so color_role cannot trivially match.
+    variant_idx = int(variant[1:]) if variant.startswith("v") and variant[1:].isdigit() else 0
+    test_color = 2 + (variant_idx % 5)  # 2..6
+    train_in = _grid([[0, 1], [1, 0]])
+    train_out = _grid([[0, 1, 1], [1, 1, 0], [1, 0, 0]])  # 3x3 from 2x2
+    test_in = _grid([[0, test_color], [test_color, 0]])
+    expected = _grid([[0, test_color, test_color], [test_color, test_color, 0], [test_color, 0, 0]])
     return _task(
         f"{seed}:unsupported_primitive_chain:{variant}",
         family_label="unsupported_primitive_chain",
         primitive_chain=("ghost_a", "ghost_b"),
-        train_pairs=(({"input": base, "output": base}),),
-        test_input=base,
-        expected_output=base,
+        train_pairs=(({"input": train_in, "output": train_out}),),
+        test_input=test_in,
+        expected_output=expected,
         difficulty="hard",
         variant=variant,
         seed=seed,
