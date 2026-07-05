@@ -7,8 +7,8 @@
 ## Start / end state
 - Expected start HEAD: `2103e72791257cf8ebc5a894febf4b938c3741a3`
 - Actual preflight HEAD: `2103e72791257cf8ebc5a894febf4b938c3741a3`
-- End HEAD: pending final commit
-- Commit status: pending final commit
+- End HEAD: `4ae3597b76c7c0d23114f565c8a6225a6622d928`
+- Commit status: committed (`Implement ARC-AGI2 compositional executor V1`)
 
 ## Files added/changed
 - Added: `weslr/arc_compositional_executor_v1.py`
