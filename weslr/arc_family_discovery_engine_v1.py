@@ -33,6 +33,7 @@ from weslr.arc_primitive_registry_v1 import PrimitiveDescriptor, PrimitiveRegist
 from weslr.arc_resize_tile_canvas_v1 import _pad_grid, _repeat_grid, _tile_grid, infer_resize_tile_hypotheses_v1
 from weslr.arc_shape_geometry_v1 import canonical_shape_signature_v1, infer_shape_geometry_hypotheses_v1, reflect_object_mask_v1, rebuild_object_into_background_grid_v1, rotate_object_mask_v1
 from weslr.arc_task_feature_signature_v1 import build_arc_task_feature_signature_v1
+from weslr.arc_agi2_symmetry_line_candidate_adapter_v1 import solve_symmetry_line_task
 
 SCHEMA_VERSION_V1 = "ArcFamilyDiscoveryEngineV1"
 MAX_PRIMITIVE_CHAIN_LENGTH_V1 = 2
@@ -44,11 +45,12 @@ FAMILY_PRIORITY_V1 = {
     "color_role": 2,
     "resize_tile": 3,
     "count_quantity": 4,
-    "crop_then_recolor": 5,
-    "crop_then_rotate_or_reflect": 6,
-    "crop_then_tile": 7,
-    "recolor_then_border": 8,
-    "select_then_recolor": 9,
+    "symmetry_line": 5,
+    "crop_then_recolor": 6,
+    "crop_then_rotate_or_reflect": 7,
+    "crop_then_tile": 8,
+    "recolor_then_border": 9,
+    "select_then_recolor": 10,
 }
 
 ALLOWED_COMPOSITION_TEMPLATES_V1 = (
@@ -867,6 +869,7 @@ def _select_solver_candidates(train_pairs: Sequence[Mapping[str, Any]], test_inp
         "color_role": [candidate.to_dict() for candidate in infer_color_role_hypotheses_v1(train_pairs, test_input)],
         "resize_tile": [candidate.to_dict() for candidate in infer_resize_tile_hypotheses_v1(train_pairs, test_input)],
         "count_quantity": [candidate.to_dict() for candidate in infer_count_quantity_hypotheses_v1(train_pairs, test_input)],
+        "symmetry_line": solve_symmetry_line_task(train_pairs, test_input),
     }
 
 
@@ -974,6 +977,16 @@ def discover_families_for_task(
             "count_quantity",
             solver_candidates["count_quantity"],
             primitive_hint_names=COUNT_QUANTITY_PRIMITIVES_V1,
+            accepted_hints=accepted_hints,
+            uncertain_hints=uncertain_hints,
+            rejected_hints=rejected_hints,
+        )
+    )
+    family_hypotheses.append(
+        _family_from_single_step_solver(
+            "symmetry_line",
+            solver_candidates["symmetry_line"],
+            primitive_hint_names=("complete_horizontal_symmetry", "complete_vertical_symmetry", "extend_line_to_boundary"),
             accepted_hints=accepted_hints,
             uncertain_hints=uncertain_hints,
             rejected_hints=rejected_hints,

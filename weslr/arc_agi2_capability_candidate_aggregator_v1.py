@@ -33,6 +33,10 @@ from weslr.arc_agi2_shape_geometry_candidate_adapter_v1 import (
     ADAPTER_NAME_V1 as SHAPE_GEOMETRY_ADAPTER_NAME_V1,
     build_arc_agi2_shape_geometry_top2_attempt_packet_v1,
 )
+from weslr.arc_agi2_symmetry_line_candidate_adapter_v1 import (
+    ADAPTER_NAME_V1 as SYMMETRY_LINE_ADAPTER_NAME_V1,
+    build_arc_agi2_symmetry_line_top2_attempt_packet_v1,
+)
 from weslr.arc_agi2_submission_contract import (
     build_arc_agi2_submission_packet_v1,
     build_arc_agi2_submission_task_entry_v1,
@@ -67,6 +71,7 @@ SOURCE_KIND_TO_FAMILY_V1 = {
     "color_role_solver": "color_role",
     "resize_tile_solver": "resize_tile",
     "count_quantity_solver": "count_quantity",
+    "symmetry_line_solver": "symmetry_line",
     "safe_deterministic_fallback": "fallback",
 }
 
@@ -158,6 +163,8 @@ def _family_for_attempt(attempt: Mapping[str, Any]) -> tuple[str, str]:
         label = _safe_text(metadata.get("resize_family") or attempt.get("source_candidate_id"), "resize_tile")
     elif family == "count_quantity":
         label = _safe_text(metadata.get("count_family") or attempt.get("source_candidate_id"), "count_quantity")
+    elif family == "symmetry_line":
+        label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "symmetry_line")
     elif family == "fallback":
         label = _safe_text(metadata.get("fallback_kind") or attempt.get("source_candidate_id"), "fallback")
     return family, label
@@ -435,6 +442,14 @@ def _build_source_packets(
             test_input_index=test_input_index,
         )
         source_packets.append({"family": "count_quantity", "adapter": COUNT_QUANTITY_ADAPTER_NAME_V1, "packet": packet})
+    if "symmetry_line" in enabled_families:
+        packet = build_arc_agi2_symmetry_line_top2_attempt_packet_v1(
+            train_pairs,
+            test_input,
+            task_id=task_id,
+            test_input_index=test_input_index,
+        )
+        source_packets.append({"family": "symmetry_line", "adapter": SYMMETRY_LINE_ADAPTER_NAME_V1, "packet": packet})
     return source_packets
 
 
@@ -450,7 +465,7 @@ def build_arc_agi2_capability_candidate_top2_attempt_packet_v1(
 ) -> dict[str, Any]:
     task_id_text = _task_id(task_id)
     test_input_index_int = _test_input_index(test_input_index)
-    enabled = {"object_bbox", "shape_geometry", "color_role", "resize_tile", "count_quantity", "fallback"}
+    enabled = {"object_bbox", "shape_geometry", "color_role", "resize_tile", "count_quantity", "symmetry_line", "fallback"}
     if enabled_families is not None:
         enabled = { _safe_text(item) for item in enabled_families if _safe_text(item) }
         if not enabled:
