@@ -37,6 +37,7 @@ EXECUTABLE_FAMILY_ORDER_V1 = (
     "resize_tile",
     "count_quantity",
     "symmetry_line",
+    "hole_row_column",
 )
 
 FAMILY_PRIORITY_WITH_FALLBACK_V1 = dict(FAMILY_PRIORITY_V1)

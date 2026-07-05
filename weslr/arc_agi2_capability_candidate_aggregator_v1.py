@@ -37,6 +37,10 @@ from weslr.arc_agi2_symmetry_line_candidate_adapter_v1 import (
     ADAPTER_NAME_V1 as SYMMETRY_LINE_ADAPTER_NAME_V1,
     build_arc_agi2_symmetry_line_top2_attempt_packet_v1,
 )
+from weslr.arc_agi2_hole_row_column_candidate_adapter_v1 import (
+    ADAPTER_NAME_V1 as HOLE_ROW_COLUMN_ADAPTER_NAME_V1,
+    build_arc_agi2_hole_row_column_top2_attempt_packet_v1,
+)
 from weslr.arc_agi2_submission_contract import (
     build_arc_agi2_submission_packet_v1,
     build_arc_agi2_submission_task_entry_v1,
@@ -50,10 +54,12 @@ AGGREGATOR_NAME_V1 = "arc_agi2_capability_candidate_aggregator_v1"
 FAMILY_PRIORITY_V1 = {
     "object_bbox": 0,
     "shape_geometry": 1,
-    "color_role": 2,
-    "resize_tile": 3,
-    "count_quantity": 4,
-    "fallback": 5,
+    "hole_row_column": 2,
+    "color_role": 3,
+    "resize_tile": 4,
+    "count_quantity": 5,
+    "symmetry_line": 6,
+    "fallback": 7,
 }
 
 SOURCE_ADAPTER_PRIORITY_V1 = {
@@ -62,7 +68,9 @@ SOURCE_ADAPTER_PRIORITY_V1 = {
     COLOR_ROLE_ADAPTER_NAME_V1: 2,
     RESIZE_TILE_ADAPTER_NAME_V1: 3,
     COUNT_QUANTITY_ADAPTER_NAME_V1: 4,
-    AGGREGATOR_NAME_V1: 5,
+    SYMMETRY_LINE_ADAPTER_NAME_V1: 5,
+    HOLE_ROW_COLUMN_ADAPTER_NAME_V1: 6,
+    AGGREGATOR_NAME_V1: 7,
 }
 
 SOURCE_KIND_TO_FAMILY_V1 = {
@@ -72,6 +80,7 @@ SOURCE_KIND_TO_FAMILY_V1 = {
     "resize_tile_solver": "resize_tile",
     "count_quantity_solver": "count_quantity",
     "symmetry_line_solver": "symmetry_line",
+    "hole_row_column_solver": "hole_row_column",
     "safe_deterministic_fallback": "fallback",
 }
 
@@ -165,6 +174,8 @@ def _family_for_attempt(attempt: Mapping[str, Any]) -> tuple[str, str]:
         label = _safe_text(metadata.get("count_family") or attempt.get("source_candidate_id"), "count_quantity")
     elif family == "symmetry_line":
         label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "symmetry_line")
+    elif family == "hole_row_column":
+        label = _safe_text(metadata.get("source_family") or attempt.get("source_candidate_id"), "hole_row_column")
     elif family == "fallback":
         label = _safe_text(metadata.get("fallback_kind") or attempt.get("source_candidate_id"), "fallback")
     return family, label
@@ -450,6 +461,14 @@ def _build_source_packets(
             test_input_index=test_input_index,
         )
         source_packets.append({"family": "symmetry_line", "adapter": SYMMETRY_LINE_ADAPTER_NAME_V1, "packet": packet})
+    if "hole_row_column" in enabled_families:
+        packet = build_arc_agi2_hole_row_column_top2_attempt_packet_v1(
+            train_pairs,
+            test_input,
+            task_id=task_id,
+            test_input_index=test_input_index,
+        )
+        source_packets.append({"family": "hole_row_column", "adapter": HOLE_ROW_COLUMN_ADAPTER_NAME_V1, "packet": packet})
     return source_packets
 
 

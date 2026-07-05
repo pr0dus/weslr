@@ -34,6 +34,7 @@ from weslr.arc_resize_tile_canvas_v1 import _pad_grid, _repeat_grid, _tile_grid,
 from weslr.arc_shape_geometry_v1 import canonical_shape_signature_v1, infer_shape_geometry_hypotheses_v1, reflect_object_mask_v1, rebuild_object_into_background_grid_v1, rotate_object_mask_v1
 from weslr.arc_task_feature_signature_v1 import build_arc_task_feature_signature_v1
 from weslr.arc_agi2_symmetry_line_candidate_adapter_v1 import solve_symmetry_line_task
+from weslr.arc_hole_row_column_v1 import solve_hole_row_column_task
 
 SCHEMA_VERSION_V1 = "ArcFamilyDiscoveryEngineV1"
 MAX_PRIMITIVE_CHAIN_LENGTH_V1 = 2
@@ -42,15 +43,16 @@ HIGH_CONFIDENCE_UNCERTAIN_THRESHOLD_V1 = 0.8
 FAMILY_PRIORITY_V1 = {
     "object_bbox": 0,
     "shape_geometry": 1,
-    "color_role": 2,
-    "resize_tile": 3,
-    "count_quantity": 4,
-    "symmetry_line": 5,
-    "crop_then_recolor": 6,
-    "crop_then_rotate_or_reflect": 7,
-    "crop_then_tile": 8,
-    "recolor_then_border": 9,
-    "select_then_recolor": 10,
+    "hole_row_column": 2,
+    "color_role": 3,
+    "resize_tile": 4,
+    "count_quantity": 5,
+    "symmetry_line": 6,
+    "crop_then_recolor": 7,
+    "crop_then_rotate_or_reflect": 8,
+    "crop_then_tile": 9,
+    "recolor_then_border": 10,
+    "select_then_recolor": 11,
 }
 
 ALLOWED_COMPOSITION_TEMPLATES_V1 = (
@@ -870,6 +872,7 @@ def _select_solver_candidates(train_pairs: Sequence[Mapping[str, Any]], test_inp
         "resize_tile": [candidate.to_dict() for candidate in infer_resize_tile_hypotheses_v1(train_pairs, test_input)],
         "count_quantity": [candidate.to_dict() for candidate in infer_count_quantity_hypotheses_v1(train_pairs, test_input)],
         "symmetry_line": solve_symmetry_line_task(train_pairs, test_input),
+        "hole_row_column": solve_hole_row_column_task(train_pairs, test_input),
     }
 
 
@@ -987,6 +990,16 @@ def discover_families_for_task(
             "symmetry_line",
             solver_candidates["symmetry_line"],
             primitive_hint_names=("complete_horizontal_symmetry", "complete_vertical_symmetry", "extend_line_to_boundary"),
+            accepted_hints=accepted_hints,
+            uncertain_hints=uncertain_hints,
+            rejected_hints=rejected_hints,
+        )
+    )
+    family_hypotheses.append(
+        _family_from_single_step_solver(
+            "hole_row_column",
+            solver_candidates["hole_row_column"],
+            primitive_hint_names=("fill_enclosed_hole", "extract_row_or_column_by_marker"),
             accepted_hints=accepted_hints,
             uncertain_hints=uncertain_hints,
             rejected_hints=rejected_hints,
