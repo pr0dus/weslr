@@ -7,8 +7,8 @@
 ## Start / end state
 - Original expected HEAD: `1bdad9e485aa737f83c1abd40fe4567c211703ce`
 - Actual preflight HEAD: `1bdad9e485aa737f83c1abd40fe4567c211703ce`
-- End HEAD: `23711414c8f8da308a4b3a249481d0558ae39916`
-- Commit status: committed (`Implement ARC-AGI2 synthetic discovery task generator V1`)
+- End HEAD: `0d7eb4193bbff857a258f725d6d18fb6193490b9`
+- Commit status: committed (`Finalize ARC-AGI2 synthetic discovery report`)
 
 ## HEAD reconciliation
 - `git rev-parse HEAD` → `1bdad9e485aa737f83c1abd40fe4567c211703ce`
