@@ -7,8 +7,8 @@
 ## Start / end state
 - Expected start HEAD: `9dc7d22f7a4e65d7fe1115b425c91a963494e3fb`
 - Actual preflight HEAD: `9dc7d22f7a4e65d7fe1115b425c91a963494e3fb`
-- End HEAD: pending final commit
-- Commit status: pending final commit
+- End HEAD: `7c6d2452b8807164ec53536971a58291f49b61ca`
+- Commit status: committed (`Implement ARC-AGI2 universal family runner V1`)
 
 ## Files added/changed
 - Added: `weslr/arc_universal_family_runner_v1.py`
