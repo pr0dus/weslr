@@ -267,3 +267,18 @@ def test_unknown_primitive_hint_is_handled_safely(monkeypatch: pytest.MonkeyPatc
     blob = json.dumps(result.to_json_safe_dict(), sort_keys=True).lower()
     assert "ghost_primitive" not in blob
     assert result.attempt_1.family_name in {"color_role", "fallback"}
+
+
+def test_generated_synthetic_composition_task_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_v1
+
+    task = build_arc_synthetic_discovery_task_v1("crop_then_recolor", seed=99, variant="smoke")
+    monkeypatch.setattr(
+        runner_module,
+        "discover_families_for_task",
+        lambda *args, **kwargs: _family_result(_hypothesis("crop_then_recolor", ("crop_foreground_bbox", "recolor_global"))),
+    )
+    result = runner_module.run_universal_family_solver(task["train_pairs"], task["test_input"])
+    assert result.exact_two_output is True
+    assert result.attempt_1.output == task["expected_output"] or result.attempt_2.output == task["expected_output"]
+    assert "discovered_not_executable_v1" not in json.dumps(result.to_json_safe_dict()).lower()
