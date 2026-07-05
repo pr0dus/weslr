@@ -7,8 +7,8 @@
 ## Start / end state
 - Original expected HEAD: `a9fcd6aeaaa594458f0fb4d3b93d95046a797762`
 - Actual preflight HEAD: `a9fcd6aeaaa594458f0fb4d3b93d95046a797762`
-- End HEAD: pending report commit
-- Commit status: pending report commit
+- End HEAD: `0b118d83d4554fc55b4ebd177d111d9bc22562c2`
+- Commit status: committed (`Implement ARC-AGI2 held-out synthetic discovery benchmark V1`)
 
 ## HEAD reconciliation
 - `git rev-parse HEAD` → `a9fcd6aeaaa594458f0fb4d3b93d95046a797762`
