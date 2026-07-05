@@ -1,10 +1,10 @@
 """ARC-AGI-2 universal family runner V1.
 
 Synthetic-only top-2 runner that connects task signatures, primitive discovery,
-family discovery, and the existing capability candidate aggregator.
+family discovery, compositional execution, and the existing capability candidate
+aggregator.
 
-It does not ingest public ARC data, does not score, does not submit, and does
-not implement compositional execution beyond discovery metadata in V1.
+No public ARC ingestion. No scoring claims. No submission writes.
 """
 
 from __future__ import annotations
@@ -13,22 +13,22 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
 from weslr.arc_agi2_capability_candidate_aggregator_v1 import build_arc_agi2_capability_candidate_top2_attempt_packet_v1
+from weslr.arc_compositional_executor_v1 import CompositionalExecutorCandidate, execute_compositional_family_hypotheses
 from weslr.arc_family_discovery_engine_v1 import (
-    ALLOWED_COMPOSITION_TEMPLATES_V1,
     COMPOSITION_FAMILY_ORDER_V1,
     FAMILY_PRIORITY_V1,
     FamilyDiscoveryResult,
     FamilyHypothesis,
     discover_families_for_task,
-    SOLVER_FAMILY_TO_PRIMITIVE_V1,
 )
-from weslr.arc_primitive_discovery_engine_v1 import PrimitiveDiscoveryResult, discover_primitives_for_task
+from weslr.arc_primitive_discovery_engine_v1 import discover_primitives_for_task
 from weslr.arc_primitive_registry_v1 import build_arc_primitive_registry_v1
 from weslr.arc_task_feature_signature_v1 import build_arc_task_feature_signature_v1
 
 SCHEMA_VERSION_V1 = "ArcUniversalFamilyRunnerV1"
 DEFAULT_TASK_ID_V1 = "arc_universal_family_runner_task"
 HIGH_CONFIDENCE_UNCERTAIN_THRESHOLD_V1 = 0.8
+FALLBACK_FAMILY_V1 = "fallback"
 
 EXECUTABLE_FAMILY_ORDER_V1 = (
     "object_bbox",
@@ -38,7 +38,10 @@ EXECUTABLE_FAMILY_ORDER_V1 = (
     "count_quantity",
 )
 
-FALLBACK_FAMILY_V1 = "fallback"
+FAMILY_PRIORITY_WITH_FALLBACK_V1 = dict(FAMILY_PRIORITY_V1)
+FAMILY_PRIORITY_WITH_FALLBACK_V1[FALLBACK_FAMILY_V1] = 999
+
+COMPOSITION_TEMPLATES_V1 = set(COMPOSITION_FAMILY_ORDER_V1)
 
 
 def _safe_text(value: Any, default: str = "") -> str:
@@ -74,49 +77,50 @@ def _pair_output(pair: Mapping[str, Any]) -> Any:
 
 
 def _family_rank(family_name: str) -> int:
-    if family_name in FAMILY_PRIORITY_V1:
-        return FAMILY_PRIORITY_V1[family_name]
-    if family_name in COMPOSITION_FAMILY_ORDER_V1:
-        return 100 + COMPOSITION_FAMILY_ORDER_V1.index(family_name)
-    if family_name == FALLBACK_FAMILY_V1:
-        return 999
-    return 500
+    return FAMILY_PRIORITY_WITH_FALLBACK_V1.get(_safe_text(family_name), 500)
 
 
-def _primitive_for_solver_family(solver_family: str) -> str:
-    return _safe_text(SOLVER_FAMILY_TO_PRIMITIVE_V1.get(_safe_text(solver_family), solver_family))
+def _train_fit(candidate: Mapping[str, Any] | UniversalRunnerCandidate) -> bool:
+    if isinstance(candidate, UniversalRunnerCandidate):
+        trace = candidate.trace if isinstance(candidate.trace, Mapping) else {}
+        if "train_fit" in trace:
+            return bool(trace.get("train_fit"))
+        return False
+    trace = candidate.get("trace") if isinstance(candidate.get("trace"), Mapping) else {}
+    if "train_fit" in trace:
+        return bool(trace.get("train_fit"))
+    return bool(candidate.get("train_fit", False))
 
 
-def _selected_single_step_families(
-    family_result: FamilyDiscoveryResult,
-    *,
-    enabled_families: Sequence[str] | None,
-) -> tuple[list[str], list[str]]:
-    allowed = {_safe_text(item) for item in enabled_families} if enabled_families is not None else None
-    selected: list[str] = []
-    discovered_not_executable: list[str] = []
+def _candidate_rank_key(candidate: Mapping[str, Any] | UniversalRunnerCandidate) -> tuple[Any, ...]:
+    if isinstance(candidate, UniversalRunnerCandidate):
+        trace = candidate.trace if isinstance(candidate.trace, Mapping) else {}
+        source = _safe_text(candidate.source, "")
+        family_name = _safe_text(candidate.family_name, "")
+        confidence = float(candidate.confidence or 0.0)
+        chain_length = len(candidate.primitive_chain)
+        source_candidate_id = _safe_text(trace.get("source_candidate_id"), "")
+    else:
+        trace = candidate.get("trace") if isinstance(candidate.get("trace"), Mapping) else {}
+        source = _safe_text(candidate.get("source"), "")
+        family_name = _safe_text(candidate.get("family_name"), "")
+        confidence = float(candidate.get("confidence", 0.0) or 0.0)
+        chain_length = len(candidate.get("primitive_chain", [])) if isinstance(candidate.get("primitive_chain"), Sequence) else 99
+        source_candidate_id = _safe_text(candidate.get("source_candidate_id"), "")
+    return (
+        0 if _train_fit(candidate if isinstance(candidate, Mapping) else {"trace": candidate.trace, "train_fit": candidate.trace.get("train_fit", False)}) else 1,
+        -confidence,
+        chain_length,
+        _family_rank(family_name),
+        0 if source == "compositional_executor" else 1 if source == "capability_aggregator" else 2,
+        _safe_text(trace.get("execution_kind"), ""),
+        family_name,
+        source_candidate_id,
+    )
 
-    hypotheses: list[FamilyHypothesis] = list(family_result.accepted_families) + list(family_result.uncertain_families)
-    hypotheses.sort(key=lambda hyp: (_family_rank(_safe_text(hyp.family_name)), -float(hyp.confidence), len(hyp.primitive_chain), _safe_text(hyp.family_name), tuple(_safe_text(name) for name in hyp.primitive_chain)))
 
-    for hypothesis in hypotheses:
-        family_name = _safe_text(hypothesis.family_name)
-        if family_name in ALLOWED_COMPOSITION_TEMPLATES_V1:
-            if family_name not in discovered_not_executable:
-                discovered_not_executable.append(family_name)
-            continue
-        if family_name not in EXECUTABLE_FAMILY_ORDER_V1:
-            continue
-        if allowed is not None and family_name not in allowed:
-            continue
-        if hypothesis.status == "uncertain" and float(hypothesis.confidence) < HIGH_CONFIDENCE_UNCERTAIN_THRESHOLD_V1 and allowed is None:
-            continue
-        if family_name not in selected:
-            selected.append(family_name)
-
-    selected.sort(key=lambda name: (_family_rank(name), name))
-    discovered_not_executable.sort(key=lambda name: (_family_rank(name), name))
-    return selected, discovered_not_executable
+def _candidate_grid_signature(candidate: Mapping[str, Any]) -> str:
+    return repr(_json_safe(candidate.get("output")))
 
 
 @dataclass(frozen=True)
@@ -170,9 +174,7 @@ class UniversalRunnerResult:
 def _candidate_from_attempt(attempt: Mapping[str, Any], *, rank: int) -> UniversalRunnerCandidate:
     metadata = attempt.get("metadata") if isinstance(attempt.get("metadata"), Mapping) else {}
     family_name = _safe_text(metadata.get("source_family") or metadata.get("source_family_label") or metadata.get("source_kind") or "fallback")
-    solver_family = _safe_text(metadata.get("solver_family") or metadata.get("source_family_label") or family_name)
-    primitive_chain = (_primitive_for_solver_family(solver_family),)
-    source = _safe_text(metadata.get("source_adapter") or metadata.get("adapter_name") or metadata.get("source_kind") or "aggregator")
+    source = _safe_text(metadata.get("source_adapter") or metadata.get("adapter_name") or metadata.get("source_kind") or "capability_aggregator")
     trace = {
         "source_family": family_name,
         "source_family_label": _safe_text(metadata.get("source_family_label"), family_name),
@@ -185,15 +187,16 @@ def _candidate_from_attempt(attempt: Mapping[str, Any], *, rank: int) -> Univers
         "duplicate_family_labels": _json_safe(metadata.get("duplicate_family_labels", [])),
         "duplicate_source_candidate_ids": _json_safe(metadata.get("duplicate_source_candidate_ids", [])),
         "selected_rank": metadata.get("selected_rank"),
+        "train_fit": bool(metadata.get("train_fit", False)),
     }
     confidence = metadata.get("candidate_score")
     try:
         confidence_value = float(confidence)
     except Exception:
-        confidence_value = float(rank)
+        confidence_value = 0.0
     return UniversalRunnerCandidate(
         family_name=family_name,
-        primitive_chain=primitive_chain,
+        primitive_chain=(_safe_text(metadata.get("solver_family") or metadata.get("source_family_label") or family_name),),
         output=attempt.get("grid"),
         confidence=confidence_value,
         rank=int(rank),
@@ -202,70 +205,127 @@ def _candidate_from_attempt(attempt: Mapping[str, Any], *, rank: int) -> Univers
     )
 
 
-def _build_safe_fallback_attempts(test_input: Any) -> list[dict[str, Any]]:
+def _candidate_from_compositional(candidate: CompositionalExecutorCandidate, *, rank: int) -> UniversalRunnerCandidate:
+    trace = dict(candidate.trace)
+    trace.setdefault("train_fit", bool(candidate.train_fit))
+    trace.setdefault("execution_kind", "compositional_executor")
+    return UniversalRunnerCandidate(
+        family_name=_safe_text(candidate.family_name),
+        primitive_chain=tuple(_safe_text(item) for item in candidate.primitive_chain),
+        output=candidate.output,
+        confidence=float(candidate.confidence),
+        rank=int(rank),
+        source="compositional_executor",
+        trace=trace,
+    )
+
+
+def _build_safe_fallback_candidates(test_input: Any) -> list[UniversalRunnerCandidate]:
     grid = _json_safe(test_input)
-    if not isinstance(grid, list):
+    if not isinstance(grid, list) or not grid or not isinstance(grid[0], list):
         grid = [[0]]
-    if not grid or not isinstance(grid[0], list):
-        grid = [[0]]
-    fallback = {
-        "attempt_id": f"{DEFAULT_TASK_ID_V1}:fallback",
-        "grid": grid,
-        "source_candidate_id": f"{DEFAULT_TASK_ID_V1}:fallback",
-        "rank": 1,
-        "confidence_label": "low",
-        "evidence_labels": ["fallback"],
-        "leakage_flags": {},
-        "metadata": {
-            "adapter_name": "arc_universal_family_runner_v1",
-            "schema_version": SCHEMA_VERSION_V1,
-            "source_kind": "safe_deterministic_fallback",
-            "source_family": FALLBACK_FAMILY_V1,
-            "source_family_label": FALLBACK_FAMILY_V1,
-            "source_adapter": "arc_universal_family_runner_v1",
-            "confidence_label": "low",
-            "candidate_score": 0,
-            "train_fit": False,
-            "synthetic_only": True,
-        },
+    fallback_trace = {
+        "schema_version": SCHEMA_VERSION_V1,
+        "family_name": FALLBACK_FAMILY_V1,
+        "execution_kind": "safe_deterministic_fallback",
+        "train_fit": False,
     }
-    return [fallback, {**fallback, "attempt_id": f"{DEFAULT_TASK_ID_V1}:fallback_2", "source_candidate_id": f"{DEFAULT_TASK_ID_V1}:fallback_2", "rank": 2}]
+    first = UniversalRunnerCandidate(
+        family_name=FALLBACK_FAMILY_V1,
+        primitive_chain=(FALLBACK_FAMILY_V1,),
+        output=grid,
+        confidence=0.0,
+        rank=1,
+        source=FALLBACK_FAMILY_V1,
+        trace=dict(fallback_trace),
+    )
+    second = UniversalRunnerCandidate(
+        family_name=FALLBACK_FAMILY_V1,
+        primitive_chain=(FALLBACK_FAMILY_V1,),
+        output=grid,
+        confidence=0.0,
+        rank=2,
+        source=FALLBACK_FAMILY_V1,
+        trace={**fallback_trace, "rank": 2},
+    )
+    return [first, second]
 
 
-def _ensure_two_attempts(packet: Mapping[str, Any], test_input: Any) -> tuple[list[dict[str, Any]], bool]:
-    attempts = [dict(attempt) for attempt in packet.get("attempts", []) if isinstance(attempt, Mapping)]
-    fallback_used = bool(packet.get("metadata", {}).get("used_fallback", False)) if isinstance(packet.get("metadata"), Mapping) else False
-    if len(attempts) >= 2:
-        return attempts[:2], fallback_used
-    fallback_attempts = _build_safe_fallback_attempts(test_input)
-    attempts.extend(fallback_attempts[: 2 - len(attempts)])
-    return attempts[:2], True
-
-
-def _dedupe_attempts(attempts: Sequence[Mapping[str, Any]], test_input: Any) -> tuple[list[dict[str, Any]], int, bool]:
-    unique: list[dict[str, Any]] = []
-    seen: set[str] = set()
+def _dedupe_candidates(candidates: Sequence[UniversalRunnerCandidate]) -> tuple[list[UniversalRunnerCandidate], int]:
+    ordered = sorted(candidates, key=_candidate_rank_key)
+    kept: list[UniversalRunnerCandidate] = []
+    seen: dict[str, UniversalRunnerCandidate] = {}
     dedupe_count = 0
-    fallback_used = False
-    for attempt in attempts:
-        grid = attempt.get("grid") if isinstance(attempt, Mapping) else None
-        signature = repr(_json_safe(grid))
-        if signature in seen:
-            dedupe_count += 1
+    for candidate in ordered:
+        signature = _candidate_grid_signature(candidate.__dict__)
+        if signature not in seen:
+            seen[signature] = candidate
+            kept.append(candidate)
             continue
-        seen.add(signature)
-        unique.append(dict(attempt))
-    if len(unique) < 2:
-        fallback_used = True
-        for fallback_attempt in _build_safe_fallback_attempts(test_input):
-            signature = repr(_json_safe(fallback_attempt.get("grid")))
-            if signature in seen:
-                continue
-            unique.append(fallback_attempt)
-            seen.add(signature)
-            if len(unique) >= 2:
-                break
-    return unique[:2], dedupe_count, fallback_used
+        dedupe_count += 1
+        primary = seen[signature]
+        primary_trace = dict(primary.trace)
+        duplicate_names = set(primary_trace.get("duplicate_family_names", []))
+        duplicate_names.add(_safe_text(candidate.family_name))
+        duplicate_names.add(_safe_text(primary.family_name))
+        primary_trace["duplicate_family_names"] = sorted(name for name in duplicate_names if name)
+        seen[signature] = UniversalRunnerCandidate(
+            family_name=primary.family_name,
+            primitive_chain=primary.primitive_chain,
+            output=primary.output,
+            confidence=primary.confidence,
+            rank=primary.rank,
+            source=primary.source,
+            trace=primary_trace,
+        )
+        kept[kept.index(primary)] = seen[signature]
+    return kept, dedupe_count
+
+
+def _selected_single_step_families(
+    family_result: FamilyDiscoveryResult,
+    *,
+    enabled_families: Sequence[str] | None,
+) -> list[FamilyHypothesis]:
+    allowed = {_safe_text(item) for item in enabled_families} if enabled_families is not None else None
+    hypotheses = list(family_result.accepted_families) + list(family_result.uncertain_families)
+    hypotheses.sort(key=lambda hyp: (_family_rank(_safe_text(hyp.family_name)), -float(hyp.confidence), len(hyp.primitive_chain), _safe_text(hyp.family_name), tuple(_safe_text(item) for item in hyp.primitive_chain)))
+    selected: list[FamilyHypothesis] = []
+    for hypothesis in hypotheses:
+        family_name = _safe_text(hypothesis.family_name)
+        if family_name in COMPOSITION_TEMPLATES_V1:
+            continue
+        if family_name not in EXECUTABLE_FAMILY_ORDER_V1:
+            continue
+        if allowed is not None and family_name not in allowed:
+            continue
+        if hypothesis.status == "uncertain" and float(hypothesis.confidence) < HIGH_CONFIDENCE_UNCERTAIN_THRESHOLD_V1 and allowed is None:
+            continue
+        selected.append(hypothesis)
+    return selected
+
+
+def _selected_composition_hypotheses(
+    family_result: FamilyDiscoveryResult,
+    *,
+    enabled_families: Sequence[str] | None,
+) -> list[FamilyHypothesis]:
+    allowed = {_safe_text(item) for item in enabled_families} if enabled_families is not None else None
+    hypotheses = list(family_result.accepted_families)
+    hypotheses.sort(key=lambda hyp: (_family_rank(_safe_text(hyp.family_name)), -float(hyp.confidence), len(hyp.primitive_chain), _safe_text(hyp.family_name), tuple(_safe_text(item) for item in hyp.primitive_chain)))
+    selected: list[FamilyHypothesis] = []
+    for hypothesis in hypotheses:
+        family_name = _safe_text(hypothesis.family_name)
+        if family_name not in COMPOSITION_TEMPLATES_V1:
+            continue
+        if allowed is not None and family_name not in allowed:
+            continue
+        selected.append(hypothesis)
+    return selected
+
+
+def _fallback_status(candidates: Sequence[UniversalRunnerCandidate]) -> bool:
+    return all(_safe_text(candidate.family_name) == FALLBACK_FAMILY_V1 for candidate in candidates)
 
 
 def run_universal_family_solver(
@@ -278,14 +338,16 @@ def run_universal_family_solver(
     primitive_result = discover_primitives_for_task(train_pairs, test_input, registry=registry)
     family_result = discover_families_for_task(train_pairs, test_input, primitive_result=primitive_result, registry=registry)
 
-    selected_family_names, discovered_not_executable = _selected_single_step_families(family_result, enabled_families=enabled_families)
-    aggregator_enabled_families = list(selected_family_names)
-    if not aggregator_enabled_families:
-        aggregator_enabled_families = [FALLBACK_FAMILY_V1]
-    elif FALLBACK_FAMILY_V1 not in aggregator_enabled_families:
-        aggregator_enabled_families.append(FALLBACK_FAMILY_V1)
+    composition_hypotheses = _selected_composition_hypotheses(family_result, enabled_families=enabled_families)
+    composition_candidates = execute_compositional_family_hypotheses(train_pairs, test_input, composition_hypotheses, trace=True)
+    executable_composition_candidates = [candidate for candidate in composition_candidates if candidate.train_fit and candidate.output is not None]
+    composition_rejections = [candidate.to_json_safe_dict() for candidate in composition_candidates if not candidate.train_fit or candidate.output is None]
 
-    packet = build_arc_agi2_capability_candidate_top2_attempt_packet_v1(
+    single_step_hypotheses = _selected_single_step_families(family_result, enabled_families=enabled_families)
+    aggregator_enabled_families = [_safe_text(hypothesis.family_name) for hypothesis in single_step_hypotheses]
+    if FALLBACK_FAMILY_V1 not in aggregator_enabled_families:
+        aggregator_enabled_families.append(FALLBACK_FAMILY_V1)
+    aggregator_packet = build_arc_agi2_capability_candidate_top2_attempt_packet_v1(
         train_pairs,
         test_input,
         task_id=DEFAULT_TASK_ID_V1,
@@ -294,22 +356,45 @@ def run_universal_family_solver(
             "adapter_name": "arc_universal_family_runner_v1",
             "schema_version": SCHEMA_VERSION_V1,
             "synthetic_only": True,
-            "discovered_not_executable_v1": discovered_not_executable,
-            "selected_family_names": selected_family_names,
-            "task_feature_summary": {
-                "pair_count": len(train_pairs),
-                "task_signature_labels": task_signature.get("task_level_signature", {}).get("possible_primitive_hint_intersection", []),
-            },
-            "primitive_result_summary": primitive_result.to_json_safe_dict(),
-            "family_result_summary": family_result.to_json_safe_dict(),
+            "selected_single_step_families": [_safe_text(hypothesis.family_name) for hypothesis in single_step_hypotheses],
+            "selected_composition_families": [_safe_text(hypothesis.family_name) for hypothesis in composition_hypotheses],
         },
     )
+    aggregator_candidates = [
+        _candidate_from_attempt(attempt, rank=index + 1)
+        for index, attempt in enumerate(aggregator_packet.get("attempts", []))
+        if isinstance(attempt, Mapping)
+    ]
 
-    attempts, fallback_used = _ensure_two_attempts(packet, test_input)
-    attempts, extra_dedupe_count, extra_fallback_used = _dedupe_attempts(attempts, test_input)
-    attempt_candidates = [_candidate_from_attempt(attempt, rank=index + 1) for index, attempt in enumerate(attempts)]
-    fallback_used = all(candidate.family_name == FALLBACK_FAMILY_V1 for candidate in attempt_candidates)
-    result_trace = {
+    all_candidates: list[UniversalRunnerCandidate] = []
+    all_candidates.extend(
+        _candidate_from_compositional(candidate, rank=index + 1)
+        for index, candidate in enumerate(executable_composition_candidates)
+    )
+    all_candidates.extend(aggregator_candidates)
+
+    deduped_candidates, extra_dedupe_count = _dedupe_candidates(all_candidates)
+    if len(deduped_candidates) < 2:
+        deduped_candidates.extend(_build_safe_fallback_candidates(test_input)[: 2 - len(deduped_candidates)])
+
+    deduped_candidates, fallback_fill_dedupe = _dedupe_candidates(deduped_candidates)
+    dedupe_count = extra_dedupe_count + fallback_fill_dedupe
+    if len(deduped_candidates) < 2:
+        deduped_candidates.extend(_build_safe_fallback_candidates(test_input)[: 2 - len(deduped_candidates)])
+
+    deduped_candidates = sorted(deduped_candidates, key=_candidate_rank_key)
+    attempts = deduped_candidates[:2]
+    if len(attempts) < 2:
+        attempts = _build_safe_fallback_candidates(test_input)
+
+    fallback_used = _fallback_status(attempts)
+    selected_family_names = []
+    for candidate in attempts:
+        name = _safe_text(candidate.family_name)
+        if name and name != FALLBACK_FAMILY_V1 and name not in selected_family_names:
+            selected_family_names.append(name)
+
+    trace = {
         "schema_version": SCHEMA_VERSION_V1,
         "task_feature_summary": {
             "pair_count": len(train_pairs),
@@ -324,24 +409,26 @@ def run_universal_family_solver(
             "accepted_count": family_result.accepted_count,
             "rejected_count": family_result.rejected_count,
             "uncertain_count": family_result.uncertain_count,
-            "discovered_not_executable_v1": discovered_not_executable,
+            "composition_rejections": composition_rejections,
         },
-        "aggregator_metadata": {
-            "dedupe_count": (packet.get("metadata", {}).get("dedupe_count", 0) if isinstance(packet.get("metadata"), Mapping) else 0) + extra_dedupe_count,
-            "used_fallback": fallback_used,
-            "enabled_families": packet.get("metadata", {}).get("enabled_families", aggregator_enabled_families) if isinstance(packet.get("metadata"), Mapping) else aggregator_enabled_families,
-        },
+        "aggregator_metadata": aggregator_packet.get("metadata", {}) if isinstance(aggregator_packet.get("metadata"), Mapping) else {},
+        "selected_single_step_families": [_safe_text(hypothesis.family_name) for hypothesis in single_step_hypotheses],
+        "selected_composition_families": [_safe_text(hypothesis.family_name) for hypothesis in composition_hypotheses],
+        "executed_composition_families": [_safe_text(candidate.family_name) for candidate in executable_composition_candidates],
     }
+    if composition_rejections:
+        trace["composition_execution_rejections"] = composition_rejections
+
     return UniversalRunnerResult(
-        attempt_1=attempt_candidates[0],
-        attempt_2=attempt_candidates[1],
-        candidate_count=len(attempt_candidates),
+        attempt_1=attempts[0],
+        attempt_2=attempts[1],
+        candidate_count=len(attempts),
         family_discovery_summary=family_result.to_json_safe_dict(),
         selected_family_names=tuple(selected_family_names),
-        dedupe_count=(int(packet.get("metadata", {}).get("dedupe_count", 0)) if isinstance(packet.get("metadata"), Mapping) else 0) + extra_dedupe_count,
+        dedupe_count=dedupe_count,
         fallback_used=fallback_used,
-        exact_two_output=len(attempt_candidates) == 2,
-        trace=result_trace,
+        exact_two_output=len(attempts) == 2,
+        trace=trace,
     )
 
 
