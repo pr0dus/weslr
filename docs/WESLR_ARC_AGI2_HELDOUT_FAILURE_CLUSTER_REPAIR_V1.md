@@ -7,8 +7,8 @@
 ## Heads
 - Actual preflight HEAD: `af5086713ad0abcf5d3296b048c58b5ae21c93e9`
 - Start HEAD: `af5086713ad0abcf5d3296b048c58b5ae21c93e9`
-- End HEAD: `738916e427edebcec5b918fb770faecf17241e5b`
-- Commit status: committed clean
+- End HEAD: `126e46d53432ae98abb90b0435578c62ee2e2f22`
+- Commit status: code/tests committed; report stamped in workspace after final HEAD and not recommitted
 
 ## Baseline
 Previous benchmark:
