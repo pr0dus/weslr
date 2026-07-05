@@ -191,13 +191,16 @@ def solve_object_bbox_task(train_pairs: Sequence[Mapping[str, Any]], test_input:
     """
     if not isinstance(train_pairs, Sequence) or not train_pairs:
         return []
-    candidates = [
-        _crop_all_foreground_candidate(train_pairs, test_input),
-        _crop_largest_object_candidate(train_pairs, test_input),
-        _crop_selected_color_candidate(train_pairs, test_input),
-        _translation_candidate(train_pairs, test_input),
-    ]
-    for candidate in candidates:
+    for builder in (
+        _crop_all_foreground_candidate,
+        _crop_largest_object_candidate,
+        _crop_selected_color_candidate,
+        _translation_candidate,
+    ):
+        try:
+            candidate = builder(train_pairs, test_input)
+        except Exception:
+            candidate = None
         if candidate is not None:
             return [candidate]
     return []

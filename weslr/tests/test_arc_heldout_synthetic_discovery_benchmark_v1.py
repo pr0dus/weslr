@@ -3,6 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import weslr.arc_heldout_synthetic_discovery_benchmark_v1 as benchmark_module
+from weslr.arc_synthetic_discovery_eval_v1 import evaluate_arc_synthetic_discovery_tasks_v1
+from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_corpus_v1
 
 
 def _fake_report(**overrides):
@@ -85,3 +87,13 @@ def test_no_public_arc_path_is_referenced_in_module_source() -> None:
     assert "kaggle" not in text
     assert "/kaggle/" not in text
     assert "arc-prize" not in text
+
+
+def test_crop_largest_and_select_largest_do_not_raise_and_fail_cleanly() -> None:
+    tasks = build_arc_synthetic_discovery_task_corpus_v1(seed=82435, tasks_per_family=5, include_adversarial=True, include_compositions=True)
+    for family in ("crop_largest_object", "select_largest_object"):
+        family_tasks = [task for task in tasks if task["family_label"] == family]
+        result = evaluate_arc_synthetic_discovery_tasks_v1(family_tasks)
+        assert result.report["failure_categories"].get("exception", 0) == 0
+        assert result.report["total_tasks"] == len(family_tasks)
+        assert result.report["unsolved"] >= 0

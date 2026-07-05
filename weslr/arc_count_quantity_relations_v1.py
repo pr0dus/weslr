@@ -495,7 +495,10 @@ def infer_count_quantity_hypotheses_v1(train_pairs: Sequence[Mapping[str, Any]],
         )
         if not scored.train_fit:
             continue
-        predicted = _build_executor(rule)({"input": test_input})
+        try:
+            predicted = _build_executor(rule)({"input": test_input})
+        except Exception:
+            continue
         candidates.append(
             HypothesisCandidate(
                 family=rule.family,
