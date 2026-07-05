@@ -30,6 +30,8 @@ def main() -> int:
     parser.add_argument("--tasks-per-family-heldout", type=int, default=5)
     parser.add_argument("--include-adversarial", action="store_true")
     parser.add_argument("--include-compositions", action="store_true")
+    parser.add_argument("--include-diversified-families", action="store_true", help="Include diversified families")
+    parser.add_argument("--diversified-tasks-per-family", type=int, default=3, help="Tasks per diversified family")
     parser.add_argument("--write-event-log", action="store_true", help="Write structured event log")
     parser.add_argument("--log-dir", type=str, default=str(DEFAULT_LOG_DIR), help="Log directory root")
     args = parser.parse_args()
@@ -48,6 +50,8 @@ def main() -> int:
             "tasks_per_family_heldout": args.tasks_per_family_heldout,
             "include_adversarial": args.include_adversarial,
             "include_compositions": args.include_compositions,
+            "include_diversified_families": args.include_diversified_families,
+            "diversified_tasks_per_family": args.diversified_tasks_per_family,
         })
 
     payload = build_heldout_synthetic_discovery_benchmark_v1(
@@ -57,6 +61,8 @@ def main() -> int:
         tasks_per_family_heldout=args.tasks_per_family_heldout,
         include_adversarial=args.include_adversarial,
         include_compositions=args.include_compositions,
+        include_diversified_families=args.include_diversified_families,
+        diversified_tasks_per_family=args.diversified_tasks_per_family,
         event_log=event_log,
     )
 

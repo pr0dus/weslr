@@ -13,6 +13,7 @@ from typing import Any, Mapping, Sequence
 from weslr.arc_synthetic_discovery_eval_v1 import evaluate_arc_synthetic_discovery_tasks_v1
 from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_corpus_v1, build_arc_synthetic_solver_packet_v1
 from weslr.arc_run_event_log_v1 import ArcRunEventLogV1, make_run_id
+from weslr.arc_synthetic_family_diversification_v1 import build_diversified_family_corpus_v1
 
 DEFAULT_DEV_SEED_V1 = 2435
 DEFAULT_HELDOUT_SEED_V1 = 82435
@@ -128,6 +129,8 @@ def build_heldout_synthetic_discovery_benchmark_v1(
     tasks_per_family_heldout: int = DEFAULT_TASKS_PER_FAMILY_HELDOUT_V1,
     include_adversarial: bool = True,
     include_compositions: bool = True,
+    include_diversified_families: bool = False,
+    diversified_tasks_per_family: int = 3,
     event_log: ArcRunEventLogV1 | None = None,
 ) -> dict[str, Any]:
     dev_tasks = build_arc_synthetic_discovery_task_corpus_v1(
@@ -142,6 +145,12 @@ def build_heldout_synthetic_discovery_benchmark_v1(
         include_adversarial=include_adversarial,
         include_compositions=include_compositions,
     )
+
+    if include_diversified_families:
+        dev_diversified = build_diversified_family_corpus_v1(seed=dev_seed, tasks_per_family=diversified_tasks_per_family)
+        heldout_diversified = build_diversified_family_corpus_v1(seed=heldout_seed, tasks_per_family=diversified_tasks_per_family)
+        dev_tasks = list(dev_tasks) + dev_diversified
+        heldout_tasks = list(heldout_tasks) + heldout_diversified
 
     if event_log is not None:
         event_log.emit("INFO", "generation", "split_started",
@@ -167,7 +176,17 @@ def build_heldout_synthetic_discovery_benchmark_v1(
     heldout_eval = _evaluation_report(evaluate_arc_synthetic_discovery_tasks_v1(heldout_tasks))
     dev_summary = _summarize_split(dev_tasks, dev_eval, split_name="dev", seed=dev_seed)
     heldout_summary = _summarize_split(heldout_tasks, heldout_eval, split_name="heldout", seed=heldout_seed)
-    deterministic_replay_pass = _deterministic_replay_pass(dev_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=dev_seed, tasks_per_family=tasks_per_family_dev, include_adversarial=include_adversarial, include_compositions=include_compositions)) and _deterministic_replay_pass(heldout_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=heldout_seed, tasks_per_family=tasks_per_family_heldout, include_adversarial=include_adversarial, include_compositions=include_compositions))
+    deterministic_replay_pass = True
+    if include_diversified_families:
+        # For diversified mode, compare original corpus portion separately
+        dev_orig_count = len(list(build_arc_synthetic_discovery_task_corpus_v1(seed=dev_seed, tasks_per_family=tasks_per_family_dev, include_adversarial=include_adversarial, include_compositions=include_compositions)))
+        held_orig_count = len(list(build_arc_synthetic_discovery_task_corpus_v1(seed=heldout_seed, tasks_per_family=tasks_per_family_heldout, include_adversarial=include_adversarial, include_compositions=include_compositions)))
+        deterministic_replay_pass = _deterministic_replay_pass(dev_tasks[:dev_orig_count], build_arc_synthetic_discovery_task_corpus_v1(seed=dev_seed, tasks_per_family=tasks_per_family_dev, include_adversarial=include_adversarial, include_compositions=include_compositions)) and _deterministic_replay_pass(heldout_tasks[:held_orig_count], build_arc_synthetic_discovery_task_corpus_v1(seed=heldout_seed, tasks_per_family=tasks_per_family_heldout, include_adversarial=include_adversarial, include_compositions=include_compositions))
+        dev_div_regen = build_diversified_family_corpus_v1(seed=dev_seed, tasks_per_family=diversified_tasks_per_family)
+        held_div_regen = build_diversified_family_corpus_v1(seed=heldout_seed, tasks_per_family=diversified_tasks_per_family)
+        deterministic_replay_pass = deterministic_replay_pass and _deterministic_replay_pass(dev_tasks[dev_orig_count:], dev_div_regen) and _deterministic_replay_pass(heldout_tasks[held_orig_count:], held_div_regen)
+    else:
+        deterministic_replay_pass = _deterministic_replay_pass(dev_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=dev_seed, tasks_per_family=tasks_per_family_dev, include_adversarial=include_adversarial, include_compositions=include_compositions)) and _deterministic_replay_pass(heldout_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=heldout_seed, tasks_per_family=tasks_per_family_heldout, include_adversarial=include_adversarial, include_compositions=include_compositions))
     expected_output_isolation_pass = all("expected_output" in task for task in dev_tasks) and all("expected_output" in task for task in heldout_tasks)
 
     if event_log is not None:
