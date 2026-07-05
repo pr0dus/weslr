@@ -46,12 +46,12 @@ def _grids_equal(a: Any, b: Any) -> bool:
 
 
 def _pair_input(pair: Mapping[str, Any]) -> list[list[int]]:
-    raw = pair.get("input", [])
+    raw = pair.get("input", pair.get("input_grid", []))
     return _grid(raw)
 
 
 def _pair_output(pair: Mapping[str, Any]) -> list[list[int]]:
-    raw = pair.get("output", [])
+    raw = pair.get("output", pair.get("output_grid", []))
     return _grid(raw)
 
 
