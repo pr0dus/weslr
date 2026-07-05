@@ -120,3 +120,23 @@ def test_primary_fallback_cluster_tasks_solve_without_fallback_when_valid() -> N
         assert runner_result.fallback_used is False
         assert runner_result.exact_two_output is True
         assert runner_result.selected_family_names
+
+
+def test_primary_composition_fallback_cluster_tasks_solve_without_fallback_when_valid() -> None:
+    tasks = build_arc_synthetic_discovery_task_corpus_v1(seed=82435, tasks_per_family=5, include_adversarial=True, include_compositions=True)
+    for family in (
+        "crop_then_recolor",
+        "crop_then_rotate_or_reflect",
+        "recolor_then_border",
+    ):
+        family_tasks = [task for task in tasks if task["family_label"] == family]
+        assert family_tasks
+        result = evaluate_arc_synthetic_discovery_tasks_v1(family_tasks)
+        assert result.report["failure_categories"].get("exception", 0) == 0
+        assert result.report["fallback_only"] == 0
+        assert result.report["exact_two_output_pass"] is True
+        assert result.report["per_family_solved"].get(family, 0) >= 1
+        runner_result = run_universal_family_solver(family_tasks[0]["train_pairs"], family_tasks[0]["test_input"])
+        assert runner_result.fallback_used is False
+        assert runner_result.exact_two_output is True
+        assert runner_result.selected_family_names

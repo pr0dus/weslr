@@ -846,9 +846,6 @@ def _composition_family_hypothesis(
     else:
         status = "uncertain"
         confidence = 0.5
-    if any(name in uncertain_hints and uncertain_hints[name].confidence < HIGH_CONFIDENCE_UNCERTAIN_THRESHOLD_V1 for name in required_primitives):
-        status = "uncertain" if status == "accepted" else status
-        confidence = min(confidence, 0.7)
     return _build_family_hypothesis(
         family_name=family_name,
         primitive_chain=tuple(chain[:MAX_PRIMITIVE_CHAIN_LENGTH_V1]),
