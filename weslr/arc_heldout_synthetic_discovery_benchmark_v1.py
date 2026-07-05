@@ -11,7 +11,8 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
 from weslr.arc_synthetic_discovery_eval_v1 import evaluate_arc_synthetic_discovery_tasks_v1
-from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_corpus_v1
+from weslr.arc_synthetic_discovery_task_generator_v1 import build_arc_synthetic_discovery_task_corpus_v1, build_arc_synthetic_solver_packet_v1
+from weslr.arc_run_event_log_v1 import ArcRunEventLogV1, make_run_id
 
 DEFAULT_DEV_SEED_V1 = 2435
 DEFAULT_HELDOUT_SEED_V1 = 82435
@@ -127,6 +128,7 @@ def build_heldout_synthetic_discovery_benchmark_v1(
     tasks_per_family_heldout: int = DEFAULT_TASKS_PER_FAMILY_HELDOUT_V1,
     include_adversarial: bool = True,
     include_compositions: bool = True,
+    event_log: ArcRunEventLogV1 | None = None,
 ) -> dict[str, Any]:
     dev_tasks = build_arc_synthetic_discovery_task_corpus_v1(
         seed=dev_seed,
@@ -140,12 +142,99 @@ def build_heldout_synthetic_discovery_benchmark_v1(
         include_adversarial=include_adversarial,
         include_compositions=include_compositions,
     )
+
+    if event_log is not None:
+        event_log.emit("INFO", "generation", "split_started",
+                       f"Generating dev split (seed={dev_seed}, tasks_per_family={tasks_per_family_dev})",
+                       {"split_name": "dev", "seed": dev_seed, "tasks_per_family": tasks_per_family_dev})
+        for task in dev_tasks:
+            event_log.emit("DEBUG", "generation", "task_generated",
+                           f"Generated task {task.get('task_id', '')}",
+                           {"task_id": str(task.get("task_id", "")),
+                            "family_label": str(task.get("family_label", "")),
+                            "kind": str(task.get("metadata", {}).get("kind", ""))})
+        event_log.emit("INFO", "generation", "split_started",
+                       f"Generating heldout split (seed={heldout_seed}, tasks_per_family={tasks_per_family_heldout})",
+                       {"split_name": "heldout", "seed": heldout_seed, "tasks_per_family": tasks_per_family_heldout})
+        for task in heldout_tasks:
+            event_log.emit("DEBUG", "generation", "task_generated",
+                           f"Generated task {task.get('task_id', '')}",
+                           {"task_id": str(task.get("task_id", "")),
+                            "family_label": str(task.get("family_label", "")),
+                            "kind": str(task.get("metadata", {}).get("kind", ""))})
+
     dev_eval = _evaluation_report(evaluate_arc_synthetic_discovery_tasks_v1(dev_tasks))
     heldout_eval = _evaluation_report(evaluate_arc_synthetic_discovery_tasks_v1(heldout_tasks))
     dev_summary = _summarize_split(dev_tasks, dev_eval, split_name="dev", seed=dev_seed)
     heldout_summary = _summarize_split(heldout_tasks, heldout_eval, split_name="heldout", seed=heldout_seed)
     deterministic_replay_pass = _deterministic_replay_pass(dev_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=dev_seed, tasks_per_family=tasks_per_family_dev, include_adversarial=include_adversarial, include_compositions=include_compositions)) and _deterministic_replay_pass(heldout_tasks, build_arc_synthetic_discovery_task_corpus_v1(seed=heldout_seed, tasks_per_family=tasks_per_family_heldout, include_adversarial=include_adversarial, include_compositions=include_compositions))
     expected_output_isolation_pass = all("expected_output" in task for task in dev_tasks) and all("expected_output" in task for task in heldout_tasks)
+
+    if event_log is not None:
+        for split_name, tasks, eval_data in [("dev", dev_tasks, dev_eval), ("heldout", heldout_tasks, heldout_eval)]:
+            task_summaries = list(eval_data.get("task_summaries", []))
+            for ts in task_summaries:
+                tid = str(ts.get("task_id", ""))
+                family = str(ts.get("family_label", ""))
+                exact = bool(ts.get("exact_match", False))
+                fb = bool(ts.get("fallback_only", False))
+                cat = ts.get("failure_category")
+                kind = ""
+                for t in tasks:
+                    if str(t.get("task_id", "")) == tid:
+                        kind = str(t.get("metadata", {}).get("kind", ""))
+                        break
+                event_log.emit("DEBUG", "solver_execution", "task_started",
+                               f"Solving {tid}",
+                               {"task_id": tid, "family_label": family, "split": split_name})
+                if exact:
+                    event_log.emit("INFO", "evaluation", "task_solved",
+                                   f"Solved {tid}",
+                                   {"task_id": tid, "family_label": family, "split": split_name,
+                                    "solved_by_attempt_1": bool(ts.get("solved_by_attempt_1", False)),
+                                    "solved_by_attempt_2": bool(ts.get("solved_by_attempt_2", False))})
+                else:
+                    event_log.emit("INFO", "evaluation", "task_unsolved",
+                                   f"Unsolved {tid}",
+                                   {"task_id": tid, "family_label": family, "split": split_name,
+                                    "failure_category": str(cat) if cat else "unknown"})
+                if fb:
+                    event_log.emit("WARNING", "failure_classification", "fallback_used",
+                                   f"Fallback for {tid}",
+                                   {"task_id": tid, "family_label": family, "split": split_name})
+                if kind == "adversarial":
+                    event_log.emit("INFO", "evaluation", "adversarial_rejection",
+                                   f"Adversarial {'rejected' if not exact else 'solved'} {tid}",
+                                   {"task_id": tid, "family_label": family, "split": split_name,
+                                    "rejected": not exact})
+                if cat == "exception":
+                    event_log.emit("ERROR", "failure_classification", "exception",
+                                   f"Exception for {tid}",
+                                   {"task_id": tid, "family_label": family, "split": split_name})
+            event_log.emit("INFO", "evaluation", "split_summary",
+                           f"{split_name} split summary",
+                           {"split_name": split_name,
+                            "solved": sum(1 for ts in task_summaries if ts.get("exact_match")),
+                            "unsolved": sum(1 for ts in task_summaries if not ts.get("exact_match")),
+                            "fallback_only": sum(1 for ts in task_summaries if ts.get("fallback_only")),
+                            "adversarial_rejection_pass": sum(1 for ts in task_summaries
+                                                              if not ts.get("exact_match")
+                                                              and any(t.get("metadata", {}).get("kind") == "adversarial"
+                                                                      for t in tasks if str(t.get("task_id", "")) == str(ts.get("task_id", "")))),
+                            "adversarial_rejection_fail": sum(1 for ts in task_summaries
+                                                              if ts.get("exact_match")
+                                                              and any(t.get("metadata", {}).get("kind") == "adversarial"
+                                                                      for t in tasks if str(t.get("task_id", "")) == str(ts.get("task_id", ""))))})
+
+        event_log.emit("INFO", "audit", "exact_two_output_check",
+                       f"Exact two output: {dev_eval.get('exact_two_output_pass', False)}",
+                       {"pass": bool(dev_eval.get("exact_two_output_pass", False))})
+        event_log.emit("INFO", "audit", "deterministic_replay_check",
+                       "Deterministic replay check",
+                       {"pass": deterministic_replay_pass})
+        event_log.emit("INFO", "audit", "expected_output_isolation_check",
+                       "Expected output isolation check",
+                       {"pass": expected_output_isolation_pass})
     comparison_context = {
         "previous_synthetic_generator_run": {
             "total_tasks": 81,
