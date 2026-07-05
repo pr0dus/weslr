@@ -7,8 +7,8 @@
 ## Start / end state
 - Original expected HEAD: `2103e72791257cf8ebc5a894febf4b938c3741a3`
 - Actual preflight HEAD: `4c89ec8569b2d082d670398db55c844e0354b2eb`
-- End HEAD: pending report commit
-- Commit status: pending report commit
+- End HEAD: `4c89ec8569b2d082d670398db55c844e0354b2eb`
+- Commit status: committed (`Finalize ARC-AGI2 compositional executor report`)
 
 ## HEAD reconciliation
 - `git rev-parse HEAD` → `4c89ec8569b2d082d670398db55c844e0354b2eb`
