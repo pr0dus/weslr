@@ -112,8 +112,16 @@ def _infer_fill_color(train_pairs: Sequence[Mapping[str, Any]], test_input: Sequ
     for pair in train_pairs:
         train_in = _pair_input(pair)
         train_out = _pair_output(pair)
+        if not isinstance(train_in, list) or not isinstance(train_out, list):
+            continue
+        if not train_in or not train_out:
+            continue
         for r in range(len(train_in)):
+            if r >= len(train_out):
+                continue
             for c in range(len(train_in[0])):
+                if c >= len(train_out[0]):
+                    continue
                 if train_in[r][c] == 0 and train_out[r][c] != 0:
                     return int(train_out[r][c])
     return None
