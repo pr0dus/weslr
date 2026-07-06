@@ -5,10 +5,11 @@ candidate aggregator, primitive registry, family discovery, compositional
 executor, and all adapters) for use from a Kaggle-style staging package.
 
 The portable solver does NOT copy the WESLR solver modules. Instead it:
-1. Auto-detects the WESLR repo path (via WESLR_REPO_ROOT env var or
+1. Auto-detects the solver source directory (via WESLR_REPO_ROOT env var or
    sibling-directory lookup)
-2. Adds both weslr/ and the repo root to sys.path
-3. Imports the real solver modules
+2. Supports both weslr/ and weslr_solver/ directory names
+3. Adds the solver source to sys.path and aliases the module name if needed
+4. Imports the real solver modules
 
 Synthetic-only. No public ARC ingestion. No scoring claims. No Kaggle writes.
 No internet. No provider calls. No model calls.
@@ -16,15 +17,33 @@ No internet. No provider calls. No model calls.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sys
 from copy import deepcopy
 from typing import Any, Mapping, Sequence
 
+# ── Solver source directory names ───────────────────────────────────────────
+
+_SOLVER_DIR_NAMES: tuple[str, ...] = ("weslr", "weslr_solver")
+
 # ── WESLR repo path resolution ──────────────────────────────────────────────
 
 _WESLR_REPO_ROOT: str | None = None
+
+
+def _find_solver_dir(root: str) -> str | None:
+    """Check if root contains a solver source directory.
+
+    Returns the full path to the solver directory (e.g., root/weslr/)
+    or None if not found.
+    """
+    for name in _SOLVER_DIR_NAMES:
+        candidate = os.path.join(root, name)
+        if os.path.isdir(candidate):
+            return candidate
+    return None
 
 
 def _resolve_weslr_repo_root() -> str:
@@ -34,40 +53,80 @@ def _resolve_weslr_repo_root() -> str:
     1. WESLR_REPO_ROOT environment variable
     2. Parent of this package's directory (sibling layout)
     3. Grandparent of this package's directory (nested layout)
+
+    Supports both weslr/ and weslr_solver/ solver directory names.
     """
     env_path = os.environ.get("WESLR_REPO_ROOT")
-    if env_path and os.path.isdir(os.path.join(env_path, "weslr")):
+    if env_path and _find_solver_dir(env_path):
         return os.path.abspath(env_path)
 
-    # Sibling layout: src/ and weslr/ are siblings
+    # Sibling layout: src/ and solver dir are siblings
     pkg_dir = os.path.dirname(os.path.abspath(__file__))
     src_dir = os.path.dirname(pkg_dir)
     candidate = os.path.dirname(src_dir)
-    if os.path.isdir(os.path.join(candidate, "weslr")):
+    if _find_solver_dir(candidate):
         return candidate
 
-    # Nested layout: src/weslr_arc_solver/ inside weslr/
+    # Nested layout: src/weslr_arc_solver/ inside solver dir
     grandparent = os.path.dirname(candidate)
-    if os.path.isdir(os.path.join(grandparent, "weslr")):
+    if _find_solver_dir(grandparent):
         return grandparent
 
+    checked = [
+        f"WESLR_REPO_ROOT={os.environ.get('WESLR_REPO_ROOT', '(not set)')}",
+        f"sibling of {pkg_dir}",
+        f"grandparent of {pkg_dir}",
+    ]
     raise RuntimeError(
-        "Cannot find WESLR repo root. "
-        "Set WESLR_REPO_ROOT environment variable or place this package "
-        "as a sibling of the weslr/ directory."
+        "Cannot find WESLR solver source directory. "
+        f"Checked: {checked}. "
+        "Set WESLR_REPO_ROOT environment variable to a directory containing "
+        f"one of: {', '.join(_SOLVER_DIR_NAMES)}."
     )
 
 
 def _ensure_weslr_imports() -> None:
-    """Ensure the WESLR repo is on sys.path so imports work."""
+    """Ensure the WESLR solver modules are importable.
+
+    Adds the solver source directory to sys.path and aliases
+    weslr_solver -> weslr if needed so that 'from weslr.xxx import ...'
+    works regardless of the actual directory name.
+    """
     global _WESLR_REPO_ROOT
     if _WESLR_REPO_ROOT is not None:
         return
     _WESLR_REPO_ROOT = _resolve_weslr_repo_root()
-    weslr_path = os.path.join(_WESLR_REPO_ROOT, "weslr")
-    for p in (_WESLR_REPO_ROOT, weslr_path):
-        if p not in sys.path:
-            sys.path.insert(0, p)
+
+    solver_dir = _find_solver_dir(_WESLR_REPO_ROOT)
+    if solver_dir is None:
+        raise RuntimeError(
+            f"No solver source directory found in {_WESLR_REPO_ROOT}. "
+            f"Expected one of: {', '.join(_SOLVER_DIR_NAMES)}."
+        )
+
+    # Add the repo root to sys.path (needed for some cross-module references)
+    if _WESLR_REPO_ROOT not in sys.path:
+        sys.path.insert(0, _WESLR_REPO_ROOT)
+
+    # Add the solver directory to sys.path
+    if solver_dir not in sys.path:
+        sys.path.insert(0, solver_dir)
+
+    # If the solver directory is not named 'weslr', alias it so that
+    # 'from weslr.xxx import ...' works.
+    solver_dir_name = os.path.basename(solver_dir)
+    if solver_dir_name != "weslr":
+        try:
+            mod = importlib.import_module(solver_dir_name)
+            sys.modules["weslr"] = mod
+        except ImportError:
+            # If the module can't be imported directly (e.g., no __init__.py),
+            # create a simple module alias
+            import types
+            alias = types.ModuleType("weslr")
+            alias.__path__ = [solver_dir]
+            alias.__file__ = os.path.join(solver_dir, "__init__.py")
+            sys.modules["weslr"] = alias
 
 
 # ── Lazy imports ─────────────────────────────────────────────────────────────
