@@ -1,0 +1,482 @@
+{
+  "generated_at": "2026-07-14T16:03:04Z",
+  "git_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "reaction_certificates": [
+    {
+      "canonical_equation": "CaO + Sc2TiO5 -> CaSc2TiO6",
+      "canonical_integer_coefficient_vector": [
+        1,
+        1,
+        1
+      ],
+      "certificate_sha256": "88698b51b277a1bf2ea1559a0069ce9c0a14a079b7872bdba939ba13f5d7ecd0",
+      "elemental_vectors": {
+        "CaO": {
+          "Ca": 1.0,
+          "O": 1.0
+        },
+        "CaSc2TiO6": {
+          "Ca": 1.0,
+          "O": 6.0,
+          "Sc": 2.0,
+          "Ti": 1.0
+        },
+        "Sc2TiO5": {
+          "O": 5.0,
+          "Sc": 2.0,
+          "Ti": 1.0
+        }
+      },
+      "final_status": "verified",
+      "gcd_reduction_applied": false,
+      "invariant_result": {
+        "details": {
+          "max_abs": 0,
+          "residual": {
+            "Ca": 0,
+            "O": 0,
+            "Sc": 0,
+            "Ti": 0
+          }
+        },
+        "invariant_name": "elemental_residual",
+        "passed": true
+      },
+      "product_coefficients": {
+        "CaSc2TiO6": 1
+      },
+      "product_formulas": [
+        "CaSc2TiO6"
+      ],
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc2TiO5": 1
+        },
+        "target_coefficient": 1
+      },
+      "proposition_type": "reaction_balance",
+      "reactant_coefficients": {
+        "CaO": 1,
+        "Sc2TiO5": 1
+      },
+      "reactant_formulas": [
+        "CaO",
+        "Sc2TiO5"
+      ],
+      "residual_vector": {
+        "Ca": 0,
+        "O": 0,
+        "Sc": 0,
+        "Ti": 0
+      },
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc2TiO5": 1
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "canonical_equation": "2 CaO + Sc4Ti2O10 -> 2 CaSc2TiO6",
+      "canonical_integer_coefficient_vector": [
+        2,
+        1,
+        2
+      ],
+      "certificate_sha256": "ebee446a6047662e236581c60c53ba9034793504a791b6f52a13095b21300076",
+      "elemental_vectors": {
+        "CaO": {
+          "Ca": 1.0,
+          "O": 1.0
+        },
+        "CaSc2TiO6": {
+          "Ca": 1.0,
+          "O": 6.0,
+          "Sc": 2.0,
+          "Ti": 1.0
+        },
+        "Sc4Ti2O10": {
+          "O": 10.0,
+          "Sc": 4.0,
+          "Ti": 2.0
+        }
+      },
+      "final_status": "verified",
+      "gcd_reduction_applied": false,
+      "invariant_result": {
+        "details": {
+          "max_abs": 0,
+          "residual": {
+            "Ca": 0,
+            "O": 0,
+            "Sc": 0,
+            "Ti": 0
+          }
+        },
+        "invariant_name": "elemental_residual",
+        "passed": true
+      },
+      "product_coefficients": {
+        "CaSc2TiO6": 2
+      },
+      "product_formulas": [
+        "CaSc2TiO6"
+      ],
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 2,
+          "Sc4Ti2O10": 1
+        },
+        "target_coefficient": 2
+      },
+      "proposition_type": "reaction_balance",
+      "reactant_coefficients": {
+        "CaO": 2,
+        "Sc4Ti2O10": 1
+      },
+      "reactant_formulas": [
+        "CaO",
+        "Sc4Ti2O10"
+      ],
+      "residual_vector": {
+        "Ca": 0,
+        "O": 0,
+        "Sc": 0,
+        "Ti": 0
+      },
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 2,
+          "Sc4Ti2O10": 1
+        },
+        "target_coefficient": 2
+      }
+    },
+    {
+      "canonical_equation": "CaSc2O4 + TiO2 -> CaSc2TiO6",
+      "canonical_integer_coefficient_vector": [
+        1,
+        1,
+        1
+      ],
+      "certificate_sha256": "16d7161c67c6aeb05afdbb30bd212612ed637ad11cd66b73ba8bb4907e793ab5",
+      "elemental_vectors": {
+        "CaSc2O4": {
+          "Ca": 1.0,
+          "O": 4.0,
+          "Sc": 2.0
+        },
+        "CaSc2TiO6": {
+          "Ca": 1.0,
+          "O": 6.0,
+          "Sc": 2.0,
+          "Ti": 1.0
+        },
+        "TiO2": {
+          "O": 2.0,
+          "Ti": 1.0
+        }
+      },
+      "final_status": "verified",
+      "gcd_reduction_applied": false,
+      "invariant_result": {
+        "details": {
+          "max_abs": 0,
+          "residual": {
+            "Ca": 0,
+            "O": 0,
+            "Sc": 0,
+            "Ti": 0
+          }
+        },
+        "invariant_name": "elemental_residual",
+        "passed": true
+      },
+      "product_coefficients": {
+        "CaSc2TiO6": 1
+      },
+      "product_formulas": [
+        "CaSc2TiO6"
+      ],
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaSc2O4": 1,
+          "TiO2": 1
+        },
+        "target_coefficient": 1
+      },
+      "proposition_type": "reaction_balance",
+      "reactant_coefficients": {
+        "CaSc2O4": 1,
+        "TiO2": 1
+      },
+      "reactant_formulas": [
+        "CaSc2O4",
+        "TiO2"
+      ],
+      "residual_vector": {
+        "Ca": 0,
+        "O": 0,
+        "Sc": 0,
+        "Ti": 0
+      },
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaSc2O4": 1,
+          "TiO2": 1
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "canonical_equation": "CaTiO3 + Sc2O3 -> CaSc2TiO6",
+      "canonical_integer_coefficient_vector": [
+        1,
+        1,
+        1
+      ],
+      "certificate_sha256": "052bfd57315661c23c90ba8718c3be3055cb5ecd5ccd3310eff3c6eba9a21a43",
+      "elemental_vectors": {
+        "CaSc2TiO6": {
+          "Ca": 1.0,
+          "O": 6.0,
+          "Sc": 2.0,
+          "Ti": 1.0
+        },
+        "CaTiO3": {
+          "Ca": 1.0,
+          "O": 3.0,
+          "Ti": 1.0
+        },
+        "Sc2O3": {
+          "O": 3.0,
+          "Sc": 2.0
+        }
+      },
+      "final_status": "verified",
+      "gcd_reduction_applied": false,
+      "invariant_result": {
+        "details": {
+          "max_abs": 0,
+          "residual": {
+            "Ca": 0,
+            "O": 0,
+            "Sc": 0,
+            "Ti": 0
+          }
+        },
+        "invariant_name": "elemental_residual",
+        "passed": true
+      },
+      "product_coefficients": {
+        "CaSc2TiO6": 1
+      },
+      "product_formulas": [
+        "CaSc2TiO6"
+      ],
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaTiO3": 1,
+          "Sc2O3": 1
+        },
+        "target_coefficient": 1
+      },
+      "proposition_type": "reaction_balance",
+      "reactant_coefficients": {
+        "CaTiO3": 1,
+        "Sc2O3": 1
+      },
+      "reactant_formulas": [
+        "CaTiO3",
+        "Sc2O3"
+      ],
+      "residual_vector": {
+        "Ca": 0,
+        "O": 0,
+        "Sc": 0,
+        "Ti": 0
+      },
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaTiO3": 1,
+          "Sc2O3": 1
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "canonical_equation": "CaO + Sc4Ti2O10 -> CaSc4Ti2O11",
+      "canonical_integer_coefficient_vector": [
+        1,
+        1,
+        1
+      ],
+      "certificate_sha256": "d84c924ca5c5bc756b88794b03ef6cc4bcea16f21ebbf892c5f6194733e32a92",
+      "elemental_vectors": {
+        "CaO": {
+          "Ca": 1.0,
+          "O": 1.0
+        },
+        "CaSc4Ti2O11": {
+          "Ca": 1.0,
+          "O": 11.0,
+          "Sc": 4.0,
+          "Ti": 2.0
+        },
+        "Sc4Ti2O10": {
+          "O": 10.0,
+          "Sc": 4.0,
+          "Ti": 2.0
+        }
+      },
+      "final_status": "verified",
+      "gcd_reduction_applied": false,
+      "invariant_result": {
+        "details": {
+          "max_abs": 0,
+          "residual": {
+            "Ca": 0,
+            "O": 0,
+            "Sc": 0,
+            "Ti": 0
+          }
+        },
+        "invariant_name": "elemental_residual",
+        "passed": true
+      },
+      "produces_scatti_target": false,
+      "product_coefficients": {
+        "CaSc4Ti2O11": 1
+      },
+      "product_formulas": [
+        "CaSc4Ti2O11"
+      ],
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc4Ti2O10": 1
+        },
+        "target_coefficient": 1
+      },
+      "proposition_type": "reaction_balance",
+      "reactant_coefficients": {
+        "CaO": 1,
+        "Sc4Ti2O10": 1
+      },
+      "reactant_formulas": [
+        "CaO",
+        "Sc4Ti2O10"
+      ],
+      "reaction_balance_status": "verified",
+      "residual_vector": {
+        "Ca": 0,
+        "O": 0,
+        "Sc": 0,
+        "Ti": 0
+      },
+      "target_multiple_status": "rejected_by_invariant",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc4Ti2O10": 1
+        },
+        "target_coefficient": 1
+      }
+    }
+  ],
+  "schema_version": 2,
+  "target_multiple_certificates": [
+    {
+      "candidate_formula": "CaSc4Ti2O11",
+      "candidate_vector": {
+        "Ca": 1.0,
+        "O": 11.0,
+        "Sc": 4.0,
+        "Ti": 2.0
+      },
+      "certificate_sha256": "eb86fe8c77b83979e50097d561f46a5543a197924bc45762287bd49463a53946",
+      "exact_integer_multiple": false,
+      "final_status": "rejected_by_invariant",
+      "proposition_type": "target_multiple_check",
+      "required_multiplier": 0,
+      "residual": {
+        "Ca": 0.0,
+        "O": 5.0,
+        "Sc": 2.0,
+        "Ti": 1.0
+      },
+      "target_formula": "CaSc2TiO6",
+      "target_vector": {
+        "Ca": 1.0,
+        "O": 6.0,
+        "Sc": 2.0,
+        "Ti": 1.0
+      }
+    },
+    {
+      "candidate_formula": "Ca2Sc4Ti2O12",
+      "candidate_vector": {
+        "Ca": 2.0,
+        "O": 12.0,
+        "Sc": 4.0,
+        "Ti": 2.0
+      },
+      "certificate_sha256": "c58ff6bab3f9a57d3b3f3c1f56c1eb43a10613e3ea218082194574dad01ea721",
+      "exact_integer_multiple": true,
+      "final_status": "verified",
+      "proposition_type": "target_multiple_check",
+      "required_multiplier": 2.0,
+      "residual": {
+        "Ca": 0.0,
+        "O": 0.0,
+        "Sc": 0.0,
+        "Ti": 0.0
+      },
+      "target_formula": "CaSc2TiO6",
+      "target_vector": {
+        "Ca": 1.0,
+        "O": 6.0,
+        "Sc": 2.0,
+        "Ti": 1.0
+      }
+    },
+    {
+      "candidate_formula": "Sc4Ti2O10",
+      "candidate_vector": {
+        "O": 10.0,
+        "Sc": 4.0,
+        "Ti": 2.0
+      },
+      "certificate_sha256": "1caa85c57677784e9013b95a7c5cae0824e4fbf5953c7dc0bc40551b2f07c279",
+      "exact_integer_multiple": false,
+      "final_status": "rejected_by_invariant",
+      "proposition_type": "target_multiple_check",
+      "required_multiplier": 0,
+      "residual": {
+        "Ca": -1.0,
+        "O": 4.0,
+        "Sc": 2.0,
+        "Ti": 1.0
+      },
+      "target_formula": "CaSc2TiO6",
+      "target_vector": {
+        "Ca": 1.0,
+        "O": 6.0,
+        "Sc": 2.0,
+        "Ti": 1.0
+      }
+    }
+  ]
+}

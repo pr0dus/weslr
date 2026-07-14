@@ -1,0 +1,80 @@
+{
+  "HEAD": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "branch": "scatti-calculation-assurance-recovery-20260714",
+  "entries": [
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "data/scatti_candidates/scatti_evidence_ledger_v1.json",
+      "sha256": "7ce4293a3f99ee464efe7f65fd55c80766c683826d585507db25ebff5cdaa214",
+      "size_bytes": 14370,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "data/scatti_candidates/scatti_implementation_inventory_v1.json",
+      "sha256": "677cea03b6c5fa1e9ab6c44f44df0ccb9cc54cec9b61b4b0b343e2d957bd0466",
+      "size_bytes": 17815,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json",
+      "sha256": "3aefa78d8f2956a3908ffcc05fb3480c7c0f8b0ae312e95c71c8cf36acd6d63d",
+      "size_bytes": 3131,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.md",
+      "sha256": "e8681ba36a0feb990e809ca5c954ec6b7f976dc34e445a328df75d78e3acf85b",
+      "size_bytes": 3595,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "docs/WESLR_SCATTI_IMPLEMENTATION_AND_EVIDENCE_AUDIT_V1.md",
+      "sha256": "d1de9cbc2e98a00a55a3fe4dc11072d103f8d7537e9f6f1d3c1f1daf443d349c",
+      "size_bytes": 10870,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "weslr/modules/materials_stoichiometric_route_engine.py",
+      "sha256": "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+      "size_bytes": 23972,
+      "tracked": false
+    },
+    {
+      "exists": true,
+      "generated_or_preexisting": "generated",
+      "git_status": "??",
+      "notes": "Created during Phase 1T-R0 stoichiometric repair",
+      "path": "weslr/tests/test_materials_stoichiometric_route_engine.py",
+      "sha256": "875c4dd18e49e4ad6d936712daeae8cc1cb95d55a0be93e6be93887dd83a4285",
+      "size_bytes": 10666,
+      "tracked": false
+    }
+  ],
+  "platform": "Android-17-aarch64-64bit-ELF",
+  "python_version": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+  "repository_root": "/data/data/com.termux/files/home/weslr-pr47-clean",
+  "timestamp_utc": "2026-07-14T15:43:18Z"
+}

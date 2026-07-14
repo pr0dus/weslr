@@ -1,0 +1,774 @@
+{
+  "certificates": [
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-001",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "b64f47bf75863f38d3f6d69b72b8f1ac1aa4a0d74465383c78aef6836727daef",
+      "exact_arithmetic": true,
+      "final_status": "verified",
+      "invariant_results": [
+        {
+          "details": {
+            "max_absolute_residual": 0,
+            "residual": {
+              "Ca": 0,
+              "O": 0,
+              "Sc": 0,
+              "Ti": 0
+            },
+            "total_absolute_residual": 0
+          },
+          "invariant_name": "elemental_residual",
+          "passed": true
+        },
+        {
+          "details": {
+            "is_multiple": true,
+            "result_Z": 1.0,
+            "result_reduced": "CaSc2TiO6",
+            "target_Z": 1.0,
+            "target_reduced": "CaSc2TiO6"
+          },
+          "invariant_name": "target_multiple",
+          "passed": true
+        }
+      ],
+      "normalized_inputs": {
+        "description": "Sc2TiO5 + CaO -> CaSc2TiO6 (exact combination)",
+        "reactants": [
+          "CaO",
+          "Sc2TiO5"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc2TiO5": 1
+        },
+        "reason": "1Sc2TiO5 + 1CaO -> 1CaSc2TiO6",
+        "route_class": "exact_combination_route",
+        "target_coefficient": 1.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc2TiO5": 1
+        },
+        "reason": "1Sc2TiO5 + 1CaO -> 1CaSc2TiO6",
+        "residual": {
+          "Ca": 0,
+          "O": 0,
+          "Sc": 0,
+          "Ti": 0
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-002",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "d00a6c3aad8e97663599fa1582a80150fab8916cdf3483a701b35d3d0ff45645",
+      "exact_arithmetic": true,
+      "final_status": "verified",
+      "invariant_results": [
+        {
+          "details": {
+            "max_absolute_residual": 0,
+            "residual": {
+              "Ca": 0,
+              "O": 0,
+              "Sc": 0,
+              "Ti": 0
+            },
+            "total_absolute_residual": 0
+          },
+          "invariant_name": "elemental_residual",
+          "passed": true
+        },
+        {
+          "details": {
+            "is_multiple": true,
+            "result_Z": 1.0,
+            "result_reduced": "CaSc2TiO6",
+            "target_Z": 1.0,
+            "target_reduced": "CaSc2TiO6"
+          },
+          "invariant_name": "target_multiple",
+          "passed": true
+        }
+      ],
+      "normalized_inputs": {
+        "description": "Sc4Ti2O10 + 2 CaO -> 2 CaSc2TiO6 (formula-unit scaling)",
+        "reactants": [
+          "CaO",
+          "Sc4Ti2O10"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 2,
+          "Sc4Ti2O10": 1
+        },
+        "reason": "1Sc4Ti2O10 + 2CaO -> 2CaSc2TiO6",
+        "route_class": "exact_combination_route",
+        "target_coefficient": 2.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 2,
+          "Sc4Ti2O10": 1
+        },
+        "reason": "1Sc4Ti2O10 + 2CaO -> 2CaSc2TiO6",
+        "residual": {
+          "Ca": 0,
+          "O": 0,
+          "Sc": 0,
+          "Ti": 0
+        },
+        "target_coefficient": 2
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-003",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "6775b2f3f2ded601f637cdc1fd9c5c92da1301313525c56e0cc35b3b0205de8e",
+      "exact_arithmetic": true,
+      "final_status": "verified",
+      "invariant_results": [
+        {
+          "details": {
+            "max_absolute_residual": 0,
+            "residual": {
+              "Ca": 0,
+              "O": 0,
+              "Sc": 0,
+              "Ti": 0
+            },
+            "total_absolute_residual": 0
+          },
+          "invariant_name": "elemental_residual",
+          "passed": true
+        },
+        {
+          "details": {
+            "is_multiple": true,
+            "result_Z": 1.0,
+            "result_reduced": "CaSc2TiO6",
+            "target_Z": 1.0,
+            "target_reduced": "CaSc2TiO6"
+          },
+          "invariant_name": "target_multiple",
+          "passed": true
+        }
+      ],
+      "normalized_inputs": {
+        "description": "CaSc2O4 + TiO2 -> CaSc2TiO6 (exact combination)",
+        "reactants": [
+          "CaSc2O4",
+          "TiO2"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaSc2O4": 1,
+          "TiO2": 1
+        },
+        "reason": "1CaSc2O4 + 1TiO2 -> 1CaSc2TiO6",
+        "route_class": "exact_combination_route",
+        "target_coefficient": 1.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaSc2O4": 1,
+          "TiO2": 1
+        },
+        "reason": "1CaSc2O4 + 1TiO2 -> 1CaSc2TiO6",
+        "residual": {
+          "Ca": 0,
+          "O": 0,
+          "Sc": 0,
+          "Ti": 0
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-004",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "3daf876b4bcef5e714fcf361d00dbe00818a4b8146afd7d1bbfcd5dfbce0640d",
+      "exact_arithmetic": true,
+      "final_status": "verified",
+      "invariant_results": [
+        {
+          "details": {
+            "max_absolute_residual": 0,
+            "residual": {
+              "Ca": 0,
+              "O": 0,
+              "Sc": 0,
+              "Ti": 0
+            },
+            "total_absolute_residual": 0
+          },
+          "invariant_name": "elemental_residual",
+          "passed": true
+        },
+        {
+          "details": {
+            "is_multiple": true,
+            "result_Z": 1.0,
+            "result_reduced": "CaSc2TiO6",
+            "target_Z": 1.0,
+            "target_reduced": "CaSc2TiO6"
+          },
+          "invariant_name": "target_multiple",
+          "passed": true
+        }
+      ],
+      "normalized_inputs": {
+        "description": "CaTiO3 + Sc2O3 -> CaSc2TiO6 (exact combination)",
+        "reactants": [
+          "CaTiO3",
+          "Sc2O3"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaTiO3": 1,
+          "Sc2O3": 1
+        },
+        "reason": "1CaTiO3 + 1Sc2O3 -> 1CaSc2TiO6",
+        "route_class": "exact_combination_route",
+        "target_coefficient": 1.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaTiO3": 1,
+          "Sc2O3": 1
+        },
+        "reason": "1CaTiO3 + 1Sc2O3 -> 1CaSc2TiO6",
+        "residual": {
+          "Ca": 0,
+          "O": 0,
+          "Sc": 0,
+          "Ti": 0
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-005",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "ab140fa8600014285446374a2cf7f06e035d8f2679b3668507e6268d4b1808ca",
+      "exact_arithmetic": true,
+      "final_status": "verified",
+      "invariant_results": [
+        {
+          "details": {
+            "max_absolute_residual": 0,
+            "residual": {
+              "Ca": 0,
+              "O": 0,
+              "Sc": 0,
+              "Ti": 0
+            },
+            "total_absolute_residual": 0
+          },
+          "invariant_name": "elemental_residual",
+          "passed": true
+        },
+        {
+          "details": {
+            "is_multiple": true,
+            "result_Z": 1.0,
+            "result_reduced": "CaSc4Ti2O11",
+            "target_Z": 1.0,
+            "target_reduced": "CaSc4Ti2O11"
+          },
+          "invariant_name": "target_multiple",
+          "passed": true
+        }
+      ],
+      "normalized_inputs": {
+        "description": "Sc4Ti2O10 + CaO -> CaSc4Ti2O11 (previous bug output, balanced as own reaction)",
+        "reactants": [
+          "CaO",
+          "Sc4Ti2O10"
+        ],
+        "target": "CaSc4Ti2O11"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc4Ti2O10": 1
+        },
+        "reason": "1Sc4Ti2O10 + 1CaO -> 1CaSc4Ti2O11",
+        "route_class": "exact_combination_route",
+        "target_coefficient": 1.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": true,
+        "coefficients": {
+          "CaO": 1,
+          "Sc4Ti2O10": 1
+        },
+        "reason": "1Sc4Ti2O10 + 1CaO -> 1CaSc4Ti2O11",
+        "residual": {
+          "Ca": 0,
+          "O": 0,
+          "Sc": 0,
+          "Ti": 0
+        },
+        "target_coefficient": 1
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-006",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "55dca11d6d04f362ea35b8ec353d3f5e3b2d92091fbd9ffb812a5e61a7e2e80a",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "CaSc4Ti2O11 compared with CaSc2TiO6 (not a multiple)",
+        "reactants": [
+          "CaSc4Ti2O11"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Cannot scale CaSc4Ti2O11 to CaSc2TiO6: inconsistent ratios [1.0, 0.5, 0.5, 0.5454545454545454]",
+        "route_class": "noninteger_scaling",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Inconsistent ratios: ['1', '1/2', '1/2', '6/11']",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-007",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "4d17a47efddfdf38f452c82a121bef1363553321df5bf2a889a825cb06a1a54c",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "Sc2TiO5 -> CaSc2TiO6 (missing Ca, element mismatch)",
+        "reactants": [
+          "Sc2TiO5"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between Sc2TiO5 and CaSc2TiO6",
+        "route_class": "element_mismatch",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between Sc2TiO5 and CaSc2TiO6",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-008",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "12a476e45985d51746b6951fa9ebcd612a135f55f79c5f2633794026c2b5410a",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "CaO -> CaSc2TiO6 (missing Sc, Ti, element mismatch)",
+        "reactants": [
+          "CaO"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between CaO and CaSc2TiO6",
+        "route_class": "element_mismatch",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between CaO and CaSc2TiO6",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-009",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "926a2d4cac695de2b86d35ae383f214e6e2f6f50f0382bdc7c81c9fcc4ead2c8",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "Sc2O3 + CaO -> CaSc2TiO6 (missing Ti, element mismatch)",
+        "reactants": [
+          "CaO",
+          "Sc2O3"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "No integer coefficients found for Sc2O3 + CaO -> CaSc2TiO6",
+        "route_class": "noninteger_scaling",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "No integer coefficients found for Sc2O3 + CaO -> CaSc2TiO6",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-010",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "9e75d518ad8319f77572b64f0e90c8936995bca333b23aaa321b9b97f26c9820",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "NaCl -> CaSc2TiO6 (complete element mismatch)",
+        "reactants": [
+          "NaCl"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between NaCl and CaSc2TiO6",
+        "route_class": "element_mismatch",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "Element mismatch between NaCl and CaSc2TiO6",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    },
+    {
+      "agreement": true,
+      "calculation_id": "SCATTI-ROUTE-011",
+      "calculation_type": "stoichiometric_route_verification",
+      "certificate_sha256": "9c912ce1597e62b12186be8fee7418d69547a16b559a018d54a6b4424a4b19de",
+      "exact_arithmetic": true,
+      "final_status": "rejected_by_invariant",
+      "invariant_results": [
+        {
+          "details": {
+            "reason": "Reaction not balanced by proposer"
+          },
+          "invariant_name": "elemental_residual",
+          "passed": false
+        }
+      ],
+      "normalized_inputs": {
+        "description": "MgO + Al2O3 -> CaSc2TiO6 (element mismatch)",
+        "reactants": [
+          "Al2O3",
+          "MgO"
+        ],
+        "target": "CaSc2TiO6"
+      },
+      "proposer_name": "materials_stoichiometric_route_engine",
+      "proposer_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "No integer coefficients found for MgO + Al2O3 -> CaSc2TiO6",
+        "route_class": "noninteger_scaling",
+        "target_coefficient": 0.0
+      },
+      "source_hashes": [
+        "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8",
+        "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8",
+        "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+      ],
+      "source_paths": [
+        "weslr/modules/calculation_assurance.py",
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "weslr/modules/materials_stoichiometric_route_verifier.py"
+      ],
+      "timestamp_utc": "2026-07-14T15:44:42Z",
+      "tool_versions": {
+        "proposer": "materials_stoichiometric_route_engine.py v1",
+        "python": "3.13.13 (main, Apr 10 2026, 13:09:22) [Clang 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f0",
+        "verifier": "materials_stoichiometric_route_verifier.py v1"
+      },
+      "verifier_name": "materials_stoichiometric_route_verifier",
+      "verifier_result": {
+        "balanced": false,
+        "coefficients": {},
+        "reason": "No integer coefficients found for MgO + Al2O3 -> CaSc2TiO6",
+        "residual": {},
+        "target_coefficient": 0
+      }
+    }
+  ],
+  "generated_at": "2026-07-14T15:44:42Z",
+  "generated_from_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d"
+}

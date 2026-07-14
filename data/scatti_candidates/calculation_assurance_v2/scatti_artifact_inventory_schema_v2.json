@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-07-14T16:00:00Z",
+  "dimensions": {
+    "implementation_status": {
+      "description": "Whether the artifact has been implemented",
+      "allowed_values": ["implemented", "planned", "superseded", "removed", "unknown"]
+    },
+    "execution_status": {
+      "description": "Whether the artifact has been executed",
+      "allowed_values": ["executed", "not_executed", "execution_unknown", "execution_evidence_external_not_imported"]
+    },
+    "evidence_class": {
+      "description": "Classification of the evidence the artifact provides",
+      "allowed_values": ["primary_computation", "external_source", "derived_analysis", "governance", "claim_boundary", "metadata_only"]
+    },
+    "artifact_type": {
+      "description": "Type of artifact",
+      "allowed_values": ["script", "test", "dataset", "structure", "report", "configuration", "documentation", "runtime_module", "evaluation", "archive"]
+    },
+    "reproducibility_status": {
+      "description": "Whether the artifact's results are reproducible",
+      "allowed_values": ["reproducible", "partially_reproducible", "not_reproducible", "unknown"]
+    }
+  },
+  "rules": {
+    "each_record_must_have": ["path", "artifact_type", "implementation_status", "execution_status", "evidence_class", "reproducibility_status", "tracked", "exists"],
+    "no_dual_purpose_fields": "execution_status is separate from implementation_status. 'executed' is not an implementation status.",
+    "no_inference_from_filename": "If a record cannot be classified without guessing, use 'unknown' and record the ambiguity."
+  }
+}
