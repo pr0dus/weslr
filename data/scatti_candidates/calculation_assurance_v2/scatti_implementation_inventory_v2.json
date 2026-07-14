@@ -1,0 +1,317 @@
+{
+  "all_sums_pass": true,
+  "by_artifact_type": {
+    "dataset": 10,
+    "documentation": 2,
+    "report": 9,
+    "runtime_module": 1,
+    "script": 1,
+    "test": 1
+  },
+  "by_evidence_class": {
+    "claim_boundary": 1,
+    "derived_analysis": 8,
+    "external_source": 4,
+    "governance": 5,
+    "metadata_only": 2,
+    "primary_computation": 4
+  },
+  "by_execution_status": {
+    "executed": 11,
+    "not_executed": 13
+  },
+  "by_implementation_status": {
+    "implemented": 24
+  },
+  "by_reproducibility_status": {
+    "reproducible": 24
+  },
+  "category_sum_assertions": [
+    {
+      "category": "artifact_type",
+      "expected": 24,
+      "passed": true,
+      "residual": 0,
+      "sum": 24
+    },
+    {
+      "category": "implementation_status",
+      "expected": 24,
+      "passed": true,
+      "residual": 0,
+      "sum": 24
+    },
+    {
+      "category": "execution_status",
+      "expected": 24,
+      "passed": true,
+      "residual": 0,
+      "sum": 24
+    },
+    {
+      "category": "evidence_class",
+      "expected": 24,
+      "passed": true,
+      "residual": 0,
+      "sum": 24
+    },
+    {
+      "category": "reproducibility_status",
+      "expected": 24,
+      "passed": true,
+      "residual": 0,
+      "sum": 24
+    }
+  ],
+  "existing_count": 24,
+  "generated_at": "2026-07-14T16:00:00Z",
+  "git_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "missing_count": 0,
+  "records": [
+    {
+      "artifact_type": "documentation",
+      "evidence_class": "governance",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "audit_bundles/scatti/README.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "primary_computation",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "audit_bundles/scatti/scatti_audit_bundle_v2.zip",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "claim_boundary",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_claim_safe_report.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "governance",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_current_state.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "governance",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_dft_queue.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "external_source",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_external_prototype_search.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_external_prototype_search.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "external_source",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_external_structure_search_v2.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_external_structure_search_v2.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "documentation",
+      "evidence_class": "governance",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_manual_verification_checklist.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "derived_analysis",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_parent_structure_clues.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_parent_structure_clues.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "primary_computation",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_screening_summary.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "external_source",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_searxng_evidence_table.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_searxng_evidence_table.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "primary_computation",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_structure_candidates.csv",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "external_source",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_structure_source_search.json",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_structure_source_search.md",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "script",
+      "evidence_class": "primary_computation",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "scripts/scatti_prepare_screening.py",
+      "reproducibility_status": "reproducible",
+      "tracked": true
+    },
+    {
+      "artifact_type": "runtime_module",
+      "evidence_class": "metadata_only",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "weslr/modules/materials_stoichiometric_route_engine.py",
+      "reproducibility_status": "reproducible",
+      "tracked": false
+    },
+    {
+      "artifact_type": "test",
+      "evidence_class": "metadata_only",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "weslr/tests/test_materials_stoichiometric_route_engine.py",
+      "reproducibility_status": "reproducible",
+      "tracked": false
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "derived_analysis",
+      "execution_status": "executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json",
+      "reproducibility_status": "reproducible",
+      "tracked": false
+    },
+    {
+      "artifact_type": "report",
+      "evidence_class": "derived_analysis",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.md",
+      "reproducibility_status": "reproducible",
+      "tracked": false
+    },
+    {
+      "artifact_type": "dataset",
+      "evidence_class": "governance",
+      "execution_status": "not_executed",
+      "exists": true,
+      "implementation_status": "implemented",
+      "path": "data/scatti_candidates/scatti_evidence_ledger_v1.json",
+      "reproducibility_status": "reproducible",
+      "tracked": false
+    }
+  ],
+  "schema_version": 2,
+  "source_inventory": "data/scatti_candidates/scatti_implementation_inventory_v1.json",
+  "total_records": 24,
+  "tracked_count": 19,
+  "untracked_count": 5
+}

@@ -1,0 +1,67 @@
+{
+  "report_version": 1,
+  "generated_at": "2026-07-14T15:30:00+00:00",
+  "generated_from_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "target_formula": "CaSc2TiO6",
+  "parent_formula": "Sc4Ti2O10",
+  "parent_reduced_formula": "Sc2TiO5",
+  "parent_Z": 2.0,
+  "target_Z": 1.0,
+  "previous_operation": "add 1 Ca + 1 O to Sc4Ti2O10 cell",
+  "previous_output": "CaSc4Ti2O11",
+  "correct_operation": "add 2 Ca + 2 O to Sc4Ti2O10 cell to reach Ca2Sc4Ti2O12 (2 × CaSc2TiO6)",
+  "previous_negative_result_valid": false,
+  "previous_negative_result_partially_valid": false,
+  "previous_negative_result_invalid_due_to_scaling_bug": true,
+  "inconclusive": false,
+  "verdict": "previous_negative_result_invalid_due_to_scaling_bug",
+  "scaling_bug_description": "The MP-parent experiment added 1 CaO to a cell containing 2 reduced formula units (Sc4Ti2O10 = 2 × Sc2TiO5). The correct operation requires 2 CaO to reach 2 × CaSc2TiO6. Adding only 1 CaO produced CaSc4Ti2O11, which is not a multiple of CaSc2TiO6.",
+  "exact_balanced_routes": [
+    {
+      "route": "Sc2TiO5 + CaO -> CaSc2TiO6",
+      "balanced": true,
+      "route_class": "exact_combination_route",
+      "coefficients": {"Sc2TiO5": 1, "CaO": 1},
+      "target_coefficient": 1,
+      "geometry_established": false,
+      "notes": "Requires geometric placement of Ca and O into Sc2TiO5 framework"
+    },
+    {
+      "route": "Sc4Ti2O10 + 2 CaO -> 2 CaSc2TiO6",
+      "balanced": true,
+      "route_class": "exact_combination_route",
+      "coefficients": {"Sc4Ti2O10": 1, "CaO": 2},
+      "target_coefficient": 2,
+      "geometry_established": false,
+      "notes": "Parent cell contains 2 reduced units; requires 2 CaO to reach 2 target cells"
+    },
+    {
+      "route": "CaSc2O4 + TiO2 -> CaSc2TiO6",
+      "balanced": true,
+      "route_class": "exact_combination_route",
+      "coefficients": {"CaSc2O4": 1, "TiO2": 1},
+      "target_coefficient": 1,
+      "geometry_established": false,
+      "notes": "Requires geometric placement of Ti and O into CaSc2O4 framework"
+    },
+    {
+      "route": "CaTiO3 + Sc2O3 -> CaSc2TiO6",
+      "balanced": true,
+      "route_class": "exact_combination_route",
+      "coefficients": {"CaTiO3": 1, "Sc2O3": 1},
+      "target_coefficient": 1,
+      "geometry_established": false,
+      "notes": "Requires geometric placement of Sc and O into CaTiO3 framework"
+    }
+  ],
+  "superseded_statements": [
+    "The Sc2TiO5 parent could not scale honestly to CaSc2TiO6",
+    "Sc4Ti2O10 + CaO -> CaSc4Ti2O11 is the only possible outcome",
+    "Parent-derived construction is mathematically impossible"
+  ],
+  "does_this_establish_a_valid_geometry": false,
+  "does_this_establish_stability": false,
+  "does_this_reopen_parent_derived_construction": true,
+  "reopen_reason": "Four exact balanced routes are mathematically available. The previous failure was caused by a formula-unit scaling bug, not an impossible stoichiometric transformation. Parent-derived construction is stoichiometrically valid and should be revisited with corrected atom counts.",
+  "next_recommended_phase": "Corrected parent-derived geometric construction"
+}

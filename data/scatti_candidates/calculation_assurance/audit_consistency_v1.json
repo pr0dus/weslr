@@ -1,0 +1,88 @@
+{
+  "checker_version": 1,
+  "corrections": [
+    {
+      "category": "implemented",
+      "code": "category_sum_mismatch",
+      "proposed_correction": "Set implemented to 16"
+    },
+    {
+      "category": "executed",
+      "code": "category_sum_mismatch",
+      "proposed_correction": "Set executed to 0"
+    },
+    {
+      "code": "supersession_count_mismatch",
+      "proposed_correction": "Set superseded count to at least 2 or add superseded artifacts to inventory"
+    }
+  ],
+  "generated_at": "2026-07-14T15:47:20Z",
+  "git_branch": "scatti-calculation-assurance-recovery-20260714",
+  "git_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "inconsistencies": [
+    {
+      "actual": 16,
+      "category": "implemented",
+      "code": "category_sum_mismatch",
+      "description": "Reported implemented count 24 != actual 16",
+      "reported": 24
+    },
+    {
+      "actual": 0,
+      "category": "executed",
+      "code": "category_sum_mismatch",
+      "description": "Reported executed count 12 != actual 0",
+      "reported": 12
+    },
+    {
+      "code": "supersession_count_mismatch",
+      "description": "Inventory reports 0 superseded but evidence ledger has 2 entries with supersedes",
+      "evidence_supersedes": 2,
+      "inventory_superseded": 0
+    },
+    {
+      "code": "external_evidence_not_imported",
+      "commit": "2d40b9d",
+      "description": "Commit 2d40b9d not reachable in this snapshot"
+    },
+    {
+      "code": "external_evidence_not_imported",
+      "commit": "55342bb",
+      "description": "Commit 55342bb not reachable in this snapshot"
+    }
+  ],
+  "inventory": {
+    "actual_artifact_count": 24,
+    "artifact_type_counts": {
+      "dataset": 10,
+      "documentation": 2,
+      "report": 9,
+      "runtime_module": 1,
+      "script": 1,
+      "test": 1
+    },
+    "evidence_class_counts": {
+      "claim_boundary": 1,
+      "derived_analysis": 8,
+      "external_source": 4,
+      "governance": 5,
+      "metadata_only": 2,
+      "primary_computation": 4
+    },
+    "execution_status_counts": {
+      "false": 13,
+      "true": 11
+    },
+    "implementation_status_counts": {
+      "executed": 8,
+      "implemented": 16
+    },
+    "reported_total_artifacts": 24
+  },
+  "inventory_loaded": true,
+  "summary": {
+    "corrections_proposed": 3,
+    "inconsistencies_found": 5,
+    "total_checks": 10
+  }
+}

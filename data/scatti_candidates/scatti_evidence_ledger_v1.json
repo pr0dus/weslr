@@ -1,0 +1,332 @@
+{
+  "candidate": {
+    "canonical_formula": "CaSc2TiO6",
+    "status": "unvalidated_computational_candidate"
+  },
+  "ledger_version": 1,
+  "generated_from_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "generated_at": "2026-07-14T15:30:00+00:00",
+  "entries": [
+    {
+      "evidence_id": "E001",
+      "phase": "candidate_definition",
+      "proposition": "CaSc2TiO6 is a valid chemical formula with charge balance",
+      "result": "Ca:Sc:Ti:O = 1:2:1:6, charge balanced (Ca2+ + 2×Sc3+ + Ti4+ + 6×O2- = 0)",
+      "status": "supports",
+      "source_paths": ["weslr/modules/materials_stoichiometric_route_engine.py"],
+      "source_commits": ["62e9ba79"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Formula-level analysis only; does not establish geometric feasibility",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E002",
+      "phase": "formula_normalization",
+      "proposition": "CaSc2TiO6 normalizes to canonical form",
+      "result": "normalize_formula('CaSc2TiO6') = 'CaSc2TiO6'; normalize_formula('CaSc₂TiO₆') = 'CaSc2TiO6'",
+      "status": "supports",
+      "source_paths": ["weslr/modules/materials_stoichiometric_route_engine.py"],
+      "source_commits": ["62e9ba79"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Unicode normalization only; no structural information",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E003",
+      "phase": "literature_search",
+      "proposition": "Exact CaSc2TiO6 has been reported in literature",
+      "result": "No confirmed exact CaSc2TiO6 found in SearxNG results. Related parent structures found: Ca2ScTiO6, Sc2TiO5, CaSc2O4, Sc-doped CaTiO3",
+      "status": "inconclusive",
+      "source_paths": [
+        "data/scatti_candidates/scatti_searxng_evidence_table.json",
+        "data/scatti_candidates/scatti_searxng_evidence_table.md",
+        "data/scatti_candidates/scatti_parent_structure_clues.json"
+      ],
+      "source_commits": ["2401b9a0", "95095cbf"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "SearxNG web search only; not a comprehensive literature review. Timeout/API error ≠ zero results.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T07:45:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E004",
+      "phase": "database_crosscheck",
+      "proposition": "CaSc2TiO6 exists in public materials databases",
+      "result": "COD: checked_no_hit. AFLOW: checked_no_hit. NOMAD: checked_no_hit. OQMD: HTTP 502 (unavailable). Materials Project: accessible but API key missing.",
+      "status": "inconclusive",
+      "source_paths": [
+        "data/scatti_candidates/scatti_structure_source_search.json",
+        "data/scatti_candidates/scatti_structure_source_search.md",
+        "data/scatti_candidates/scatti_current_state.md"
+      ],
+      "source_commits": ["52de97e1", "3a36be6a"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "OQMD unavailable (HTTP 502). Materials Project requires API key. COD/AFLOW/NOMAD queries may not cover all entries.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T10:44:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E005",
+      "phase": "chemical_plausibility",
+      "proposition": "CaSc2TiO6 is chemically plausible",
+      "result": "Charge balanced. All four exact balanced routes are mathematically available. Sc2TiO5 + CaO -> CaSc2TiO6 is exact. Sc4Ti2O10 + 2 CaO -> 2 CaSc2TiO6 is exact. CaSc2O4 + TiO2 -> CaSc2TiO6 is exact. CaTiO3 + Sc2O3 -> CaSc2TiO6 is exact.",
+      "status": "supports",
+      "source_paths": [
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json"
+      ],
+      "source_commits": ["62e9ba79"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Formula-level analysis only. Does not establish geometric feasibility, stability, or synthesis feasibility.",
+      "supersedes": ["Previous claim that parent-derived construction is mathematically impossible"],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E006",
+      "phase": "structure_generation",
+      "proposition": "Computational structure candidates for CaSc2TiO6 have been generated",
+      "result": "19 candidates generated across phases 1B-1J. 0 DFT-ready. 2 pre-relaxation starting geometries. 13 downgraded. 4 reference phases. All exact-formula candidates have fatal distance violations or coordination failures.",
+      "status": "executed_negative",
+      "source_paths": [
+        "data/scatti_candidates/scatti_screening_summary.json",
+        "data/scatti_candidates/scatti_structure_candidates.csv",
+        "scripts/scatti_prepare_screening.py"
+      ],
+      "source_commits": ["3a36be6a", "a11a21d3"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Hand-built coordinates only. No CSP, no ML structure prediction, no database-derived structures. All candidates failed geometric validation.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T10:44:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E007",
+      "phase": "structure_generation",
+      "proposition": "Parent-motif construction from Sc-doped CaTiO3 clues",
+      "result": "SCATTI-PARENT-001 and SCATTI-PARENT-002 both rejected. Fatal Sc-O and O-O contacts. Hand-built coordinates insufficient.",
+      "status": "executed_negative",
+      "source_paths": [
+        "data/scatti_candidates/scatti_screening_summary.json",
+        "scripts/scatti_prepare_screening.py"
+      ],
+      "source_commits": ["a11a21d3"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Hand-built coordinates only. The stoichiometric analysis was correct (formula matched) but geometric placement failed.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T12:48:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E008",
+      "phase": "stability_screening",
+      "proposition": "CHGNet ML relaxation of SCATTI-LAYERED-001",
+      "result": "max_force = 0.596 eV/Å after 50 steps (target: 0.2 eV/Å). Volume collapsed by 23.9%. Short O-O contact 1.483 Å. Sc-O coordination only 2 each. Classified as ml_relaxed_but_not_qe_ready.",
+      "status": "executed_inconclusive",
+      "source_paths": [
+        "audit_bundles/scatti/scatti_audit_bundle_v2.zip",
+        "data/scatti_candidates/scatti_current_state.md"
+      ],
+      "source_commits": ["62e9ba79", "86bd0d2d"],
+      "executed": true,
+      "reproducible": "partially_reproducible",
+      "limitations": "CHGNet ML relaxation only. Not DFT. Forces did not converge. Volume collapse suggests force field bias or over-relaxation.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T15:07:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E009",
+      "phase": "competing_phase_analysis",
+      "proposition": "Competing phases for CaSc2TiO6 have been identified",
+      "result": "Reference phases created: CaO (fluorite), Sc2O3 (bixbyite), TiO2 (rutile), CaTiO3 (perovskite). No competing phase analysis performed.",
+      "status": "not_started",
+      "source_paths": ["data/scatti_candidates/scatti_screening_summary.json"],
+      "source_commits": ["3a36be6a"],
+      "executed": false,
+      "reproducible": false,
+      "limitations": "Reference phases created but no decomposition energy analysis performed.",
+      "supersedes": [],
+      "timestamp": "2026-05-08T10:44:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E010",
+      "phase": "dynamic_stability",
+      "proposition": "CaSc2TiO6 is dynamically stable",
+      "result": "No phonon calculation performed. No molecular dynamics performed.",
+      "status": "not_started",
+      "source_paths": [],
+      "source_commits": [],
+      "executed": false,
+      "reproducible": false,
+      "limitations": "Requires DFT-relaxed structure first.",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E011",
+      "phase": "property_prediction",
+      "proposition": "CaSc2TiO6 has predicted properties",
+      "result": "No property prediction performed.",
+      "status": "not_started",
+      "source_paths": [],
+      "source_commits": [],
+      "executed": false,
+      "reproducible": false,
+      "limitations": "Requires DFT-relaxed structure first.",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E012",
+      "phase": "synthesis_feasibility",
+      "proposition": "CaSc2TiO6 can be synthesized",
+      "result": "No synthesis feasibility analysis performed.",
+      "status": "not_started",
+      "source_paths": [],
+      "source_commits": [],
+      "executed": false,
+      "reproducible": false,
+      "limitations": "Requires structure and stability evidence first.",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E013",
+      "phase": "evidence_package",
+      "proposition": "Evidence package for CaSc2TiO6 is complete",
+      "result": "Partial evidence package exists. Candidate definition, formula normalization, literature search (inconclusive), database crosscheck (inconclusive), chemical plausibility (supports), structure generation (negative), CHGNet relaxation (inconclusive).",
+      "status": "partial",
+      "source_paths": [
+        "data/scatti_candidates/scatti_current_state.md",
+        "data/scatti_candidates/scatti_claim_safe_report.md",
+        "data/scatti_candidates/scatti_manual_verification_checklist.md"
+      ],
+      "source_commits": ["3a36be6a", "a11a21d3", "62e9ba79"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Multiple stages not started. No DFT. No CSP. No competing phase analysis. No dynamic stability. No property prediction. No synthesis feasibility.",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E014",
+      "phase": "publication_draft",
+      "proposition": "Publication draft for CaSc2TiO6 is ready",
+      "result": "No publication draft created. Claim boundary: CaSc2TiO6 remains an unvalidated computational candidate.",
+      "status": "not_started",
+      "source_paths": [],
+      "source_commits": [],
+      "executed": false,
+      "reproducible": false,
+      "limitations": "Requires complete evidence package first.",
+      "supersedes": [],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    },
+    {
+      "evidence_id": "E015",
+      "phase": "chemical_plausibility",
+      "proposition": "Previous MP-parent experiment conclusion that Sc2TiO5 parent cannot scale to CaSc2TiO6",
+      "result": "Conclusion was invalid due to formula-unit scaling bug. Sc4Ti2O10 (Z=2) requires 2 CaO to reach 2 × CaSc2TiO6, not 1 CaO.",
+      "status": "contradicts",
+      "source_paths": [
+        "weslr/modules/materials_stoichiometric_route_engine.py",
+        "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json"
+      ],
+      "source_commits": ["62e9ba79"],
+      "executed": true,
+      "reproducible": true,
+      "limitations": "Formula-level analysis only. Does not establish geometric feasibility.",
+      "supersedes": ["Previous claim that parent-derived construction is impossible"],
+      "timestamp": "2026-07-14T15:30:00+00:00",
+      "content_hashes": {}
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "C001",
+      "description": "Previous MP-parent experiment concluded Sc2TiO5 parent cannot scale to CaSc2TiO6. Stoichiometric analysis shows exact balanced route exists: Sc4Ti2O10 + 2 CaO -> 2 CaSc2TiO6.",
+      "resolved": true,
+      "resolution": "Formula-unit scaling bug. Parent cell (Sc4Ti2O10) has Z=2. Previous code added 1 CaO instead of 2 CaO.",
+      "supersedes_evidence": ["E015"]
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "Q001",
+      "question": "Does CaSc2TiO6 exist in Materials Project?",
+      "phase": "database_crosscheck",
+      "blocked_by": "MATERIALS_PROJECT_API_KEY not configured"
+    },
+    {
+      "id": "Q002",
+      "question": "Does CaSc2TiO6 exist in OQMD?",
+      "phase": "database_crosscheck",
+      "blocked_by": "OQMD HTTP 502 (transient?)"
+    },
+    {
+      "id": "Q003",
+      "question": "Can a valid starting geometry be constructed from Sc2TiO5 + CaO?",
+      "phase": "structure_generation",
+      "blocked_by": "Requires corrected geometric construction with proper atom counts"
+    },
+    {
+      "id": "Q004",
+      "question": "Can a valid starting geometry be constructed from CaSc2O4 + TiO2?",
+      "phase": "structure_generation",
+      "blocked_by": "Requires geometric construction"
+    },
+    {
+      "id": "Q005",
+      "question": "Can a valid starting geometry be constructed from CaTiO3 + Sc2O3?",
+      "phase": "structure_generation",
+      "blocked_by": "Requires geometric construction"
+    },
+    {
+      "id": "Q006",
+      "question": "Is CaSc2TiO6 dynamically stable?",
+      "phase": "dynamic_stability",
+      "blocked_by": "Requires DFT-relaxed structure"
+    },
+    {
+      "id": "Q007",
+      "question": "What are the competing phases and decomposition energies?",
+      "phase": "competing_phase_analysis",
+      "blocked_by": "Requires DFT-relaxed structure"
+    }
+  ],
+  "stage_status": {
+    "candidate_definition": "passed_gate",
+    "formula_normalization": "passed_gate",
+    "literature_search": "executed_inconclusive",
+    "database_crosscheck": "executed_inconclusive",
+    "chemical_plausibility": "passed_gate",
+    "structure_generation": "executed_negative",
+    "stability_screening": "executed_inconclusive",
+    "competing_phase_analysis": "not_started",
+    "dynamic_stability": "not_started",
+    "property_prediction": "not_started",
+    "synthesis_feasibility": "not_started",
+    "evidence_package": "partial",
+    "publication_draft": "not_started"
+  }
+}

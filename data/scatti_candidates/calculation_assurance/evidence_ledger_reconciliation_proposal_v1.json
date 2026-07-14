@@ -1,0 +1,95 @@
+{
+  "reconciliation_version": 1,
+  "generated_at": "2026-07-14T15:45:00Z",
+  "generated_from_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "purpose": "Propose corrections to evidence ledger without overwriting the original",
+  "local_snapshot_scope": {
+    "repository": "/data/data/com.termux/files/home/weslr-pr47-clean",
+    "branch": "scatti-calculation-assurance-recovery-20260714",
+    "head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+    "note": "This is a local snapshot. Commits 2d40b9d and 55342bb are not reachable. MP-parent experiment artifacts are on Ubuntu/Nova host."
+  },
+  "proposed_corrections": [
+    {
+      "id": "CORR-001",
+      "target": "evidence_ledger_v1",
+      "field": "entries[E004].status",
+      "current_value": "inconclusive",
+      "proposed_value": "known_external_evidence_not_imported",
+      "rationale": "Materials Project exact-formula querying was reportedly executed on Ubuntu but its evidence is not imported here. Local status must reflect that the evidence exists externally but is not locally verifiable.",
+      "affects_stage": "database_crosscheck"
+    },
+    {
+      "id": "CORR-002",
+      "target": "evidence_ledger_v1",
+      "field": "stage_status.database_crosscheck",
+      "current_value": "executed_inconclusive",
+      "proposed_value": "known_external_evidence_not_imported",
+      "rationale": "Same as CORR-001. The local snapshot cannot certify database crosscheck status without imported evidence."
+    },
+    {
+      "id": "CORR-003",
+      "target": "evidence_ledger_v1",
+      "field": "stage_status.chemical_plausibility",
+      "current_value": "passed_gate",
+      "proposed_value": "partial",
+      "rationale": "Chemical plausibility is supported by stoichiometric analysis but does not establish geometric feasibility, stability, or synthesis. 'passed_gate' overstates the available evidence for a full chemical plausibility gate.",
+      "new_stable_status": "partial"
+    },
+    {
+      "id": "CORR-004",
+      "target": "evidence_ledger_v1",
+      "field": "entries[E015].supersedes",
+      "current_value": ["Previous claim that parent-derived construction is impossible"],
+      "proposed_value": ["Previous claim that parent-derived construction is impossible", "Previous MP-parent experiment negative conclusion"],
+      "rationale": "The parent-derived negative conclusion is superseded due to formula-unit scaling bug. This should be explicitly recorded."
+    },
+    {
+      "id": "CORR-005",
+      "target": "evidence_ledger_v1",
+      "field": "stage_status.structure_generation",
+      "current_value": "executed_negative",
+      "proposed_value": "superseded",
+      "rationale": "The structure_generation stage contains valid earlier negative results (hand-built coordinates failed) AND the scaling-bug result (which is superseded). The stage status should reflect that the negative result is partially superseded by the corrected stoichiometric analysis.",
+      "new_stable_status": "superseded"
+    },
+    {
+      "id": "CORR-006",
+      "target": "evidence_ledger_v1",
+      "field": "entries[E006].status",
+      "current_value": "executed_negative",
+      "proposed_value": "executed_negative",
+      "rationale": "E006 (hand-built structure candidates) remains valid as executed_negative. The hand-built coordinates genuinely failed geometric validation. This is not superseded by the stoichiometric correction.",
+      "no_change_needed": true
+    },
+    {
+      "id": "CORR-007",
+      "target": "evidence_ledger_v1",
+      "field": "entries[E007].status",
+      "current_value": "executed_negative",
+      "proposed_value": "superseded",
+      "rationale": "E007 (parent-motif construction) was based on the scaling-bug result. The parent-motif construction attempt itself failed geometrically, but the stoichiometric premise was invalid. This entry should be marked superseded.",
+      "new_stable_status": "superseded"
+    },
+    {
+      "id": "CORR-008",
+      "target": "evidence_ledger_v1",
+      "field": "global_certification",
+      "current_value": "not_applicable",
+      "proposed_value": "cannot_certify_until_cross_host_reconciliation",
+      "rationale": "The global SCATTI state cannot be certified until cross-host evidence (commits 2d40b9d, 55342bb, MP-parent experiment artifacts) is reconciled. This snapshot is a partial view."
+    }
+  ],
+  "new_stable_statuses_introduced": [
+    "known_external_evidence_not_imported",
+    "cannot_certify_until_cross_host_reconciliation"
+  ],
+  "summary": {
+    "total_proposed_corrections": 8,
+    "corrections_requiring_status_change": 5,
+    "corrections_confirming_no_change": 1,
+    "corrections_adding_supersession": 1,
+    "corrections_adding_global_note": 1,
+    "new_statuses_introduced": 2
+  }
+}

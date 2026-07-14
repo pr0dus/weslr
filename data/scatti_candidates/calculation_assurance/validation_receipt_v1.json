@@ -1,0 +1,75 @@
+{
+  "commands": [
+    {
+      "command": "python3 -m pytest weslr/tests/test_materials_stoichiometric_route_engine.py weslr/tests/test_calculation_assurance.py weslr/tests/test_materials_stoichiometric_route_verifier.py weslr/tests/test_scatti_audit_consistency.py -q",
+      "result": "PASS",
+      "return_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d7c8136b55bbaa500ab283da3276444521b660f13e10601654b471da60baefc3",
+      "utc_end": "2026-07-14T15:47:20Z",
+      "utc_start": "2026-07-14T15:47:18Z"
+    },
+    {
+      "command": "python3 -m compileall -q weslr/modules/calculation_assurance.py weslr/modules/materials_stoichiometric_route_engine.py weslr/modules/materials_stoichiometric_route_verifier.py scripts/scatti_audit_consistency_check.py scripts/render_scatti_calculation_assurance_report.py",
+      "result": "PASS",
+      "return_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "utc_end": "2026-07-14T15:47:20Z",
+      "utc_start": "2026-07-14T15:47:20Z"
+    },
+    {
+      "command": "python3 scripts/scatti_audit_consistency_check.py",
+      "result": "PASS",
+      "return_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "c1ee6802e3a37bca3a5dc35c98ed4ab13ef632c4a3577dfda6a94de2e723f353",
+      "utc_end": "2026-07-14T15:47:20Z",
+      "utc_start": "2026-07-14T15:47:20Z"
+    },
+    {
+      "command": "python3 scripts/render_scatti_calculation_assurance_report.py",
+      "result": "PASS",
+      "return_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "1b6c97761b4418c5c015c201f11073371b3edae613c23b78a425064fedf6a299",
+      "utc_end": "2026-07-14T15:47:20Z",
+      "utc_start": "2026-07-14T15:47:20Z"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS",
+      "return_code": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "utc_end": "2026-07-14T15:47:20Z",
+      "utc_start": "2026-07-14T15:47:20Z"
+    }
+  ],
+  "files_checked": [
+    "weslr/modules/calculation_assurance.py",
+    "weslr/modules/materials_stoichiometric_route_engine.py",
+    "weslr/modules/materials_stoichiometric_route_verifier.py",
+    "scripts/generate_stoichiometric_certificates.py",
+    "scripts/scatti_audit_consistency_check.py",
+    "scripts/render_scatti_calculation_assurance_report.py",
+    "weslr/tests/test_calculation_assurance.py",
+    "weslr/tests/test_materials_stoichiometric_route_engine.py",
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py",
+    "weslr/tests/test_scatti_audit_consistency.py",
+    "data/scatti_candidates/calculation_assurance/pre_modification_manifest_v1.json",
+    "data/scatti_candidates/calculation_assurance/stoichiometric_certificates_v1.json",
+    "data/scatti_candidates/calculation_assurance/audit_consistency_v1.json",
+    "data/scatti_candidates/calculation_assurance/audit_consistency_v1.md",
+    "data/scatti_candidates/calculation_assurance/evidence_ledger_reconciliation_proposal_v1.json",
+    "docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V1.md"
+  ],
+  "generated_at": "2026-07-14T15:47:20Z",
+  "generated_from_head": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "summary": {
+    "failed": 0,
+    "passed": 5,
+    "total_commands": 5
+  },
+  "validation_receipt_version": 1
+}
