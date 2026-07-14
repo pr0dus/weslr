@@ -1,0 +1,5 @@
+........................................................................ [ 41%]
+........................................................................ [ 82%]
+..............................                                           [100%]
+- generated xml file: /home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_junit.xml -
+174 passed in 0.24s

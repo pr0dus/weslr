@@ -1,0 +1,114 @@
+{
+  "verifier": "verify_scatti_cross_host_reconciliation_r4c.py",
+  "timestamp": "2026-07-14T19:23:15+02:00",
+  "checks": {
+    "command_receipt_exists": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/command_receipt.json"
+    },
+    "junit_xml_exists": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_junit.xml"
+    },
+    "raw_stdout_exists": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_stdout.txt"
+    },
+    "raw_stderr_exists": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_stderr.txt"
+    },
+    "test_receipt_exists": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/test_receipt.json"
+    },
+    "pytest_return_code_zero": {
+      "status": "PASS",
+      "detail": "Return code: 0"
+    },
+    "stdout_hash_recorded": {
+      "status": "PASS",
+      "detail": "Hash: dea680087616a0ed..."
+    },
+    "stderr_hash_recorded": {
+      "status": "PASS",
+      "detail": "Hash: e3b0c44298fc1c14..."
+    },
+    "stdout_hash_matches": {
+      "status": "PASS",
+      "detail": "Expected: dea680087616a0ed..., Got: dea680087616a0ed..."
+    },
+    "stderr_hash_matches": {
+      "status": "PASS",
+      "detail": "Expected: e3b0c44298fc1c14..., Got: e3b0c44298fc1c14..."
+    },
+    "junit_sha256_recorded": {
+      "status": "PASS",
+      "detail": "6aa477e440855caa"
+    },
+    "junit_failures_present": {
+      "status": "PASS",
+      "detail": "JUnit failures: 0"
+    },
+    "junit_errors_present": {
+      "status": "PASS",
+      "detail": "JUnit errors: 0"
+    },
+    "junit_skips_unapproved": {
+      "status": "PASS",
+      "detail": "JUnit skipped: 0"
+    },
+    "junit_total_inconsistent": {
+      "status": "PASS",
+      "detail": "JUnit total: 174, failures: 0, errors: 0, skipped: 0"
+    },
+    "stdout_junit_mismatch": {
+      "status": "PASS",
+      "detail": "JUnit failures=0, errors=0, stdout has FAILED=False, has ERRORS=False"
+    },
+    "summary_junit_mismatch": {
+      "status": "PASS",
+      "detail": "Receipt: failures=0, errors=0; JUnit: failures=0, errors=0"
+    },
+    "receipt_head_mismatch": {
+      "status": "PASS",
+      "detail": "Receipt HEAD: 754da5256edd7559..., Current HEAD: 754da5256edd7559..."
+    },
+    "test_run_modified_source": {
+      "status": "PASS",
+      "detail": "Source unchanged: True"
+    },
+    "validation_status_accepted": {
+      "status": "PASS",
+      "detail": "Status: accepted"
+    },
+    "live_verifier_circular_dependency": {
+      "status": "PASS",
+      "detail": "Stage A tests must not invoke live repository verifier"
+    },
+    "release_evidence_missing_command_receipt.json": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/command_receipt.json"
+    },
+    "release_evidence_missing_pytest_junit.xml": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_junit.xml"
+    },
+    "release_evidence_missing_pytest_stdout.txt": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_stdout.txt"
+    },
+    "release_evidence_missing_pytest_stderr.txt": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_stderr.txt"
+    },
+    "release_evidence_missing_test_receipt.json": {
+      "status": "PASS",
+      "detail": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/test_receipt.json"
+    }
+  },
+  "passed": 26,
+  "failed": 0,
+  "abstained": 0,
+  "overall": "cross_host_reconciliation_r4c_release_verified"
+}

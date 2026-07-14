@@ -1,0 +1,30 @@
+{
+  "audit_id": "r4b_false_release_audit_r4c",
+  "committed_head": "754da5256edd75598aeefddaad870a3bef91a32d",
+  "summary_claims": {
+    "total": 159,
+    "passed": 159,
+    "failed": 0,
+    "errors": 0
+  },
+  "raw_output_evidence": {
+    "total": 159,
+    "passed": 155,
+    "failed": 4,
+    "errors": 0
+  },
+  "contradiction": "summary claims 159 passed, raw output shows 155 passed, 4 failed",
+  "pytest_failure_names": [
+    "TestCrossHostVerifier::test_verifier_passes",
+    "TestScattiCrossHostReconciliationV3::test_no_scientific_overpromotion",
+    "TestScattiCrossHostReconciliationV3::test_verifier_passed",
+    "TestR4ARegressionDefects::test_readme_paths_exist_in_zip"
+  ],
+  "affected_verifier_checks": [
+    "validation_tests_failed (would have failed if verifier parsed raw output)",
+    "promotion_gate_recommendation_conflict (readiness based on false data)"
+  ],
+  "affected_readiness_result": "ready_for_corrected_geometry_phase was set to true based on false summary",
+  "verdict": "r4b_release_invalid_raw_summary_disagreement",
+  "root_cause": "test_summary.json was manually written with hardcoded totals instead of being generated from JUnit XML or raw pytest output"
+}

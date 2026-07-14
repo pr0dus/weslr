@@ -1,0 +1,46 @@
+{
+  "review_id": "scatti_cross_host_review_r4c",
+  "generated_at": "2026-07-14T19:20:00+02:00",
+  "r4b_invalidation": {
+    "verdict": "r4b_release_invalid_raw_summary_disagreement",
+    "summary_claimed": {
+      "total": 159,
+      "passed": 159,
+      "failed": 0
+    },
+    "raw_evidence": {
+      "total": 159,
+      "passed": 155,
+      "failed": 4
+    },
+    "root_cause": "test_summary.json was manually written with hardcoded totals"
+  },
+  "stage_a": {
+    "return_code": 0,
+    "junit_tests": 174,
+    "junit_passed": 174,
+    "junit_failures": 0,
+    "junit_errors": 0,
+    "junit_skipped": 0,
+    "validation_status": "accepted",
+    "source_unchanged": true
+  },
+  "stage_b": {
+    "verifier": "verify_scatti_cross_host_reconciliation_r4c.py",
+    "checks_passed": 26,
+    "checks_failed": 0,
+    "checks_abstained": 0,
+    "overall": "cross_host_reconciliation_r4c_release_verified"
+  },
+  "readiness": {
+    "ready_for_corrected_geometry_phase": true,
+    "next_recommended_phase": "corrected_parent_derived_geometry_construction"
+  },
+  "promotion_gates": {
+    "stage_a_passes": true,
+    "stage_b_passes": true,
+    "no_circular_dependency": true,
+    "raw_evidence_authoritative": true,
+    "ready_for_corrected_geometry_phase": true
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "--junitxml",
+    "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_junit.xml",
+    "--tb=short",
+    "weslr/tests/test_materials_stoichiometric_route_engine.py",
+    "weslr/tests/test_calculation_assurance.py",
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py",
+    "weslr/tests/test_scatti_audit_consistency.py",
+    "weslr/tests/test_scatti_calculation_assurance_release_v2.py",
+    "weslr/tests/test_cross_host_evidence_reconciliation.py",
+    "weslr/tests/test_scatti_cross_host_reconciliation_v3.py"
+  ],
+  "cwd": "/home/pr0/projects/weslr-scatti-reconciliation-v3",
+  "interpreter": "/usr/bin/python3",
+  "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "start_utc": "2026-07-14T17:23:10.353739+00:00",
+  "end_utc": "2026-07-14T17:23:10.793908+00:00",
+  "return_code": 0,
+  "stdout_sha256": "dea680087616a0edbe0a6b9b223a1fe4b367e3f35617c8658d3ddfe7aede3877",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "tested_files": [
+    "weslr/tests/test_materials_stoichiometric_route_engine.py",
+    "weslr/tests/test_calculation_assurance.py",
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py",
+    "weslr/tests/test_scatti_audit_consistency.py",
+    "weslr/tests/test_scatti_calculation_assurance_release_v2.py",
+    "weslr/tests/test_cross_host_evidence_reconciliation.py",
+    "weslr/tests/test_scatti_cross_host_reconciliation_v3.py"
+  ],
+  "environment_allowlist": [
+    "WESLR_REPO_ROOT",
+    "PYTHONPATH",
+    "PATH",
+    "HOME",
+    "USER"
+  ],
+  "pre_run_head": "754da5256edd75598aeefddaad870a3bef91a32d",
+  "pre_run_status": "M data/scatti_candidates/calculation_assurance_v2/calculation_assurance_run_summary_v2.json\n M data/scatti_candidates/cross_host_reconciliation_v3/verifier_results_v3.json\n M docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V2.md\n M weslr/tests/test_cross_host_evidence_reconciliation.py\n M weslr/tests/test_scatti_cross_host_reconciliation_v3.py\n?? data/scatti_candidates/cross_host_reconciliation_v3/r4b_false_release_audit_r4c.json\n?? data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/\n?? scripts/run_scatti_release_validation_r4c.py\n?? scripts/verify_scatti_cross_host_reconciliation_r4c.py"
+}

@@ -1,0 +1,21 @@
+{
+  "test_suite": "SCATTI release validation R4C",
+  "interpreter": "/usr/bin/python3",
+  "python_version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "junit_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/pytest_junit.xml",
+  "junit_sha256": "6aa477e440855caac9ce7583c8513d73291514ee69c53112f59aa312453561b0",
+  "return_code": 0,
+  "junit_tests": 174,
+  "junit_passed": 174,
+  "junit_failures": 0,
+  "junit_errors": 0,
+  "junit_skipped": 0,
+  "stdout_summary": "174 passed in 0.24s",
+  "stdout_junit_agree": true,
+  "pre_run_head": "754da5256edd75598aeefddaad870a3bef91a32d",
+  "post_run_head": "754da5256edd75598aeefddaad870a3bef91a32d",
+  "post_run_status": "M data/scatti_candidates/calculation_assurance_v2/calculation_assurance_run_summary_v2.json\n M data/scatti_candidates/cross_host_reconciliation_v3/verifier_results_v3.json\n M docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V2.md\n M weslr/tests/test_cross_host_evidence_reconciliation.py\n M weslr/tests/test_scatti_cross_host_reconciliation_v3.py\n?? data/scatti_candidates/cross_host_reconciliation_v3/r4b_false_release_audit_r4c.json\n?? data/scatti_candidates/cross_host_reconciliation_v3/raw_validation_r4c/\n?? scripts/run_scatti_release_validation_r4c.py\n?? scripts/verify_scatti_cross_host_reconciliation_r4c.py",
+  "source_unchanged": true,
+  "validation_status": "accepted",
+  "generated_at": "2026-07-14T17:23:10.793908+00:00"
+}
