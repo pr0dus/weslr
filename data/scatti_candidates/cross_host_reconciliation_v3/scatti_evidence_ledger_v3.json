@@ -1,0 +1,61 @@
+{
+  "corrections": [
+    {
+      "correction": "CORR-001",
+      "description": "Materials Project query changes from external-not-imported to imported-and-verified",
+      "applied": true,
+      "evidence": "MP query artifacts verified: 9 queries, CaSc2TiO6=0 hits, 4 CIFs with hashes, no API key exposure",
+      "final_status": "imported_and_verified"
+    },
+    {
+      "correction": "CORR-002",
+      "description": "Database crosscheck stage becomes executed_inconclusive",
+      "applied": true,
+      "evidence": "Zero MP entries for CaSc2TiO6 does not prove absence from all databases",
+      "final_status": "executed_inconclusive"
+    },
+    {
+      "correction": "CORR-003",
+      "description": "Chemical plausibility remains partial",
+      "applied": true,
+      "evidence": "Ca-Sc-Ti-O phase space is chemically plausible but no experimental CaSc2TiO6 exists in MP",
+      "final_status": "partial"
+    },
+    {
+      "correction": "CORR-004",
+      "description": "Record explicit supersession of the stoichiometric-impossibility conclusion",
+      "applied": true,
+      "evidence": "Z-scaling bug confirmed: script added 1 Ca+1 O instead of 2 Ca+2 O for Z=2 cell",
+      "final_status": "superseded"
+    },
+    {
+      "correction": "CORR-005",
+      "description": "Structure-generation stage contains valid negative hand-built results, superseded scaling-bug conclusion, corrected parent-derived geometry not yet tested",
+      "applied": true,
+      "evidence": "Hand-built structures (LAYERED, INTERSTITIAL, etc.) remain valid negative results. Parent-derived geometry not yet tested with correct scaling.",
+      "final_status": "partial_with_superseded_components"
+    },
+    {
+      "correction": "CORR-006",
+      "description": "Preserve genuine hand-built geometric failures",
+      "applied": true,
+      "evidence": "Hand-built structures remain valid negative results - not superseded",
+      "final_status": "verified_negative"
+    },
+    {
+      "correction": "CORR-007",
+      "description": "Preserve the failed execution fact but supersede the invalid inference",
+      "applied": true,
+      "evidence": "Execution fact (CaSc4Ti2O11) preserved. Stoichiometric impossibility inference superseded.",
+      "final_status": "execution_fact_preserved_inference_superseded"
+    },
+    {
+      "correction": "CORR-008",
+      "description": "After successful reconciliation, global evidence state becomes cross_host_evidence_reconciled_pre_structure_validation",
+      "applied": true,
+      "evidence": "All imported evidence verified. No DFT-ready structure. No novelty claim.",
+      "final_status": "cross_host_evidence_reconciled_pre_structure_validation"
+    }
+  ],
+  "total": 8
+}

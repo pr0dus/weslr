@@ -1,0 +1,254 @@
+{
+  "verifier": "verify_scatti_cross_host_reconciliation_v3.py",
+  "timestamp": "2026-07-14T19:11:29+02:00",
+  "checks": {
+    "transport_commit_reachable": {
+      "status": "PASS",
+      "detail": "Expected 04dc013305b713c1eb3ea0117e462aa77099485f, got 04dc013305b713c1eb3ea0117e462aa77099485f"
+    },
+    "transport_commit_hash": {
+      "status": "PASS",
+      "detail": "Hash: 04dc013305b713c1eb3ea0117e462aa77099485f"
+    },
+    "transport_commit_parent": {
+      "status": "PASS",
+      "detail": "Parent: 62e9ba794c780bb37d5472d79ca8c9d91230892d"
+    },
+    "transport_commit_subject": {
+      "status": "PASS",
+      "detail": "Subject: WESLR: add verified scatti calculation assurance v2"
+    },
+    "cherry_pick_exists": {
+      "status": "PASS",
+      "detail": "HEAD: f654b4aeca288ae62f804d50f07cf0b172fc7c67"
+    },
+    "cherry_pick_parent_is_base": {
+      "status": "PASS",
+      "detail": "Parent: b478773e8364ba0a3d5c39a88a5cf0427fee94b4"
+    },
+    "ubuntu_commit_2d40b9d_reachable": {
+      "status": "PASS",
+      "detail": "2d40b9d is a commit"
+    },
+    "ubuntu_commit_55342bb_reachable": {
+      "status": "PASS",
+      "detail": "55342bb is a commit"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_transport_commit_verification_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/transport_commit_verification_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_transport_path_collision_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/transport_path_collision_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_imported_assurance_test_results_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/imported_assurance_test_results_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_ubuntu_scatti_artifact_inventory_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/ubuntu_scatti_artifact_inventory_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_materials_project_evidence_verification_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/materials_project_evidence_verification_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_mp_parent_experiment_reaudit_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/mp_parent_experiment_reaudit_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_multilingual_search_verification_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/multilingual_search_verification_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_structure_and_chgnet_evidence_verification_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/structure_and_chgnet_evidence_verification_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_scatti_evidence_ledger_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/scatti_evidence_ledger_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_scatti_implementation_inventory_v3.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/scatti_implementation_inventory_v3.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_source_patch_verification_r4b.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/source_patch_verification_r4b.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_git_state_contradiction_resolution_r4b.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/git_state_contradiction_resolution_r4b.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_structure_and_chgnet_evidence_verification_r4a.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/structure_and_chgnet_evidence_verification_r4a.json"
+    },
+    "artifact_exists_data_scatti_candidates_cross_host_reconciliation_v3_scatti_cross_host_review_summary_r4a.json": {
+      "status": "PASS",
+      "detail": "Path: data/scatti_candidates/cross_host_reconciliation_v3/scatti_cross_host_review_summary_r4a.json"
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_transport_commit_verification_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_transport_path_collision_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_imported_assurance_test_results_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_ubuntu_scatti_artifact_inventory_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_materials_project_evidence_verification_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_mp_parent_experiment_reaudit_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_multilingual_search_verification_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_structure_and_chgnet_evidence_verification_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_scatti_evidence_ledger_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_scatti_implementation_inventory_v3.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_source_patch_verification_r4b.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_git_state_contradiction_resolution_r4b.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_structure_and_chgnet_evidence_verification_r4a.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "json_valid_data_scatti_candidates_cross_host_reconciliation_v3_scatti_cross_host_review_summary_r4a.json": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "mp_zero_hit_CaSc2TiO6": {
+      "status": "PASS",
+      "detail": "CaSc2TiO6: 0 entries"
+    },
+    "mp_zero_hit_Ca2ScTiO6": {
+      "status": "PASS",
+      "detail": "Ca2ScTiO6: 0 entries"
+    },
+    "cif_has_formula_sum_mp-753401_Sc2TiO5.cif": {
+      "status": "PASS",
+      "detail": ""
+    },
+    "parent_z_correct": {
+      "status": "PASS",
+      "detail": "Z=2, expected 2"
+    },
+    "ledger_has_8_corrections": {
+      "status": "PASS",
+      "detail": "Found 8 corrections"
+    },
+    "correction_CORR-001_applied": {
+      "status": "PASS",
+      "detail": "CORR-001: imported_and_verified"
+    },
+    "correction_CORR-002_applied": {
+      "status": "PASS",
+      "detail": "CORR-002: executed_inconclusive"
+    },
+    "correction_CORR-003_applied": {
+      "status": "PASS",
+      "detail": "CORR-003: partial"
+    },
+    "correction_CORR-004_applied": {
+      "status": "PASS",
+      "detail": "CORR-004: superseded"
+    },
+    "correction_CORR-005_applied": {
+      "status": "PASS",
+      "detail": "CORR-005: partial_with_superseded_components"
+    },
+    "correction_CORR-006_applied": {
+      "status": "PASS",
+      "detail": "CORR-006: verified_negative"
+    },
+    "correction_CORR-007_applied": {
+      "status": "PASS",
+      "detail": "CORR-007: execution_fact_preserved_inference_superseded"
+    },
+    "correction_CORR-008_applied": {
+      "status": "PASS",
+      "detail": "CORR-008: cross_host_evidence_reconciled_pre_structure_validation"
+    },
+    "inventory_has_modules": {
+      "status": "PASS",
+      "detail": "4 modules"
+    },
+    "inventory_has_scripts": {
+      "status": "PASS",
+      "detail": "10 scripts"
+    },
+    "inventory_has_tests": {
+      "status": "PASS",
+      "detail": "5 tests"
+    },
+    "validation_tests_failed": {
+      "status": "PASS",
+      "detail": "Tests failed: 0"
+    },
+    "validation_errors_present": {
+      "status": "PASS",
+      "detail": "Test errors: 0"
+    },
+    "validation_total_explicit": {
+      "status": "PASS",
+      "detail": "Total: 159"
+    },
+    "source_repair_unverified": {
+      "status": "PASS",
+      "detail": "14/14 repairs verified"
+    },
+    "git_state_contradiction": {
+      "status": "PASS",
+      "detail": "Resolution: repairs_were_applied_after_state_capture"
+    },
+    "archive_member_count_mismatch": {
+      "status": "PASS",
+      "detail": "Actual: 16, Reported: 16"
+    },
+    "raw_validation_missing": {
+      "status": "PASS",
+      "detail": "Raw validation outputs present"
+    },
+    "promotion_gate_recommendation_conflict": {
+      "status": "PASS",
+      "detail": "Gate=false but phase=reconciliation_release_repair"
+    },
+    "structure_status_overpromotion": {
+      "status": "PASS",
+      "detail": "No structure uses overbroad 'fully_verified' status"
+    }
+  },
+  "passed": 61,
+  "failed": 0,
+  "abstained": 0,
+  "overall": "cross_host_reconciliation_release_verified"
+}

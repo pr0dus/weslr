@@ -1,0 +1,301 @@
+{
+  "artifacts": [
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/transport_commit_verification_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/transport_commit_verification_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 12211,
+          "sha256": "bf320a681677186014cb815287e21013ed81f095e94376d0dcef2fec2f24f032"
+        },
+        {
+          "repository": "main_repo",
+          "full_path": "/home/pr0/projects/weslr/data/scatti_candidates/cross_host_reconciliation_v3/transport_commit_verification_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 12211,
+          "sha256": "bf320a681677186014cb815287e21013ed81f095e94376d0dcef2fec2f24f032"
+        }
+      ],
+      "classification": "duplicate_identical"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/transport_path_collision_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/transport_path_collision_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 6661,
+          "sha256": "fddd62854ed393eb7129f560b37c5a350400d71aceaf3d43e9829b963a999155"
+        },
+        {
+          "repository": "main_repo",
+          "full_path": "/home/pr0/projects/weslr/data/scatti_candidates/cross_host_reconciliation_v3/transport_path_collision_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 6661,
+          "sha256": "fddd62854ed393eb7129f560b37c5a350400d71aceaf3d43e9829b963a999155"
+        }
+      ],
+      "classification": "duplicate_identical"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/imported_assurance_test_results_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/imported_assurance_test_results_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 780,
+          "sha256": "faceca701e0c44632250e39c6821f6cb8f6fe9268df8a8ae7d37199de0169d47"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/ubuntu_scatti_artifact_inventory_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/ubuntu_scatti_artifact_inventory_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 83305,
+          "sha256": "db2557587b7c39bd35f2ee3f274cef1c6581714be09ee670a37fd2475a30cff5"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/materials_project_evidence_verification_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/materials_project_evidence_verification_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 37414,
+          "sha256": "8887f9f83352406d39e403c1117e497cf8d9505ed9dbf4874872ee5b8f80e2ff"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/mp_parent_experiment_reaudit_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/mp_parent_experiment_reaudit_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 730,
+          "sha256": "ec2fe53825575fb44f6f57ead8b7cf09469da5476048987113462f8ffd6f1db6"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/multilingual_search_verification_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/multilingual_search_verification_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 765,
+          "sha256": "6a875d392d0fec9125113fcfc5b03ca9f38604a117aa2926fcdbb2766b08c8e2"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/structure_and_chgnet_evidence_verification_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/structure_and_chgnet_evidence_verification_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 4288,
+          "sha256": "1008da8653c38e5e45e5bf4542efa9523236ac0613a7db5e5bea8c827c3984b5"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/scatti_evidence_ledger_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/scatti_evidence_ledger_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 2717,
+          "sha256": "210ed3d9f69c19c7f1165587de513b035439f9d3513cfd31afec111f2af06dd3"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/scatti_implementation_inventory_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/scatti_implementation_inventory_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 2407,
+          "sha256": "a95cf76f8faead22ebddd8237aa35662665cbd909f5e1579528c45d5bc6f3ec4"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "data/scatti_candidates/cross_host_reconciliation_v3/verifier_results_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/data/scatti_candidates/cross_host_reconciliation_v3/verifier_results_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 7298,
+          "sha256": "dc5fbf76e5aec829ab3797bb20b0f7b1bf7a8122e4bc8cd8b9cd8cd1a20e7480"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "docs/WESLR_SCATTI_CROSS_HOST_RECONCILIATION_REPORT_V3.md",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/docs/WESLR_SCATTI_CROSS_HOST_RECONCILIATION_REPORT_V3.md",
+          "exists": true,
+          "tracked": false,
+          "size": 7344,
+          "sha256": "c4acb83b726ed674c373e85bb8b782e0cd14115c76c15c95a5462f998754da78"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "scripts/verify_scatti_cross_host_reconciliation_v3.py",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/scripts/verify_scatti_cross_host_reconciliation_v3.py",
+          "exists": true,
+          "tracked": false,
+          "size": 13826,
+          "sha256": "122a405357c995f6589e77a75ca17602f5a9dd8f2e386c8990334b482a8e20c1"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "weslr/modules/cross_host_evidence_reconciliation.py",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/weslr/modules/cross_host_evidence_reconciliation.py",
+          "exists": true,
+          "tracked": false,
+          "size": 8906,
+          "sha256": "f36fd3a1d32a074aff5f640ae18ee8cbdf9e0b776afcbcaecd6baa5d910cc902"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "weslr/tests/test_cross_host_evidence_reconciliation.py",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/weslr/tests/test_cross_host_evidence_reconciliation.py",
+          "exists": true,
+          "tracked": false,
+          "size": 7180,
+          "sha256": "5f6bf7c9576c5845a1ddf954a79ea90594864a4e5bc159796f6f4f2e9d59013e"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "weslr/tests/test_scatti_cross_host_reconciliation_v3.py",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/weslr/tests/test_scatti_cross_host_reconciliation_v3.py",
+          "exists": true,
+          "tracked": false,
+          "size": 7983,
+          "sha256": "fbbb84c5db82ee088666fefaf16b453b36f9fa2a8708c0c8488ee31fdc81702c"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "artifacts/scatti_cross_host_reconciliation_v3.tar.gz",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/artifacts/scatti_cross_host_reconciliation_v3.tar.gz",
+          "exists": true,
+          "tracked": false,
+          "size": 29306,
+          "sha256": "7f76e97340ea6c72c0386caa7e28a9935bcea3a2714a753c150eb46d7147c2df"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "artifacts/scatti_cross_host_reconciliation_v3.sha256",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/artifacts/scatti_cross_host_reconciliation_v3.sha256",
+          "exists": true,
+          "tracked": false,
+          "size": 109,
+          "sha256": "6dcb5f042cac7d71cfc98d9a2717d15fdd24fcf6d05443b88174ec78f26849c2"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "artifacts/scatti_cross_host_reconciliation_manifest_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/artifacts/scatti_cross_host_reconciliation_manifest_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 1627,
+          "sha256": "d6517d4d197db4223b778c2afca6e2350154cc535622539c7af597fabb30cc37"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    },
+    {
+      "path": "artifacts/scatti_cross_host_reconciliation_receipt_v3.json",
+      "locations": [
+        {
+          "repository": "worktree",
+          "full_path": "/home/pr0/projects/weslr-scatti-reconciliation-v3/artifacts/scatti_cross_host_reconciliation_receipt_v3.json",
+          "exists": true,
+          "tracked": false,
+          "size": 488,
+          "sha256": "4c4b9920a29b176f58662a0e842f113e923b0dce3d83ce9c4f6bced816caf572"
+        }
+      ],
+      "classification": "correct_worktree_location"
+    }
+  ],
+  "total": 20
+}

@@ -13,7 +13,7 @@ import json
 from datetime import datetime, timezone
 
 # Parent CIF paths
-parent_dir = Path("/home/pr0/projects/weslr/data/scatti_candidates/materials_project/cifs")
+parent_dir = Path(os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / "data" / "scatti_candidates" / "materials_project" / "cifs"
 
 # Load parent CIFs
 print("Loading MP parent CIFs...")
@@ -129,7 +129,7 @@ for name, s in parents.items():
         print(f"  ✗ Wrong formula")
 
 # Output directory
-output_dir = Path("/home/pr0/projects/weslr/data/scatti_candidates/mp_parent_experiment")
+output_dir = Path(os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / "data" / "scatti_candidates" / "mp_parent_experiment"
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Write summary JSON

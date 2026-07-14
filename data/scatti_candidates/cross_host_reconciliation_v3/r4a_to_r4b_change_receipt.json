@@ -1,0 +1,16 @@
+{
+  "r4a_to_r4b_changes": [
+    {
+      "file": "reconciliation_actual_state_r4a.json",
+      "old_sha": "8d50908dfdf76fc43b8af4f7201507fb40cc9ed37bfc8457428a5c566975637a",
+      "new_sha": "9281fec3d003e4755b5fac306616de1ff1c15c630a76f1be09d799a091385cfb"
+    },
+    {
+      "file": "scatti_cross_host_review_summary_r4a.json",
+      "old_sha": "636b50e3794777d8b732fb2f034621ee6dfae9b9e0543dc97c0bcb0202f2c01d",
+      "new_sha": "7bd79402c5034fdd3b055207ad260ade3efd1739b6c52c1237c5e3b6bffa8f34"
+    }
+  ],
+  "total_changes": 2,
+  "note": "Only summary and state files updated. All other V3 evidence unchanged."
+}

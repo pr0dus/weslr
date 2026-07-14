@@ -1,7 +1,7 @@
 """Generate preflight scope counts V2."""
 import hashlib, json, os, subprocess, sys
 
-REPO_ROOT = "/data/data/com.termux/files/home/weslr-pr47-clean"
+REPO_ROOT = os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(REPO_ROOT)
 
 # Get git status

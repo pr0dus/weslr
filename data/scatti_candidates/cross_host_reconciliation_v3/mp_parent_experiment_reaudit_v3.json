@@ -1,0 +1,21 @@
+{
+  "parent_formula": "Sc2TiO5",
+  "parent_cif_sum_formula": "Sc4Ti2O10",
+  "parent_z": 2,
+  "target_formula": "CaSc2TiO6",
+  "script_adds_cell_level": {
+    "Ca": 1,
+    "O": 1
+  },
+  "should_add_cell_level": {
+    "Ca": 2,
+    "O": 2
+  },
+  "produced_formula": "CaSc4Ti2O11",
+  "expected_formula": "Ca2Sc4Ti2O12 (reduced: CaSc2TiO6)",
+  "scaling_bug": true,
+  "verdict": "scaling_bug_confirmed",
+  "original_attempt_execution_result": "Script produced CaSc4Ti2O11 (valid execution fact)",
+  "stoichiometric_impossibility_conclusion": "SUPERSEDED - caused by Z-scaling bug (added 1 Ca+1O instead of 2 Ca+2O for Z=2)",
+  "corrected_parent_geometry_status": "No correctly scaled parent-derived CaSc2TiO6 geometry has been tested"
+}

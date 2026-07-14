@@ -9,7 +9,7 @@ import os
 import sys
 from datetime import datetime, timezone
 
-REPO_ROOT = "/data/data/com.termux/files/home/weslr-pr47-clean"
+REPO_ROOT = os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def load_json(path: str) -> dict:

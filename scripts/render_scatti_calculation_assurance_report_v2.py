@@ -5,7 +5,7 @@ All numbers are rendered from the one canonical run-summary JSON.
 """
 import json, os, subprocess, sys
 
-REPO_ROOT = "/data/data/com.termux/files/home/weslr-pr47-clean"
+REPO_ROOT = os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(REPO_ROOT)
 
 with open("data/scatti_candidates/calculation_assurance_v2/calculation_assurance_run_summary_v2.json") as f:

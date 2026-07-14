@@ -1,0 +1,215 @@
+{
+  "commit_hash": "04dc013305b713c1eb3ea0117e462aa77099485f",
+  "parent": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+  "subject": "WESLR: add verified scatti calculation assurance v2",
+  "total_files": 39,
+  "added_files": 39,
+  "modified_files": 0,
+  "deleted_files": 0,
+  "all_additions": true,
+  "no_deletions": true,
+  "forbidden_paths_found": [],
+  "credential_values_found": false,
+  "expected_file_count": 39,
+  "file_count_match": true,
+  "commit_verification_status": "transport_commit_verified",
+  "paths": [
+    "data/scatti_candidates/calculation_assurance/audit_consistency_v1.json",
+    "data/scatti_candidates/calculation_assurance/evidence_ledger_reconciliation_proposal_v1.json",
+    "data/scatti_candidates/calculation_assurance/pre_modification_manifest_v1.json",
+    "data/scatti_candidates/calculation_assurance/stoichiometric_certificates_v1.json",
+    "data/scatti_candidates/calculation_assurance/validation_receipt_v1.json",
+    "data/scatti_candidates/calculation_assurance_v2/calculation_assurance_run_summary_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/preflight_scope_counts_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/release_verification_receipt_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/release_verification_report_v2.md",
+    "data/scatti_candidates/calculation_assurance_v2/scatti_artifact_inventory_schema_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/scatti_implementation_inventory_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/stoichiometric_certificates_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/transport_commit_scope_v2.json",
+    "data/scatti_candidates/calculation_assurance_v2/validation_receipt_v2.json",
+    "data/scatti_candidates/scatti_evidence_ledger_v1.json",
+    "data/scatti_candidates/scatti_implementation_inventory_v1.json",
+    "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json",
+    "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.md",
+    "docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V1.md",
+    "docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V2.md",
+    "docs/WESLR_SCATTI_IMPLEMENTATION_AND_EVIDENCE_AUDIT_V1.md",
+    "scripts/generate_canonical_run_summary_v2.py",
+    "scripts/generate_preflight_scope_counts_v2.py",
+    "scripts/generate_stoichiometric_certificates.py",
+    "scripts/generate_stoichiometric_certificates_v2.py",
+    "scripts/generate_validation_receipt_v2.py",
+    "scripts/rebuild_inventory_v2.py",
+    "scripts/render_scatti_calculation_assurance_report.py",
+    "scripts/render_scatti_calculation_assurance_report_v2.py",
+    "scripts/scatti_audit_consistency_check.py",
+    "scripts/verify_scatti_calculation_assurance_release_v2.py",
+    "weslr/modules/calculation_assurance.py",
+    "weslr/modules/materials_stoichiometric_route_engine.py",
+    "weslr/modules/materials_stoichiometric_route_verifier.py",
+    "weslr/tests/test_calculation_assurance.py",
+    "weslr/tests/test_materials_stoichiometric_route_engine.py",
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py",
+    "weslr/tests/test_scatti_audit_consistency.py",
+    "weslr/tests/test_scatti_calculation_assurance_release_v2.py"
+  ],
+  "blobs": {
+    "data/scatti_candidates/calculation_assurance/audit_consistency_v1.json": {
+      "git_blob_hash": "2ce7aaed7129363e37ce18011df24cb2253dadde",
+      "sha256": "5003dbad865c04386348bf732b0c7f7e09665b75eac07b9cb39a9242899f9ec8"
+    },
+    "data/scatti_candidates/calculation_assurance/evidence_ledger_reconciliation_proposal_v1.json": {
+      "git_blob_hash": "0eac3e1fe371535834c25291ce5713f088764232",
+      "sha256": "c5dfd491e1e5c68d7613cc33bcd114e17cffba67f799f5973c5d6cb2cc0b23d2"
+    },
+    "data/scatti_candidates/calculation_assurance/pre_modification_manifest_v1.json": {
+      "git_blob_hash": "2f6e6ab3227693f695b22f31558295ebcdcabec9",
+      "sha256": "5fd543ba3862c6a3f6f0a2f61bfec28d037e3e93ec18c0c0bfbf039668e8bbc7"
+    },
+    "data/scatti_candidates/calculation_assurance/stoichiometric_certificates_v1.json": {
+      "git_blob_hash": "b8010b4043a63a5a453c96a6ae7351d441adb8e6",
+      "sha256": "36a7f5783c5316094475808c4d2af0bd6680421c2e13bb3743205dc7a8893e04"
+    },
+    "data/scatti_candidates/calculation_assurance/validation_receipt_v1.json": {
+      "git_blob_hash": "2b518be4b467c7e32f24477dbad9fef632975a97",
+      "sha256": "c5fb56ab5c68a29264e3b73925893fc4111a71d870dd6ecc3be7c093466362d5"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/calculation_assurance_run_summary_v2.json": {
+      "git_blob_hash": "d5f044e61714c58f3c479e3e358c6a1279f96eb8",
+      "sha256": "39a954bf17711130de35f23b0893b10d65d2f18c6e3f707732d2879034243799"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/preflight_scope_counts_v2.json": {
+      "git_blob_hash": "039499a953961500966fcc875f2fcebe2d5a6991",
+      "sha256": "2825062729a49c1a07c1555624414ad5cf212388ba1b31e7f06c0f66b7b83857"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/release_verification_receipt_v2.json": {
+      "git_blob_hash": "a20fa52474d174187bb2f037e84162a0173a041a",
+      "sha256": "036616815553b291dd6a79385c27e8e3859b292f47a956f83b0e5ff9542c9bd6"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/release_verification_report_v2.md": {
+      "git_blob_hash": "dab14c83cae8bc0f1d1f8a30802bef338613484c",
+      "sha256": "2e38056b8a86e38da126e5357f04aab4d3e580ec905eb96f888a9c6a0ce697d0"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/scatti_artifact_inventory_schema_v2.json": {
+      "git_blob_hash": "e4eff27b5b68b5d5dad40d880be850910973a498",
+      "sha256": "e37ee463fcad9f51f29fd22b5e277fbb45283463d2d8aa16ed16e1f737e2e092"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/scatti_implementation_inventory_v2.json": {
+      "git_blob_hash": "dec3cde388b46bf91f16482c49a7040d75d7495e",
+      "sha256": "e1ccb377564f988a46598c819516a476b650b662f8809825389281fae715a38a"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/stoichiometric_certificates_v2.json": {
+      "git_blob_hash": "db3cd38d82da6865f7da144123bfb7315ac808fc",
+      "sha256": "e9894ac08e607a189492de3a93231f0d56ea9c246731de8b759c9c3a33dd599d"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/transport_commit_scope_v2.json": {
+      "git_blob_hash": "03a090fe7fed4c4ae95ac3347272a5cc0b4c9f45",
+      "sha256": "c215063a365a1dc0b2fd3e10a9d8a69b461a6a895746b89afead4353625eed64"
+    },
+    "data/scatti_candidates/calculation_assurance_v2/validation_receipt_v2.json": {
+      "git_blob_hash": "7fb90673fb983aed6eb4b01fff3e957a78d455e0",
+      "sha256": "ca6047f07d1546c189c2b9f58b8003ec0e63423be79fb6f267bf8b270201fa89"
+    },
+    "data/scatti_candidates/scatti_evidence_ledger_v1.json": {
+      "git_blob_hash": "c98b20d6fd464eec4ea0d86006e24fcdaa7620e8",
+      "sha256": "7ce4293a3f99ee464efe7f65fd55c80766c683826d585507db25ebff5cdaa214"
+    },
+    "data/scatti_candidates/scatti_implementation_inventory_v1.json": {
+      "git_blob_hash": "6cbe48da9cbd91b8ccde964b203dcc512b6b06b2",
+      "sha256": "677cea03b6c5fa1e9ab6c44f44df0ccb9cc54cec9b61b4b0b343e2d957bd0466"
+    },
+    "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.json": {
+      "git_blob_hash": "75fe8da8d32dd4a791864bf5d7addbc6f290f0dc",
+      "sha256": "3aefa78d8f2956a3908ffcc05fb3480c7c0f8b0ae312e95c71c8cf36acd6d63d"
+    },
+    "data/scatti_candidates/scatti_parent_route_stoichiometry_repair_v1.md": {
+      "git_blob_hash": "b3c90752fd017b101671f9f3ddfe0162d9d9d6dc",
+      "sha256": "e8681ba36a0feb990e809ca5c954ec6b7f976dc34e445a328df75d78e3acf85b"
+    },
+    "docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V1.md": {
+      "git_blob_hash": "30b1eebe793d95be2d56ed8fc36da1b3c929c077",
+      "sha256": "82105d642bd8cf1ccbc1282cf73517458a09b603e94a6e6e37c4af5fd9e148bd"
+    },
+    "docs/WESLR_SCATTI_CALCULATION_ASSURANCE_REPORT_V2.md": {
+      "git_blob_hash": "def47fe02e752140571d6bc613bb5225e5c5cc6e",
+      "sha256": "4cf83d897d39789c1949ab25d8ed6e6f0a2dad275ba6766c4b3cc79ec1e2c9aa"
+    },
+    "docs/WESLR_SCATTI_IMPLEMENTATION_AND_EVIDENCE_AUDIT_V1.md": {
+      "git_blob_hash": "3ef0bbfa93f58b60a67d3ca2861ed3386033a215",
+      "sha256": "d1de9cbc2e98a00a55a3fe4dc11072d103f8d7537e9f6f1d3c1f1daf443d349c"
+    },
+    "scripts/generate_canonical_run_summary_v2.py": {
+      "git_blob_hash": "200250772576a7b08208f2e0b08e06ae69cc4da8",
+      "sha256": "68d8ec11e000ae4ca05444ca0eb89cfd17e5ff45ccb1ed0a581a01d67dbfdaf1"
+    },
+    "scripts/generate_preflight_scope_counts_v2.py": {
+      "git_blob_hash": "cfe7ee0647b9ffdadf9e49c2993dcdca8bafbee8",
+      "sha256": "d08fe9947d777c025fa226c1d97eef0031429b88bda681eeebba46a374cd8733"
+    },
+    "scripts/generate_stoichiometric_certificates.py": {
+      "git_blob_hash": "cc9a20684f6029f7dc730fd66f8c14192d7b43b1",
+      "sha256": "8928c75a3c1a49ccb2bbff11151a65affff953231acdfc7a7c137ee04389ce72"
+    },
+    "scripts/generate_stoichiometric_certificates_v2.py": {
+      "git_blob_hash": "2968848d6fa031a60f022353b1e9e0abb429362f",
+      "sha256": "8f729baf3bc99d75e44e8ff44b9ca6168c61ff7dc7161d4a50c41fb57697b089"
+    },
+    "scripts/generate_validation_receipt_v2.py": {
+      "git_blob_hash": "e0105ac5547f847306c1b10599bc8b590c2a79e2",
+      "sha256": "6e6b71ee6b87eb23cb9a37fd6c740d49c2ed82b9196803e4a33b6be77ad9cb9a"
+    },
+    "scripts/rebuild_inventory_v2.py": {
+      "git_blob_hash": "1e633d3247b12fbf373c37b71421ff5cdcac5235",
+      "sha256": "65ab5c384a43e365c262fbb6586544b118e65e6a1330f814ea4289bfe1a8a440"
+    },
+    "scripts/render_scatti_calculation_assurance_report.py": {
+      "git_blob_hash": "129ccf968b805d03403cbfda8985c3e560b971e7",
+      "sha256": "6d320a51b2a5e57812ee60471bc74c89db4eeac1d69c2e7dffbc7df7b9885159"
+    },
+    "scripts/render_scatti_calculation_assurance_report_v2.py": {
+      "git_blob_hash": "4074f39dfc57871cacd1d8f95fd8ce63f35180d8",
+      "sha256": "550cee02a9421b81ba747c5db1f1a9ce8021d70cf5d0c510f08c8dee57e9066e"
+    },
+    "scripts/scatti_audit_consistency_check.py": {
+      "git_blob_hash": "ddfecb56697da3fa02d7d71470d001b94a8f15eb",
+      "sha256": "1a64250f826835b6bafb02f984460838626ee9d5c02b4ef5de6f20d0f074e3fa"
+    },
+    "scripts/verify_scatti_calculation_assurance_release_v2.py": {
+      "git_blob_hash": "361a18af46760e8a21a1fe0a5124cf3d74086de7",
+      "sha256": "908b8f488959a13ac210a10082392e783f2501b80df835de06cbbd30a1ae907d"
+    },
+    "weslr/modules/calculation_assurance.py": {
+      "git_blob_hash": "ac84e141b300b429a9d8ae5fb330caa6fd9c33e7",
+      "sha256": "87bb42e846e5fa4ddd7fe2a56ffbbc138bb976b7e5cefc98b494d8a4802324b8"
+    },
+    "weslr/modules/materials_stoichiometric_route_engine.py": {
+      "git_blob_hash": "43fe359876a1df151b560dc7e67cf323f962ae40",
+      "sha256": "ef70ad4a584a10ea8619e57c297833e1568649b32ab6df23042c00a59f1d52f8"
+    },
+    "weslr/modules/materials_stoichiometric_route_verifier.py": {
+      "git_blob_hash": "baad0fa9441f1c7aa2f6f9999035afc5e5d17e41",
+      "sha256": "e3d1b517e66dfc5c983c7df819aeb56b4d3ee86fcc4dbf7db9936939e630b2ab"
+    },
+    "weslr/tests/test_calculation_assurance.py": {
+      "git_blob_hash": "f5bc84d9e3f4dc572fc85dde207c1cc32841804f",
+      "sha256": "ac040a403b6676fadfc058b0c0206b44e40b7984c6977999b1076a1c1f7f6bce"
+    },
+    "weslr/tests/test_materials_stoichiometric_route_engine.py": {
+      "git_blob_hash": "63928b4b40cb9c27330d0918eef12b6bbee98ed5",
+      "sha256": "875c4dd18e49e4ad6d936712daeae8cc1cb95d55a0be93e6be93887dd83a4285"
+    },
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py": {
+      "git_blob_hash": "2aaa912accfaeb4247a47d8cb17a4da7114a64c7",
+      "sha256": "5258c94994cb8c4899543644d7aba8ac71f3b205934462a4ed9ff137295c472a"
+    },
+    "weslr/tests/test_scatti_audit_consistency.py": {
+      "git_blob_hash": "4e79c5f0edd70245f916dba2ccc68dd976c1c205",
+      "sha256": "172bd797c61061511cd280c051099336083585f78f2d1e7269cbbbb4dd230cb6"
+    },
+    "weslr/tests/test_scatti_calculation_assurance_release_v2.py": {
+      "git_blob_hash": "078083dbeefd7b36d85d89810dde8bcb4c524ac4",
+      "sha256": "e6ca65ca52ad3678cec1a0956afaf746497ff589f4a437c942794d4abbbfc625"
+    }
+  }
+}

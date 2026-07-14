@@ -237,7 +237,7 @@ def generate_certificate(
 
 
 def main():
-    os.chdir("/data/data/com.termux/files/home/weslr-pr47-clean")
+    os.chdir(os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
     routes = [
         # Known balanced routes

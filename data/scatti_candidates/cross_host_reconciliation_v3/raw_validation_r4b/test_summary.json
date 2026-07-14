@@ -1,0 +1,10 @@
+{
+  "test_suite": "Full targeted SCATTI suite (R4B)",
+  "interpreter": "/home/pr0/projects/weslr/.venv-scatti/bin/python",
+  "python_version": "3.12",
+  "total": 159,
+  "passed": 159,
+  "failed": 0,
+  "errors": 0,
+  "note": "Zero failures. All tests pass including verifier."
+}

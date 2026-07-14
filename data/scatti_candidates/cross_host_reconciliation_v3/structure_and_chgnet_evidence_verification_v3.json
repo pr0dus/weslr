@@ -1,0 +1,108 @@
+{
+  "chgnet_relaxation": {
+    "path": "data/scatti_candidates/chgnet_relaxation/SCATTI-LAYERED-001/relaxation_summary.json",
+    "data": {
+      "candidate_id": "SCATTI-LAYERED-001",
+      "input_file": "data/scatti_candidates/structures/SCATTI-LAYERED-001.cif",
+      "method": "CHGNet StructOptimizer",
+      "max_steps": 50,
+      "fmax_target_ev_per_ang": 0.2,
+      "claim_boundary": "ML pre-relaxation only; not DFT; not proof of stability.",
+      "success": true,
+      "final_formula": "CaSc2TiO6",
+      "initial_volume": 540.0,
+      "final_volume": 411.11320805153247,
+      "volume_change_percent": -23.867924434901393,
+      "trajectory_keys": [
+        "atoms",
+        "energies",
+        "forces",
+        "stresses",
+        "magmoms",
+        "atom_positions",
+        "cells"
+      ],
+      "readiness_classification": "ml_relaxed_but_not_qe_ready",
+      "not_qe_ready_reasons": [
+        "O-O shortest distance 1.483 \u00c5 is suspicious/too short",
+        "Sc-O coordination only 2 for each Sc (expected ~4)",
+        "Ca-O coordination only 2 (expected ~6-8)",
+        "Volume collapsed by 23.9% (possible force field bias or over-relaxation)"
+      ],
+      "next_steps": [
+        "A. CHGNet dry-run/relaxation on SCATTI-RANDOM-02",
+        "B. Constrained/manual geometry improvement before another relaxation",
+        "C. External CIF/API route"
+      ]
+    },
+    "model_version": "unknown",
+    "package_version": "unknown",
+    "input_structure": "unknown",
+    "final_energy": "unknown",
+    "converged": "unknown"
+  },
+  "structures": {
+    "data/scatti_candidates/structures/SCATTI-CATIO3-001.cif": {
+      "sha256": "20bff9e73dfdc2bb9cab807b8a28a326e191911871faee26e7ad05709dd13a81",
+      "size": 1270
+    },
+    "data/scatti_candidates/structures/SCATTI-Ca2ScTiO6-001.cif": {
+      "sha256": "d93b61dea698c7d80fa4ce10a8c09824e05eb8357e412faf332b966f0d08b805",
+      "size": 1270
+    },
+    "data/scatti_candidates/structures/SCATTI-INTERSTITIAL-001.cif": {
+      "sha256": "2c9fc9b9616507eb70aa352dc333c3ca5fce81b849bdf42b3c6ea3a7007054a6",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-LAYERED-001.cif": {
+      "sha256": "ba70fbfb1dc112e04c0cfd5f725f3c58a526948d02adc59cb42a6378b05984cf",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-LAYERED-SLAB-001.cif": {
+      "sha256": "83875142156b9d2540a28bfdd0ad2a72bbce1f0fc661a71d66f78ded5bc51bb3",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-OCTACHAIN-001.cif": {
+      "sha256": "f2a0939863c0eed574eef35cc1d41eb510848e25988f8339168ef7f3c7f25245",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-OCTALAYER-001.cif": {
+      "sha256": "e52f1eb404b8a9a6b5a938a29187d20dfc94302843dbc398c2c674ef0b90fd85",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-ORDERED-001.cif": {
+      "sha256": "9c9a8d33dcfa4783f22e27035e7f5dd79b9d2a0131c1684395f400efd01335dd",
+      "size": 1271
+    },
+    "data/scatti_candidates/structures/SCATTI-PARENT-001.cif": {
+      "sha256": "e1678984b2decfae7deca21cf21992b7133474b19d67d34cc6182d3d75786e39",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-PARENT-002.cif": {
+      "sha256": "800c8afed38287a24f9bda950515f59218e79c0bc0e38ceb17f31a2d5f0a05bd",
+      "size": 1272
+    },
+    "data/scatti_candidates/structures/SCATTI-RANDOM-01.cif": {
+      "sha256": "7663235901e5b7612afc10bd667fb8e671a771db539097c3e1694758f83b1ef0",
+      "size": 1271
+    },
+    "data/scatti_candidates/structures/SCATTI-RANDOM-02.cif": {
+      "sha256": "2c236b71870c46846d0d964cce08f272ea2832f1013c73cf4ad1c00b46681b4f",
+      "size": 1271
+    },
+    "data/scatti_candidates/structures/SCATTI-RANDOM-03.cif": {
+      "sha256": "9f5a5da4ebf5f5dbf0a47cc4237babde32bd6bbb2a1af60dd8e2375182223333",
+      "size": 1271
+    },
+    "data/scatti_candidates/structures/SCATTI-RANDOM-04.cif": {
+      "sha256": "e6afbfbc1aea88ea2f592983924fef4db24f51f792f2b96f0405987e5023c9d4",
+      "size": 1271
+    },
+    "data/scatti_candidates/structures/SCATTI-RANDOM-05.cif": {
+      "sha256": "91cb7a38627575c654c20dbc29360113dcd6b099c65db58f779f4f8ea04caea9",
+      "size": 1271
+    }
+  },
+  "structure_count": 15,
+  "status": "evidence_partially_verified"
+}

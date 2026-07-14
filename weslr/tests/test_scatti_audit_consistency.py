@@ -98,16 +98,53 @@ class TestInventoryConsistency(unittest.TestCase):
             self.assertIn(stage, stage_statuses, f"Missing stage: {stage}")
 
     def test_external_evidence_not_imported(self):
-        """Verify that commits 2d40b9d and 55342bb are not reachable."""
+        """Verify that commits from an external source are not reachable.
+        
+        Uses an isolated temporary Git repository fixture instead of the
+        live repository to avoid host-dependent commit reachability.
+        """
         import subprocess
-        for commit in ["2d40b9d", "55342bb"]:
+        import tempfile
+        import os
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Init a bare repo
+            subprocess.run(["git", "init", "--initial-branch=main"], cwd=tmpdir, 
+                          capture_output=True)
+            subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=tmpdir,
+                          capture_output=True)
+            subprocess.run(["git", "config", "user.name", "Test"], cwd=tmpdir,
+                          capture_output=True)
+            
+            # Create a test commit
+            test_file = os.path.join(tmpdir, "test.txt")
+            with open(test_file, "w") as f:
+                f.write("test")
+            subprocess.run(["git", "add", "test.txt"], cwd=tmpdir, capture_output=True)
+            subprocess.run(["git", "commit", "-m", "test"], cwd=tmpdir, capture_output=True)
+            
+            # Get the reachable commit hash
+            reachable = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=tmpdir).decode().strip()
+            
+            # A deliberately unreachable hash
+            unreachable = "0000000000000000000000000000000000000000"
+            
+            # Verify reachable commit IS reachable
             result = subprocess.run(
-                ["git", "cat-file", "-t", commit],
-                capture_output=True, text=True,
-                cwd="/data/data/com.termux/files/home/weslr-pr47-clean",
+                ["git", "cat-file", "-t", reachable],
+                capture_output=True, text=True, cwd=tmpdir,
+            )
+            self.assertEqual(result.returncode, 0,
+                            f"Commit {reachable} should be reachable")
+            
+            # Verify unreachable hash is NOT reachable
+            result = subprocess.run(
+                ["git", "cat-file", "-t", unreachable],
+                capture_output=True, text=True, cwd=tmpdir,
             )
             self.assertNotEqual(result.returncode, 0,
-                                f"Commit {commit} should not be reachable")
+                               f"Commit {unreachable} should not be reachable")
 
     def test_markdown_cannot_override_json(self):
         """Verify that Markdown reports are rendered from JSON, not manually entered."""

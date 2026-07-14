@@ -1,0 +1,24 @@
+{
+  "classification": "imported_assurance_partially_verified",
+  "total_tests": 115,
+  "passed": 102,
+  "failed": 4,
+  "errors": 9,
+  "failed_tests": [
+    "test_external_evidence_not_imported (Android path)",
+    "test_repeated_canonical_runs_identical (Android path)",
+    "test_timestamp_only_changes (Android path)",
+    "test_no_shared_imports (Android path)"
+  ],
+  "error_tests": [
+    "TestReleaseVerifierBase (Android path)",
+    "TestReleaseVerifierErrors (Android path)",
+    "TestDeterminism (Android path)"
+  ],
+  "note": "All failures are Android-specific hardcoded paths. Core modules verified.",
+  "core_modules_passing": [
+    "test_materials_stoichiometric_route_engine",
+    "test_calculation_assurance",
+    "test_materials_stoichiometric_route_verifier"
+  ]
+}

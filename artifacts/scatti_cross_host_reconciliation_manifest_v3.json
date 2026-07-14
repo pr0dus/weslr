@@ -1,0 +1,25 @@
+{
+  "bundle": "scatti_cross_host_reconciliation_v3.tar.gz",
+  "sha256": "7f76e97340ea6c72c0386caa7e28a9935bcea3a2714a753c150eb46d7147c2df",
+  "created": "2026-07-14T18:50:00+02:00",
+  "files": [
+    "data/scatti_candidates/cross_host_reconciliation_v3/imported_assurance_test_results_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/materials_project_evidence_verification_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/mp_parent_experiment_reaudit_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/multilingual_search_verification_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/scatti_evidence_ledger_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/scatti_implementation_inventory_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/structure_and_chgnet_evidence_verification_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/transport_commit_verification_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/transport_path_collision_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/ubuntu_scatti_artifact_inventory_v3.json",
+    "data/scatti_candidates/cross_host_reconciliation_v3/verifier_results_v3.json",
+    "docs/WESLR_SCATTI_CROSS_HOST_RECONCILIATION_REPORT_V3.md",
+    "weslr/modules/cross_host_evidence_reconciliation.py",
+    "scripts/verify_scatti_cross_host_reconciliation_v3.py",
+    "weslr/tests/test_cross_host_evidence_reconciliation.py",
+    "weslr/tests/test_scatti_cross_host_reconciliation_v3.py"
+  ],
+  "file_count": 16,
+  "deterministic": true
+}

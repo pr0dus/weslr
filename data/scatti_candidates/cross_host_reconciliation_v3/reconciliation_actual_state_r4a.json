@@ -1,0 +1,12 @@
+{
+  "repository_root": "/home/pr0/projects/weslr-scatti-reconciliation-v3",
+  "branch": "scatti-cross-host-reconciliation-v3-20260714",
+  "head": "f654b4aeca288ae62f804d50f07cf0b172fc7c67",
+  "parent": "b478773e8364ba0a3d5c39a88a5cf0427fee94b4",
+  "tracked_modifications": 15,
+  "staged_files": 0,
+  "untracked_v3_files": 20,
+  "cherry_pick_tracked_files": 30,
+  "total_relevant_files": 65,
+  "note": "15 tracked modifications = 14 path portability repairs + 1 V2 report update"
+}

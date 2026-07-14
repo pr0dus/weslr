@@ -1,0 +1,105 @@
+{
+  "repairs": [
+    {
+      "file": "scripts/generate_stoichiometric_certificates.py",
+      "old": "    os.chdir(\"/data/data/com.termux/files/home/weslr-pr47-clean\")",
+      "new": "    os.chdir(os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/verify_scatti_calculation_assurance_release_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/scatti_audit_consistency_check.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/generate_canonical_run_summary_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/generate_validation_receipt_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/generate_stoichiometric_certificates_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/render_scatti_calculation_assurance_report.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/render_scatti_calculation_assurance_report_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/rebuild_inventory_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/generate_preflight_scope_counts_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/scatti_mp_parent_experiment.py",
+      "old": "parent_dir = Path(\"/home/pr0/projects/weslr/data/scatti_candidates/materials_project/cifs\")",
+      "new": "parent_dir = Path(os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / \"data\" / \"scatti_candidates\" / \"materials_project\" / \"cifs\"",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "scripts/scatti_mp_parent_experiment.py",
+      "old": "output_dir = Path(\"/home/pr0/projects/weslr/data/scatti_candidates/mp_parent_experiment\")",
+      "new": "output_dir = Path(os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) / \"data\" / \"scatti_candidates\" / \"mp_parent_experiment\"",
+      "classification": "runtime_defect",
+      "status": "repaired"
+    },
+    {
+      "file": "weslr/tests/test_scatti_audit_consistency.py",
+      "old": "                cwd=\"/data/data/com.termux/files/home/weslr-pr47-clean\",",
+      "new": "                cwd=os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),",
+      "classification": "test_fixture",
+      "status": "repaired"
+    },
+    {
+      "file": "weslr/tests/test_scatti_calculation_assurance_release_v2.py",
+      "old": "REPO_ROOT = \"/data/data/com.termux/files/home/weslr-pr47-clean\"",
+      "new": "REPO_ROOT = os.environ.get(\"WESLR_REPO_ROOT\", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))",
+      "classification": "test_fixture",
+      "status": "repaired"
+    }
+  ],
+  "total_attempted": 14,
+  "total_applied": 14,
+  "note": "Only SCATTI calculation-assurance files repaired. Historical evidence strings in docs/ and data/ left untouched."
+}

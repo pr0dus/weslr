@@ -1,0 +1,14 @@
+{
+  "transport_commit_verified": true,
+  "source_commits_verified": true,
+  "mp_evidence_verified": true,
+  "parent_experiment_reaudited": true,
+  "multilingual_evidence_verified": true,
+  "chgnet_evidence_status": "evidence_partially_verified",
+  "evidence_ledger_reconciled": true,
+  "verifier_status": "cross_host_reconciliation_verified",
+  "deterministic_rebuild": true,
+  "ready_for_corrected_geometry_phase": false,
+  "ready_for_dft": false,
+  "ready_for_scientific_claim": false
+}

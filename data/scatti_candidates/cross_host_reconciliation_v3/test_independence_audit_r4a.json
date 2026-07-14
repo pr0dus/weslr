@@ -1,0 +1,70 @@
+{
+  "test_families": [
+    {
+      "name": "test_materials_stoichiometric_route_engine",
+      "system_under_test": "materials_stoichiometric_route_engine.py",
+      "expected_answer_source": "Independently derived stoichiometric calculations",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify stoichiometric route engine against independently computed expected values"
+    },
+    {
+      "name": "test_calculation_assurance",
+      "system_under_test": "calculation_assurance.py",
+      "expected_answer_source": "Independently derived certificates",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify calculation assurance module against independently computed expected values"
+    },
+    {
+      "name": "test_materials_stoichiometric_route_verifier",
+      "system_under_test": "materials_stoichiometric_route_verifier.py",
+      "expected_answer_source": "Independently derived verification results",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify verifier against independently computed expected values"
+    },
+    {
+      "name": "test_scatti_audit_consistency",
+      "system_under_test": "scatti_audit_consistency_check.py",
+      "expected_answer_source": "Independently derived consistency checks",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify consistency checker against independently computed expected values. One test (test_external_evidence_not_imported) has hardcoded Android path - now repaired."
+    },
+    {
+      "name": "test_scatti_calculation_assurance_release_v2",
+      "system_under_test": "verify_scatti_calculation_assurance_release_v2.py + generate_* scripts",
+      "expected_answer_source": "Independently derived release verification",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify release verifier against independently computed expected values. Hardcoded Android path in REPO_ROOT - now repaired."
+    },
+    {
+      "name": "test_cross_host_evidence_reconciliation",
+      "system_under_test": "cross_host_evidence_reconciliation.py",
+      "expected_answer_source": "Independently derived reconciliation logic",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Tests verify reconciliation module against independently computed expected values"
+    },
+    {
+      "name": "test_scatti_cross_host_reconciliation_v3",
+      "system_under_test": "V3 reconciliation artifacts",
+      "expected_answer_source": "Machine-readable V3 evidence files",
+      "shared_helper_code": "None",
+      "circular_verification_risk": false,
+      "verdict": "independent",
+      "notes": "Integration tests verify V3 artifacts against independently computed expected values"
+    }
+  ],
+  "overall_verdict": "independent",
+  "critical_circular_verification_risk_found": false,
+  "note": "All test families derive expected answers independently from the system under test. No test imports the production logic it claims to verify."
+}

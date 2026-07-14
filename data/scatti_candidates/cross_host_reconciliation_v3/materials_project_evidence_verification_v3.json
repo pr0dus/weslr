@@ -1,0 +1,840 @@
+{
+  "mp_query_script": "scripts/mp_query_scatti.py",
+  "mp_query_script_exists": true,
+  "raw_query_json": "data/scatti_candidates/materials_project/materials_project_search_results.json",
+  "json_parses": true,
+  "queries": [
+    {
+      "formula": "CaSc2TiO6",
+      "count": 0,
+      "entries": []
+    },
+    {
+      "formula": "Ca2ScTiO6",
+      "count": 0,
+      "entries": []
+    },
+    {
+      "formula": "Sc2TiO5",
+      "count": 1,
+      "entries": [
+        {
+          "material_id": "mp-753401",
+          "formula_pretty": "Sc2TiO5",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.806863982916667,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Cmc2_1' hall=None number=36 point_group='mm2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "Sc2Ti2O7",
+      "count": 2,
+      "entries": [
+        {
+          "material_id": "mp-753802",
+          "formula_pretty": "Sc2Ti2O7",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.72757864742424,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='C2/m' hall=None number=12 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-780402",
+          "formula_pretty": "Sc2Ti2O7",
+          "energy_above_hull": 0.056744149318181,
+          "formation_energy_per_atom": -3.67083449810606,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='P2_1' hall=None number=4 point_group='2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "CaSc2O4",
+      "count": 1,
+      "entries": [
+        {
+          "material_id": "mp-4056",
+          "formula_pretty": "CaSc2O4",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.783688220714285,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "CaTiO3",
+      "count": 6,
+      "entries": [
+        {
+          "material_id": "mp-3442",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.017396585500002,
+          "formation_energy_per_atom": -3.538690571666666,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='I4/mcm' hall=None number=140 point_group='4/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-754701",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.0283526885,
+          "formation_energy_per_atom": -3.527734468666666,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R-3' hall=None number=148 point_group='-3' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-5827",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.0644675975,
+          "formation_energy_per_atom": -3.491619559666667,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Pm-3m' hall=None number=221 point_group='m-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-4019",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.556087157166666,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1205364",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.011449592499999,
+          "formation_energy_per_atom": -3.544637564666666,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Cmcm' hall=None number=63 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-556003",
+          "formula_pretty": "CaTiO3",
+          "energy_above_hull": 0.011411810500000001,
+          "formation_energy_per_atom": -3.544675346666666,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Imma' hall=None number=74 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "Sc2O3",
+      "count": 6,
+      "entries": [
+        {
+          "material_id": "mp-558748",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.065858427083332,
+          "formation_energy_per_atom": -3.9028742136666663,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='C2/m' hall=None number=12 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-754455",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.09726974075000001,
+          "formation_energy_per_atom": -3.8714628999999983,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R-3' hall=None number=148 point_group='-3' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-13060",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.13188977374999802,
+          "formation_energy_per_atom": -3.836842867,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='P-3m1' hall=None number=164 point_group='-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-755313",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.036392894749999,
+          "formation_energy_per_atom": -3.932339745999999,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R-3c' hall=None number=167 point_group='-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-216",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.968732640749999,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Ia-3' hall=None number=206 point_group='m-3' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-775837",
+          "formula_pretty": "Sc2O3",
+          "energy_above_hull": 0.08177998074999901,
+          "formation_energy_per_atom": -3.88695266,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pna2_1' hall=None number=33 point_group='mm2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "TiO2",
+      "count": 46,
+      "entries": [
+        {
+          "material_id": "mp-1245098",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.16661254061111,
+          "formation_energy_per_atom": -3.341442911333334,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1245134",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.179434900277776,
+          "formation_energy_per_atom": -3.328620551666667,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1245308",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.17022814094444302,
+          "formation_energy_per_atom": -3.337827311,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1245321",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.189298021277776,
+          "formation_energy_per_atom": -3.318757430666667,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-777129",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.053828319166665,
+          "formation_energy_per_atom": -3.454227132777779,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-572822",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.5324322366666661,
+          "formation_energy_per_atom": -2.975623215277778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='P2_1/m' hall=None number=11 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-554278",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.006417397499999001,
+          "formation_energy_per_atom": -3.501638054444445,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='C2/m' hall=None number=12 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-766454",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.045939138888888,
+          "formation_energy_per_atom": -3.4621163130555552,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='C2/m' hall=None number=12 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-2657",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.043638704166665,
+          "formation_energy_per_atom": -3.464416747777778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='P4_2/mnm' hall=None number=136 point_group='4/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-430",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.039483500833334004,
+          "formation_energy_per_atom": -3.46857195111111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='P2_1/c' hall=None number=14 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-390",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.5080554519444442,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='I4_1/amd' hall=None number=141 point_group='4/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-34688",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.014502442499999001,
+          "formation_energy_per_atom": -3.493553009444445,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='C2/c' hall=None number=15 point_group='2/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-553432",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.14966203888888702,
+          "formation_energy_per_atom": -3.358393413055555,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='P3_121' hall=None number=152 point_group='32' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1044853",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.17778468527777802,
+          "formation_energy_per_atom": -3.330270766666665,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='P3m1' hall=None number=156 point_group='3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1380335",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.17749046333333302,
+          "formation_energy_per_atom": -3.33056498861111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='P3m1' hall=None number=156 point_group='3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1408285",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.187470469999999,
+          "formation_energy_per_atom": -3.320584981944444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R3m' hall=None number=160 point_group='3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1426806",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.15821946750000002,
+          "formation_energy_per_atom": -3.349835984444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R-3m' hall=None number=166 point_group='-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-25433",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.15901846083333301,
+          "formation_energy_per_atom": -3.349036991111111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.trig: 'Trigonal'> symbol='R-3m' hall=None number=166 point_group='-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-756587",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.11795843624999901,
+          "formation_energy_per_atom": -3.390097015694445,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.hex_: 'Hexagonal'> symbol='P6_3mc' hall=None number=186 point_group='6mm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1079207",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.33281692972222204,
+          "formation_energy_per_atom": -3.175238522222222,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.hex_: 'Hexagonal'> symbol='P-62m' hall=None number=189 point_group='-6m2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1445035",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 2.7445488075,
+          "formation_energy_per_atom": -0.763506644444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.hex_: 'Hexagonal'> symbol='P6_3/mmc' hall=None number=194 point_group='6/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1102591",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.256583777499999,
+          "formation_energy_per_atom": -3.251471674444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Pa-3' hall=None number=205 point_group='m-3' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1008677",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.308324844166666,
+          "formation_energy_per_atom": -3.199730607777778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Fm-3m' hall=None number=225 point_group='m-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-25262",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.185231633333332,
+          "formation_energy_per_atom": -3.322823818611111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Fd-3m' hall=None number=227 point_group='m-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-636827",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.30857668916666503,
+          "formation_energy_per_atom": -3.199478762777778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pmm2' hall=None number=25 point_group='mm2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-655656",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.311595178333332,
+          "formation_energy_per_atom": -3.196460273611111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Cmm2' hall=None number=35 point_group='mm2' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1341203",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.157399472916667,
+          "formation_energy_per_atom": -3.350655979027777,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pmmn' hall=None number=59 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-2901430",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.17854586291666502,
+          "formation_energy_per_atom": -3.329509589027778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pmmn' hall=None number=59 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1439",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.004523600833332001,
+          "formation_energy_per_atom": -3.503531851111111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pbcn' hall=None number=60 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-775938",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.012246891111111002,
+          "formation_energy_per_atom": -3.495808560833333,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pbcn' hall=None number=60 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1190753",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.123919274583332,
+          "formation_energy_per_atom": -3.3841361773611123,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pbca' hall=None number=61 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1840",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.0030413275,
+          "formation_energy_per_atom": -3.505014124444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pbca' hall=None number=61 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1102255",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.2975914725,
+          "formation_energy_per_atom": -3.210463979444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1201727",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.066588627708334,
+          "formation_energy_per_atom": -3.44146682423611,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-2420244",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.016494126666666,
+          "formation_energy_per_atom": -3.491561325277777,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-2739239",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.09153499666666601,
+          "formation_energy_per_atom": -3.416520455277778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-754672",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.08033827,
+          "formation_energy_per_atom": -3.427717181944443,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-754769",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.036293397500001004,
+          "formation_energy_per_atom": -3.471762054444443,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-756655",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.074462540416666,
+          "formation_energy_per_atom": -3.433592911527778,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-849533",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.09669845874999901,
+          "formation_energy_per_atom": -3.411356993194444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-9173",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.057499790000001,
+          "formation_energy_per_atom": -3.450555661944443,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Pnma' hall=None number=62 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1386640",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.153265412499999,
+          "formation_energy_per_atom": -3.354790039444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Cmcm' hall=None number=63 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1041565",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.043648089999999,
+          "formation_energy_per_atom": -3.464407361944444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Imma' hall=None number=74 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1350429",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.18555024145833302,
+          "formation_energy_per_atom": -3.322505210486111,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.mono: 'Monoclinic'> symbol='Cm' hall=None number=8 point_group='m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1101022",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.047387922500000006,
+          "formation_energy_per_atom": -3.4606675294444442,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='I4/m' hall=None number=87 point_group='4/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1400963",
+          "formula_pretty": "TiO2",
+          "energy_above_hull": 0.065303227500001,
+          "formation_energy_per_atom": -3.442752224444444,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='I4/m' hall=None number=87 point_group='4/m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    },
+    {
+      "formula": "CaO",
+      "count": 8,
+      "entries": [
+        {
+          "material_id": "mp-1244902",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.311101841399999,
+          "formation_energy_per_atom": -2.9949175511,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1245200",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.34150319959999903,
+          "formation_energy_per_atom": -2.9645161929,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1245305",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.295378315899998,
+          "formation_energy_per_atom": -3.0106410766,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tri: 'Triclinic'> symbol='P1' hall=None number=1 point_group='1' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1064492",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.20994023749999902,
+          "formation_energy_per_atom": -3.096079154999999,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.tet: 'Tetragonal'> symbol='I4/mmm' hall=None number=139 point_group='4/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-545512",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.10432442000000101,
+          "formation_energy_per_atom": -3.201694972499998,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.hex_: 'Hexagonal'> symbol='P6_3/mmc' hall=None number=194 point_group='6/mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-2605",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.0,
+          "formation_energy_per_atom": -3.306019392499999,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Fm-3m' hall=None number=225 point_group='m-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1181903",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 2.728132051249999,
+          "formation_energy_per_atom": -0.5778873412499991,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.cubic: 'Cubic'> symbol='Fd-3m' hall=None number=227 point_group='m-3m' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": true,
+          "experimental": null,
+          "has_structure": true
+        },
+        {
+          "material_id": "mp-1079707",
+          "formula_pretty": "CaO",
+          "energy_above_hull": 0.209769855,
+          "formation_energy_per_atom": -3.096249537499999,
+          "spacegroup_symbol": null,
+          "symmetry": "crystal_system=<CrystalSystem.ortho: 'Orthorhombic'> symbol='Cmce' hall=None number=64 point_group='mmm' symprec=0.1 angle_tolerance=5.0 version='2.5.0'",
+          "theoretical": false,
+          "experimental": null,
+          "has_structure": true
+        }
+      ]
+    }
+  ],
+  "total_queries": 9,
+  "api_key_in_output": false,
+  "cif_count": 4,
+  "cif_hashes": {
+    "data/scatti_candidates/materials_project/cifs/mp-4056_CaSc2O4.cif": "da5b68f3cb3277b543eee51544661f24f30fa4ae6f7e71bf80a980d881841fc9",
+    "data/scatti_candidates/materials_project/cifs/mp-753401_Sc2TiO5.cif": "743fbe64087ba4d94a09cd7051ccf29eab402320d70cee44c08306ea4d786ae5",
+    "data/scatti_candidates/materials_project/cifs/mp-753802_Sc2Ti2O7.cif": "65e7a7f0b7965b8b4db431b5275119763988545e1a70d6daf8876457911e76c9",
+    "data/scatti_candidates/materials_project/cifs/mp-780402_Sc2Ti2O7.cif": "e5b5c5ab2206414773f0d44afb8d3678149a9760b709fc802442927c508c0178"
+  },
+  "status": "mp_evidence_verified"
+}

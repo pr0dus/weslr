@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, ".")
 
-REPO_ROOT = "/data/data/com.termux/files/home/weslr-pr47-clean"
+REPO_ROOT = os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the verifier
 from scripts.verify_scatti_calculation_assurance_release_v2 import (

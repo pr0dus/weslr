@@ -1,0 +1,16 @@
+{
+  "commit": "55342bb",
+  "languages_queried": [],
+  "patent_search_scope": "unknown",
+  "exact_formula_hits": [],
+  "related_results": [],
+  "limitations": [
+    "This was a bounded multilingual search, not an exhaustive global literature review.",
+    "Some planned language groups (Japanese, Korean, French, Spanish, Italian, Polish/Czech) were not explicitly queried.",
+    "SearxNG snippets are search leads, not source validation.",
+    "No hit in this search is not proof of novelty or absence.",
+    "Non-English exact formula variants may still exist in patents, theses, old ceramic literature, or paywalled databases.",
+    "Only 4 languages (English, German, Russian, Chinese) were explicitly queried."
+  ],
+  "status": "multilingual_partial_verified"
+}

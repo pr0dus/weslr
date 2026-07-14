@@ -1,0 +1,113 @@
+{
+  "review_id": "scatti_cross_host_review_r4a",
+  "generated_at": "2026-07-14T18:56:00+02:00",
+  "repository_identity": {
+    "worktree": "/home/pr0/projects/weslr-scatti-reconciliation-v3",
+    "branch": "scatti-cross-host-reconciliation-v3-20260714",
+    "head": "f654b4aeca288ae62f804d50f07cf0b172fc7c67",
+    "base": "b478773e8364ba0a3d5c39a88a5cf0427fee94b4",
+    "transport_commit": "04dc013305b713c1eb3ea0117e462aa77099485f",
+    "transport_parent": "62e9ba794c780bb37d5472d79ca8c9d91230892d",
+    "transport_subject": "WESLR: add verified scatti calculation assurance v2"
+  },
+  "git_state": {
+    "tracked_modifications": [],
+    "staged_files": [],
+    "untracked_v3_files": 20,
+    "cherry_pick_tracked_files": 30,
+    "total_relevant_files": 50
+  },
+  "path_portability_repair": {
+    "total_attempted": 14,
+    "total_applied": 14,
+    "note": "Only SCATTI calculation-assurance files repaired. Historical evidence strings in docs/ and data/ left untouched."
+  },
+  "artifact_location": {
+    "total_artifacts": 20,
+    "correct_worktree": 18,
+    "duplicate_identical": 2,
+    "wrong_location": 0,
+    "missing": 0
+  },
+  "test_independence": {
+    "overall_verdict": "independent",
+    "critical_risk_found": false,
+    "families": 7
+  },
+  "full_test_receipt": {
+    "total": 148,
+    "passed": 145,
+    "failed": 3,
+    "errors": 0,
+    "portability_repair_verified": true,
+    "expected_cross_host_failures": 3,
+    "note": "All 3 failures are expected cross-host differences (commit reachability, scope counts)"
+  },
+  "mp_evidence_status": "mp_evidence_verified",
+  "parent_scaling_verdict": "scaling_bug_confirmed",
+  "parent_scaling_details": {
+    "parent_z": 2,
+    "script_added": {
+      "Ca": 1,
+      "O": 1
+    },
+    "should_have_added": {
+      "Ca": 2,
+      "O": 2
+    },
+    "produced_formula": "CaSc4Ti2O11"
+  },
+  "multilingual_evidence_status": "multilingual_partial_verified",
+  "structure_evidence": {
+    "total_structures": 15,
+    "all_verified": true,
+    "formula": "CaSc2TiO6",
+    "z": 1,
+    "atoms_per_cell": 16
+  },
+  "chgnet_evidence": {
+    "status": "value_verified_provenance_partial",
+    "success": true,
+    "volume_change_arithmetic_verified": true,
+    "input_output_link_verified": true
+  },
+  "corrections_applied": [
+    "CORR-001",
+    "CORR-002",
+    "CORR-003",
+    "CORR-004",
+    "CORR-005",
+    "CORR-006",
+    "CORR-007",
+    "CORR-008"
+  ],
+  "corrections_count": 8,
+  "verifier": {
+    "status": "cross_host_reconciliation_verified",
+    "passed": 44,
+    "failed": 0,
+    "abstained": 0,
+    "total": 44
+  },
+  "unresolved_questions": [
+    "Can a correctly scaled parent-derived CaSc2TiO6 geometry be constructed from Sc2TiO5 (Z=2)?",
+    "Would such a geometry be physically reasonable (bond lengths, coordination)?",
+    "Would CHGNet relaxation converge for a correctly scaled structure?",
+    "Does CaSc2TiO6 exist in any database beyond Materials Project?",
+    "Is CaSc2TiO6 thermodynamically stable or metastable?"
+  ],
+  "promotion_gates": {
+    "transport_commit_verified": true,
+    "cherry_pick_clean": true,
+    "path_portability_repaired": true,
+    "test_independence_verified": true,
+    "no_circular_verification_risk": true,
+    "no_credential_exposure": true,
+    "no_scientific_overpromotion": true,
+    "v3_verifier_passes": true,
+    "ready_for_corrected_geometry_phase": true,
+    "ready_for_dft": false,
+    "ready_for_scientific_claim": false
+  },
+  "next_recommended_phase": "corrected_parent_derived_geometry_construction"
+}

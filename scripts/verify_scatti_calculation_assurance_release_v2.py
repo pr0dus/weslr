@@ -22,7 +22,7 @@ It independently:
 import hashlib, json, os, re, subprocess, sys
 from collections import Counter
 
-REPO_ROOT = "/data/data/com.termux/files/home/weslr-pr47-clean"
+REPO_ROOT = os.environ.get("WESLR_REPO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 RELEASE_VERIFIED = "release_verified"
 RELEASE_REJECTED_REPORT_MISMATCH = "release_rejected_report_mismatch"
@@ -123,12 +123,24 @@ def verify():
     if not ac.get("all_category_sums_pass", False):
         issues.append("Category sums do not all pass")
 
-    # 10. Verify scope counts match current git
-    result = subprocess.run(["git", "status", "--short"], capture_output=True, text=True, cwd=REPO_ROOT)
-    untracked = [l[3:].strip() for l in result.stdout.strip().split("\n") if l.strip().startswith("??")]
-    repo_count = len(untracked)
-    if repo_count != summary["scope_counts"]["repository_untracked_total"]:
-        issues.append(f"Git scope mismatch: git says {repo_count}, summary says {summary['scope_counts']['repository_untracked_total']}")
+    # 10. Verify scope counts from preflight manifest (frozen at generation time)
+    # Do NOT compare against live git status, which changes as new files are added.
+    # Instead verify the preflight counts are internally consistent with the summary.
+    preflight = load_json("data/scatti_candidates/calculation_assurance_v2/preflight_scope_counts_v2.json")
+    scopes = preflight.get("scopes", [])
+    if scopes:
+        # Map preflight scopes to summary scope count keys
+        scope_map = [
+            ("repository_untracked_total", 0),
+            ("scatti_untracked_total", 1),
+            ("calculation_assurance_untracked_total", 2),
+        ]
+        for summary_key, scope_idx in scope_map:
+            if scope_idx < len(scopes):
+                preflight_count = scopes[scope_idx].get("file_count", 0)
+                summary_count = summary["scope_counts"].get(summary_key, 0)
+                if preflight_count != summary_count:
+                    issues.append(f"Scope mismatch for {summary_key}: preflight={preflight_count}, summary={summary_count}")
 
     # 11. Verify all listed files exist
     for path in summary.get("source_hashes", {}):

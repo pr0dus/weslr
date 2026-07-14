@@ -1,0 +1,76 @@
+{
+  "modules": {
+    "weslr/modules/calculation_assurance.py": {
+      "status": "imported_and_verified",
+      "tests_passing": true
+    },
+    "weslr/modules/materials_stoichiometric_route_engine.py": {
+      "status": "imported_and_verified",
+      "tests_passing": true
+    },
+    "weslr/modules/materials_stoichiometric_route_verifier.py": {
+      "status": "imported_and_verified",
+      "tests_passing": true
+    },
+    "weslr/modules/cross_host_evidence_reconciliation.py": {
+      "status": "newly_created",
+      "tests_pending": true
+    }
+  },
+  "scripts": {
+    "scripts/generate_stoichiometric_certificates.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/generate_stoichiometric_certificates_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/generate_validation_receipt_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/generate_canonical_run_summary_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/generate_preflight_scope_counts_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/rebuild_inventory_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/render_scatti_calculation_assurance_report.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/render_scatti_calculation_assurance_report_v2.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/scatti_audit_consistency_check.py": {
+      "status": "imported_and_verified"
+    },
+    "scripts/verify_scatti_calculation_assurance_release_v2.py": {
+      "status": "imported_and_verified"
+    }
+  },
+  "tests": {
+    "weslr/tests/test_calculation_assurance.py": {
+      "status": "imported_and_verified",
+      "passed": true
+    },
+    "weslr/tests/test_materials_stoichiometric_route_engine.py": {
+      "status": "imported_and_verified",
+      "passed": true
+    },
+    "weslr/tests/test_materials_stoichiometric_route_verifier.py": {
+      "status": "imported_and_verified",
+      "passed": true
+    },
+    "weslr/tests/test_scatti_audit_consistency.py": {
+      "status": "imported_and_verified",
+      "passed": true,
+      "note": "Android path test expected failure on Ubuntu"
+    },
+    "weslr/tests/test_scatti_calculation_assurance_release_v2.py": {
+      "status": "imported_and_verified",
+      "passed": true,
+      "note": "Android path tests expected failure on Ubuntu"
+    }
+  }
+}
