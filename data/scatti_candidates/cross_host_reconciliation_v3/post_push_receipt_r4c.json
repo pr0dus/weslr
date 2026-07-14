@@ -1,0 +1,12 @@
+{
+  "r4b_hash": "754da5256edd75598aeefddaad870a3bef91a32d",
+  "r4c_hash": "d9113dba8d92acdb77ed6df36d32886387b719a3",
+  "parent_relationship": "d9113dba8d92acdb77ed6df36d32886387b719a3 is child of 754da5256edd75598aeefddaad870a3bef91a32d",
+  "parent_verified": true,
+  "remote_hash": "d9113dba8d92acdb77ed6df36d32886387b719a3",
+  "local_remote_agreement": true,
+  "stage_a_result": "accepted",
+  "stage_b_result": "cross_host_reconciliation_r4c_release_verified",
+  "committed_tree_cleanliness": "3 pre-existing modifications (not from R4C)",
+  "pushed_without_force": true
+}
