@@ -4,6 +4,17 @@ WESLR is a continuity-first intelligence platform for structured reasoning over 
 
 This repository is the main WESLR development repository. It is no longer only a Siemens/TIA plugin repository. The Siemens/TIA work remains important, but it is now one product track inside the broader WESLR platform.
 
+## Support independent research
+
+I'm Robert ([pr0dus](https://github.com/pr0dus)), an independent researcher working on experiments and reproducible tools that make ideas easier to test and challenge.
+
+- **[Unknown Engine](https://github.com/pr0dus/unknown-engine-research)** studies how inherited methods can fail and how experiments can detect that failure. Public source, simulated reference-program results and reproduction instructions are available; external AI performance and real-world usefulness remain unestablished.
+- **B-null** is a separate AI-assisted scientific discovery research program: checking possible gaps against prior work, fixing test criteria before calculation, and preserving negative results. Its research remains private. No confirmed new discovery or established scientific novelty is claimed.
+
+[**Sponsor the research on GitHub**](https://github.com/sponsors/pr0dus). Support helps fund computation, scientific validation, software, reproducibility and research time. Every tier supports the same work and gives no influence over conclusions.
+
+Read the [research status and support details](docs/RESEARCH_SUPPORT.md). These projects' results do not establish the capabilities or readiness of the WESLR application.
+
 ## Current product identity
 
 WESLR is being developed as a governed intelligence system with these core principles:
